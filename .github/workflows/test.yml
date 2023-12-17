@@ -24,8 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install poetry
-        run: pipx install poetry
+      - name: Install cli
+        run: pipx install poetry sourcery-cli
 
       - uses: actions/setup-python@v5
         with:
