@@ -24,10 +24,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install cli
-        run: |
-          pipx install poetry
-          pipx install sourcery-cli
+      - name: Install poetry
+        run: pipx install poetry
 
       - uses: actions/setup-python@v5
         with:
@@ -38,13 +36,13 @@ jobs:
         run: poetry install --no-interaction
 
       - name: Login to Sourcery
-        run: sourcery login --token "${SOURCERY_TOKEN}"
+        run: poetry run sourcery login --token "${SOURCERY_TOKEN}"
 
       - name: Lint package
-        run: poe lint
+        run: poetry run poe lint
 
       - name: Test package
-        run: poe test
+        run: poetry run poe test
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3

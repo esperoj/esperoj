@@ -1305,16 +1305,16 @@ files = [
 ]
 
 [[package]]
-name = "sourcery-cli"
+name = "sourcery"
 version = "1.14.0"
 description = "Magically refactor Python"
 category = "dev"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sourcery_cli-1.14.0-py2.py3-none-macosx_10_9_universal2.whl", hash = "sha256:17c0cbb264c853d04f90dc25def1c077c054e8158ae9dd30c37d8e75d0e275cd"},
-    {file = "sourcery_cli-1.14.0-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:eddae39c223460d8a66b26aa04275124af4c59c833929dee6712403de295b3da"},
-    {file = "sourcery_cli-1.14.0-py2.py3-none-win_amd64.whl", hash = "sha256:941442baacaac7b2501d4e82801ec7ad71fd125b841eb5c05694ab12fe88c62e"},
+    {file = "sourcery-1.14.0-py2.py3-none-macosx_10_9_universal2.whl", hash = "sha256:208dbf69e0c3b145bbb18a3f7d082a849cc61ac7b51df323291ccddc92025433"},
+    {file = "sourcery-1.14.0-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:12a79c93f8f7baddde77678d7a69b81cdea51e4ceafa8d6be5caf21b66eb71f8"},
+    {file = "sourcery-1.14.0-py2.py3-none-win_amd64.whl", hash = "sha256:15b056baae7440319e3866ff0e524484d4899665c0669c7b20044e4d7869204a"},
 ]
 
 [[package]]
@@ -1432,4 +1432,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<4.0"
-content-hash = "9a7304d9395e6c41b73f7c8f7b7ce0f8e34cf79121221074a0c01502b2089f7d"
+content-hash = "cd8070e1fce31f3dc957b863a7ca6512842ae1325dfc7470492dc08dd41067ad"
