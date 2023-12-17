@@ -27,7 +27,7 @@ jobs:
       - name: Install cli
         run: |
           pipx install poetry
-          pipx instsll sourcery-cli
+          pipx install sourcery-cli
 
       - uses: actions/setup-python@v5
         with:
