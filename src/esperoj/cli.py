@@ -4,9 +4,9 @@ from pathlib import Path
 
 import typer
 
-from .airtable import Airtable
-from .esperoj import Esperoj
-from .storj import Storj
+from esperoj.airtable import Airtable
+from esperoj.esperoj import Esperoj
+from esperoj.storj import Storj
 
 app = typer.Typer()
 db = Airtable()
@@ -16,12 +16,11 @@ esperoj = Esperoj(db=db, storage=storage)
 
 @app.command()
 def ingest(path: Path) -> None:
+    """Ingest a file."""
     esperoj.ingest(path)
 
 
 @app.command()
 def info() -> None:
-    """
-    print info
-    """
+    """Print info."""
     esperoj.info()

@@ -1,3 +1,4 @@
+"""Module contain Storj class."""
 import os
 from pathlib import Path
 
@@ -6,6 +7,8 @@ from boto3.s3.transfer import TransferConfig
 
 
 class Storj:
+    """Storj class."""
+
     def __init__(self):
         self.client = boto3.client(
             "s3",
@@ -19,4 +22,5 @@ class Storj:
         )
 
     def upload_file(self, path: Path, name: str):
+        """Upload a file to storage."""
         self.client.upload_file(str(path), self.bucket_name, name, Config=self.config)
