@@ -47,7 +47,7 @@ repos:
       - id: ruff-check
         name: ruff check
         entry: ruff check
-        args: ["--preview", "--force-exclude", "--extend-fixable=F401,F841", "--fix-only"]
+        args: ["--force-exclude", "--extend-fixable=F401,F841", "--fix-only"]
         require_serial: true
         language: system
         types_or: [python, pyi]
