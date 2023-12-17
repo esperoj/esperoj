@@ -11,18 +11,18 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.x"
 
       - name: Install Poetry
         run: pip install --no-input poetry
 
       - name: Publish package
         run: |
-          poetry config repositories.private "https://codeberg.org/esperoj/esperoj"
+          poetry config repositories.private "https://codeberg.org/api/packages/esperoj/pypi"
           poetry config http-basic.private "${{ secrets.POETRY_HTTP_BASIC_ESPEROJ_USERNAME }}" "${{ secrets.POETRY_HTTP_BASIC_ESPEROJ_PASSWORD }}"
           poetry publish --build --repository private
