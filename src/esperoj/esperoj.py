@@ -41,7 +41,7 @@ class Esperoj:
 
     def ingest(self, path: Path):
         """Ingest a file."""
-        if path.exists() and path.is_file():
+        if path.is_file():
             name = path.name
             size = path.stat().st_size
             sha256sum = self.calculate_hash(path=path, algorithm="sha256")
