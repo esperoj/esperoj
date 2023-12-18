@@ -1,7 +1,7 @@
 """Contain list of fixtures."""
 import pytest
 
-from esperoj import Database
+from esperoj.database import Database
 
 
 @pytest.fixture(scope="function")
