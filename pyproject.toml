@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]  # https://python-poetry.org/docs/pyproject/
 name = "esperoj"
-version = "0.0.2"
+version = "0.0.3"
 description = "Esperoj package with cli."
 authors = ["Esperoj <esperoj@esperoj.eu.org>"]
 readme = "README.md"
@@ -70,7 +70,7 @@ warn_unreachable = true
 
 [tool.pytest.ini_options]  # https://docs.pytest.org/en/latest/reference/reference.html#ini-options-ref
 addopts = "--color=yes --doctest-modules --exitfirst --failed-first --verbosity=2 --junitxml=reports/pytest.xml"
-testpaths = ["src", "tests"]
+testpaths = ["tests"]
 xfail_strict = true
 
 [tool.ruff]  # https://github.com/charliermarsh/ruff

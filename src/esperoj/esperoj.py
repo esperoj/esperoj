@@ -40,8 +40,6 @@ class Esperoj:
 
     def info(self):
         """Print info."""
-        print(self.__dict__)
-        print(self.storage.client.list_buckets())
         print(self.db.table("Files").all())
 
     def ingest(self, path: Path):

@@ -4,7 +4,7 @@ import os
 
 from pyairtable import Api
 
-from esperoj.database import Database
+from esperoj import Database
 
 
 class Airtable(Database):
@@ -15,6 +15,6 @@ class Airtable(Database):
         self.api_key = os.environ["AIRTABLE_API_KEY"]
         self.client = Api(self.api_key)
 
-    def table(self, table_name):
+    def table(self, name):
         """Return a table."""
-        return self.client.table(self.base_id, table_name)
+        return self.client.table(self.base_id, name)

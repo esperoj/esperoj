@@ -5,7 +5,7 @@ from pathlib import Path
 import boto3
 from boto3.s3.transfer import TransferConfig
 
-from esperoj.storage import Storage
+from esperoj import Storage
 
 
 class Storj(Storage):
