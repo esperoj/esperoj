@@ -9,23 +9,25 @@ from esperoj.esperoj import Esperoj
 
 app = typer.Typer()
 
-match os.environ.get("ESPEROJ_DATABASE"):
-    case "Airtable":
-        from esperoj.airtable import Airtable
 
-        db = Airtable()  # type: ignore
-    case _:
-        db = 1  # type: ignore
+esperoj = Esperoj()
+if os.environ.get("ESPEROJ_DATABASE") == "Airtable":
+    from esperoj.airtable import Airtable
 
-match os.environ.get("ESPEROJ_STORAGE"):
-    case "Storj":
-        from esperoj.storj import Storj
+    esperoj.set_database(Airtable())
+else:
+    from esperoj.database import Database
 
-        storage = Storj()  # type: ignore
-    case _:
-        storage = 1  # type: ignore
+    esperoj.set_database(Database())
 
-esperoj = Esperoj(db=db, storage=storage)
+if os.environ.get("ESPEROJ_STORAGE") == "Storj":
+    from esperoj.storj import Storj
+
+    esperoj.set_storage(Storj())
+else:
+    from esperoj.storage import Storage
+
+    esperoj.set_storage(Storage())
 
 
 @app.command()

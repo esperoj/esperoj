@@ -4,8 +4,10 @@ import os
 
 from pyairtable import Api
 
+from esperoj.database import Database
 
-class Airtable:
+
+class Airtable(Database):
     """Airtable class."""
 
     def __init__(self):

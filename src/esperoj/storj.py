@@ -5,8 +5,10 @@ from pathlib import Path
 import boto3
 from boto3.s3.transfer import TransferConfig
 
+from esperoj.storage import Storage
 
-class Storj:
+
+class Storj(Storage):
     """Storj class."""
 
     def __init__(self):
