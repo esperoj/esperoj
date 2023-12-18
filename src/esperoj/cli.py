@@ -5,29 +5,31 @@ from pathlib import Path
 
 import typer
 
-from .esperoj import Esperoj
+from esperoj.esperoj import Esperoj
 
 app = typer.Typer()
 
 
-esperoj = Esperoj()
+config = {}
 if os.environ.get("ESPEROJ_DATABASE") == "Airtable":
-    from .airtable import Airtable
+    from esperoj.airtable import Airtable
 
-    esperoj.set_database(Airtable())
+    config["db"] = Airtable()  # type: ignore
 else:
-    from .database import Database
+    from esperoj.database import Database
 
-    esperoj.set_database(Database())
+    config["db"] = Database()  # type: ignore
 
 if os.environ.get("ESPEROJ_STORAGE") == "Storj":
-    from .storj import Storj
+    from esperoj.storj import Storj
 
-    esperoj.set_storage(Storj())
+    config["storage"] = Storj()  # type: ignore
 else:
-    from .storage import Storage
+    from esperoj.storage import Storage
 
-    esperoj.set_storage(Storage())
+    config["storage"] = Storage()  # type: ignore
+
+esperoj = Esperoj(**config)
 
 
 @app.command()

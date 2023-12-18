@@ -4,6 +4,8 @@ from pathlib import Path
 
 
 class Storage:
+    """Storage class."""
+
     def __init__(self):
         pass
 

@@ -4,15 +4,15 @@ import pytest
 from esperoj.database import Database
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def db():
-    """A temporary database."""
+    """Return a temporary database."""
     db_ = Database()
     yield db_
     db_.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def table(db):
-    """An empty table."""
+    """Return an empty table."""
     return db.table("table")

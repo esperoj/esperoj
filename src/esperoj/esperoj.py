@@ -6,13 +6,8 @@ from pathlib import Path
 class Esperoj:
     """Esperoj class."""
 
-    def __init__(self):
-        pass
-
-    def set_database(self, db):
+    def __init__(self, db, storage):
         self.db = db
-
-    def set_storage(self, storage):
         self.storage = storage
 
     def calculate_hash(self, content=None, path=None, algorithm="sha256"):
