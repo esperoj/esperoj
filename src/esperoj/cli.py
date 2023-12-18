@@ -13,17 +13,17 @@ match os.environ.get("ESPEROJ_DATABASE"):
     case "Airtable":
         from esperoj.airtable import Airtable
 
-        db: object = Airtable()
+        db = Airtable()  # type: ignore
     case _:
-        db = typer.Typer()
+        db = 1  # type: ignore
 
 match os.environ.get("ESPEROJ_STORAGE"):
     case "Storj":
         from esperoj.storj import Storj
 
-        storage: object = Storj()
+        storage = Storj()  # type: ignore
     case _:
-        storage = typer.Typer()
+        storage = 1  # type: ignore
 
 esperoj = Esperoj(db=db, storage=storage)
 
