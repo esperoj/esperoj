@@ -1353,18 +1353,6 @@ files = [
 ]
 
 [[package]]
-name = "sourcery"
-version = "1.14.0"
-description = "Magically refactor Python"
-optional = false
-python-versions = "*"
-files = [
-    {file = "sourcery-1.14.0-py2.py3-none-macosx_10_9_universal2.whl", hash = "sha256:208dbf69e0c3b145bbb18a3f7d082a849cc61ac7b51df323291ccddc92025433"},
-    {file = "sourcery-1.14.0-py2.py3-none-manylinux1_x86_64.whl", hash = "sha256:12a79c93f8f7baddde77678d7a69b81cdea51e4ceafa8d6be5caf21b66eb71f8"},
-    {file = "sourcery-1.14.0-py2.py3-none-win_amd64.whl", hash = "sha256:15b056baae7440319e3866ff0e524484d4899665c0669c7b20044e4d7869204a"},
-]
-
-[[package]]
 name = "text-unidecode"
 version = "1.3"
 description = "The most basic Text::Unidecode port"
@@ -1500,4 +1488,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "47315f1e7a8413964b72c0c31127eaf2d8cfedb6c649e72a05ab36ffbd9ce460"
+content-hash = "03bde3c8712052e4418901568271799c6a36e0d548873afd342c8bf494d0d7ed"

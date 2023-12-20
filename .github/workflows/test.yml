@@ -35,8 +35,10 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-interaction
 
-      - name: Login to Sourcery
-        run: poetry run sourcery login --token "${SOURCERY_TOKEN}"
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit/
+          key: ${{ hashFiles('.pre-commit-config.yaml') }}
 
       - name: Lint package
         run: poetry run poe lint
