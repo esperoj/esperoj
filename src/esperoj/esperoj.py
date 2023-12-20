@@ -47,8 +47,10 @@ class Esperoj:
         if content is not None:
             hash_obj.update(content.encode())
         else:
-            if not isinstance(path, Path):
+            if isinstance(path, str):
                 path = Path(path)
+            else:
+                raise ValueError("Path should be of type str or Path")
             with path.open("rb") as f:
                 hash_obj.update(f.read())
         return hash_obj.hexdigest()

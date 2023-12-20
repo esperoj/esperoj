@@ -62,9 +62,9 @@ repos:
     entry: poetry check
     language: system
     pass_filenames: false
-  - id: mypy
-    name: mypy
-    entry: mypy
+  - id: pyright
+    name: pyright
+    entry: pyright
     language: system
     types: [python]
 - repo: https://github.com/sourcery-ai/sourcery
