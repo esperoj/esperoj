@@ -105,7 +105,7 @@ convention = "numpy"
     help = "The docstring style (default: numpy)"
     name = "docformat"
     options = ["--docformat"]
-    default = "numpy"
+    default = "google"
 
     [[tool.poe.tasks.docs.args]]
     help = "The output directory (default: docs)"
