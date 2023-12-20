@@ -49,7 +49,7 @@ class Esperoj:
         else:
             if isinstance(path, str):
                 path = Path(path)
-            else:
+            elif not isinstance(path, Path):
                 raise ValueError("Path should be of type str or Path")
             with path.open("rb") as f:
                 hash_obj.update(f.read())
