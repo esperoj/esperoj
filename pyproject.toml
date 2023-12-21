@@ -117,6 +117,8 @@ convention = "numpy"
         --all-files
         --color always
       """
+    [[tool.poe.tasks.lint.sequence]]
+    cmd = "pyright"
 
   [tool.poe.tasks.test]
   help = "Test this package"
