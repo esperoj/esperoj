@@ -29,6 +29,7 @@ poethepoet = ">=0.20.0"
 pytest = ">=7.3.1"
 pytest-xdist = ">=3.2.1"
 moto = ">=4.2.12"
+pytest-cov = "^4.1.0"
 
 [tool.poetry.group.dev]
 optional = true
@@ -53,7 +54,7 @@ data_file = "reports/.coverage"
 source = ["src"]
 
 [tool.coverage.xml]  # https://coverage.readthedocs.io/en/latest/config.html#xml
-output = "reports/coverage.xml"
+output = "reports/pytest.xml"
 
 [tool.pyright]
 pythonVersion = "3.11"
@@ -65,7 +66,7 @@ exclude = ["**/node_modules",
 ]
 
 [tool.pytest.ini_options]  # https://docs.pytest.org/en/latest/reference/reference.html#ini-options-ref
-addopts = "-n 4 --color=yes --exitfirst --failed-first --verbosity=2 --junitxml=reports/pytest.xml"
+addopts = "--cov=esperoj -n 4 --color=yes --exitfirst --failed-first --verbosity=2 --junitxml=reports/pytest.xml"
 testpaths = ["tests"]
 xfail_strict = true
 
