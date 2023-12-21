@@ -1,9 +1,18 @@
 """Database module."""
 import uuid
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any
 
 from esperoj.exceptions import InvalidRecordError, RecordNotFoundError
+
+
+@dataclass
+class Record:
+    """Record class."""
+
+    record_id: str
+    fields: dict[str, Any]
 
 
 class BaseTable(ABC):
