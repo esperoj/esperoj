@@ -33,15 +33,7 @@ jobs:
           cache: 'poetry'
 
       - name: Install dependencies
-        run: poetry install --no-interaction
-
-      - uses: actions/cache@v3
-        with:
-          path: ~/.cache/pre-commit/
-          key: ${{ hashFiles('.pre-commit-config.yaml') }}
-
-      - name: Lint package
-        run: poetry run poe lint
+        run: poetry install --with test
 
       - name: Test package
         run: poetry run poe test

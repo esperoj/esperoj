@@ -1,3 +1,4 @@
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/esperoj/esperoj/main.svg)](https://results.pre-commit.ci/latest/github/esperoj/esperoj/main)
 # Esperoj
 
 Esperoj package with cli.

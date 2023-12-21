@@ -41,31 +41,23 @@ repos:
     args: [--pytest-test-first]
   - id: trailing-whitespace
     types: [python]
-- repo: local
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.1.8
   hooks:
-  - id: ruff-check
-    name: ruff check
-    entry: ruff check
-    require_serial: true
-    language: system
-    types_or: [python, pyi]
+  - id: ruff
   - id: ruff-format
-    name: ruff format
-    entry: ruff format
-    args: [--force-exclude]
-    require_serial: true
-    language: system
-    types_or: [python, pyi]
+- repo: https://github.com/python-poetry/poetry
+  rev: '1.7.1'
+  hooks:
   - id: poetry-check
-    name: poetry check
-    entry: poetry check
-    language: system
-    pass_filenames: false
+  - id: poetry-lock
+  - id: poetry-export
+  - id: poetry-install
+- repo: https://github.com/RobertCraigie/pyright-python
+  rev: v1.1.342
+  hooks:
   - id: pyright
-    name: pyright
-    entry: pyright
-    language: system
-    types: [python]
+    additional_dependencies: [boto3, pyairtable, savepagenow, 'typer[all]']
 - repo: https://github.com/sourcery-ai/sourcery
   rev: v1.14.0
   hooks:
