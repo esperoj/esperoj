@@ -22,6 +22,7 @@ class Esperoj:
         self.db = db
         self.storage = storage
 
+    # TODO: change this to be a static method
     def calculate_hash(self, content=None, path=None, algorithm="sha256"):
         """Calculate hash from either content or a file path.
 
@@ -47,11 +48,16 @@ class Esperoj:
         if content is not None:
             hash_obj.update(content.encode())
         else:
-            if not isinstance(path, Path):
+            if isinstance(path, str):
                 path = Path(path)
+            elif not isinstance(path, Path):
+                raise ValueError("Path should be of type str or Path")
             with path.open("rb") as f:
                 hash_obj.update(f.read())
         return hash_obj.hexdigest()
+
+    def archive(self, record_id: str):
+        """Archive file."""
 
     def ingest(self, path: Path) -> dict:
         """Ingests a file into the database and storage.

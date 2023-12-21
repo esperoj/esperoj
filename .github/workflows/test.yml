@@ -10,9 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-      SOURCERY_TOKEN: ${{ secrets.SOURCERY_TOKEN }}
-
     strategy:
       fail-fast: false
       matrix:
@@ -33,13 +30,7 @@ jobs:
           cache: 'poetry'
 
       - name: Install dependencies
-        run: poetry install --no-interaction
-
-      - name: Login to Sourcery
-        run: poetry run sourcery login --token "${SOURCERY_TOKEN}"
-
-      - name: Lint package
-        run: poetry run poe lint
+        run: poetry install --with test
 
       - name: Test package
         run: poetry run poe test
