@@ -58,8 +58,3 @@ repos:
   hooks:
   - id: pyright
     additional_dependencies: [boto3, pyairtable, savepagenow, 'typer[all]']
-- repo: https://github.com/sourcery-ai/sourcery
-  rev: v1.14.0
-  hooks:
-  - id: sourcery
-    args: [--diff=git diff HEAD, --no-summary]
