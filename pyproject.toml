@@ -83,7 +83,7 @@ target-version = "py311"
 ban-relative-imports = "all"
 
 [tool.ruff.pydocstyle]
-convention = "numpy"
+convention = "google"
 
 [tool.poe.tasks]  # https://github.com/nat-n/poethepoet
 
