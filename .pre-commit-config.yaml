@@ -50,8 +50,10 @@ repos:
   rev: '1.7.1'
   hooks:
   - id: poetry-check
-- repo: https://github.com/RobertCraigie/pyright-python
-  rev: v1.1.342
+- repo: local
   hooks:
   - id: pyright
-    additional_dependencies: [boto3, pyairtable, savepagenow, 'typer[all]']
+    name: pyright
+    entry: pyright
+    language: system
+    types: [python]
