@@ -15,7 +15,7 @@ from esperoj.storage import LocalStorage
 def bucket_name():
     """Fixture that provides a test bucket name.
 
-    Returns
+    Returns:
     -------
         str: Name of the test bucket.
     """
@@ -30,7 +30,7 @@ def s3_storage(s3_client, bucket_name):
         s3_client (boto3.client): The boto3 S3 client.
         bucket_name (str): The name of the bucket to create.
 
-    Returns
+    Returns:
     -------
         S3Storage: An instance of S3Storage with the created bucket.
     """
@@ -56,7 +56,7 @@ def s3_client(_aws_credentials):
 
     This uses the moto library to mock an S3 client.
 
-    Yields
+    Yields:
     ------
         boto3.client: A mocked S3 client.
     """
@@ -70,7 +70,7 @@ def db():
 
     This creates a temporary database, yields it for use in tests, and then closes it.
 
-    Yields
+    Yields:
     ------
         Database: A temporary database.
     """
@@ -86,7 +86,7 @@ def local_storage(tmp_path):
     Args:
         tmp_path (pathlib.Path): A temporary path provided by pytest.
 
-    Returns
+    Returns:
     -------
         LocalStorage: An instance of LocalStorage with the provided path.
     """
@@ -101,7 +101,7 @@ def esperoj(db, local_storage):
         db (Database): A database instance.
         local_storage (LocalStorage): A local storage instance.
 
-    Returns
+    Returns:
     -------
         Esperoj: An instance of Esperoj with the provided database and local storage.
     """
@@ -115,7 +115,7 @@ def table(db):
     Args:
         db (Database): A database instance.
 
-    Returns
+    Returns:
     -------
         Table: An empty table from the provided database.
     """

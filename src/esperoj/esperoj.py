@@ -6,7 +6,7 @@ from pathlib import Path
 class Esperoj:
     """Esperoj class for handling file ingestion and information retrieval.
 
-    Attributes
+    Attributes:
     ----------
         db: A database object.
         storage: A storage object.
@@ -31,12 +31,12 @@ class Esperoj:
             path (str, optional): Path to a file to calculate hash from. Defaults to None.
             algorithm (str, optional): Hashing algorithm to use. Defaults to "sha256".
 
-        Raises
+        Raises:
         ------
             ValueError: If neither content nor path is provided.
             ValueError: If the provided algorithm is not supported.
 
-        Returns
+        Returns:
         -------
             str: The calculated hash.
         """
@@ -65,12 +65,12 @@ class Esperoj:
         Args:
             path (Path): Path to the file to ingest.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the provided path does not point to a file.
             FileExistsError: If a file with the same name already exists in the database or storage.
 
-        Returns
+        Returns:
         -------
             dict: A dictionary containing information about the ingested file.
         """

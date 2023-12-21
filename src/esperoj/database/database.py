@@ -20,7 +20,7 @@ class Record(ABC):
         Args:
             fields (dict[str, Any]): A dictionary of field names and their new values.
 
-        Returns
+        Returns:
         -------
             Self: The updated record.
         """
@@ -36,7 +36,7 @@ class Table(ABC):
         Args:
             fields (dict[str, Any]): A dictionary of field names and their values.
 
-        Returns
+        Returns:
         -------
             Record: The created record.
         """
@@ -48,7 +48,7 @@ class Table(ABC):
         Args:
             record_id (Any): The ID of the record to delete.
 
-        Returns
+        Returns:
         -------
             Any: The deleted record ID.
         """
@@ -60,7 +60,7 @@ class Table(ABC):
         Args:
             record_id (Any): The ID of the record to get.
 
-        Returns
+        Returns:
         -------
             Record: The requested record.
         """
@@ -74,7 +74,7 @@ class Table(ABC):
         Args:
             formulas (dict[str, Any], optional): A dictionary of field names and their values to filter records. Defaults to {}.
 
-        Returns
+        Returns:
         -------
             Iterable[Record]: An iterable of matching records.
         """
@@ -89,7 +89,7 @@ class Table(ABC):
             record_id (Any): The ID of the record to update.
             fields (dict[str, Any]): A dictionary of field names and their new values.
 
-        Returns
+        Returns:
         -------
             Record: The updated record.
         """
@@ -100,7 +100,7 @@ class Table(ABC):
         Args:
             fields_list (Iterable[dict[str, Any]]): An iterable of dictionaries containing field names and their values.
 
-        Returns
+        Returns:
         -------
             Iterable[Record]: An iterable of created records.
         """
@@ -112,7 +112,7 @@ class Table(ABC):
         Args:
             record_ids (Iterable[Any]): An iterable of record IDs to delete.
 
-        Returns
+        Returns:
         -------
             Iterable[Any]: An iterable of deleted record IDs.
         """
@@ -124,7 +124,7 @@ class Table(ABC):
         Args:
             record_ids (Iterable[Any]): An iterable of record IDs to get.
 
-        Returns
+        Returns:
         -------
             Iterable[Record]: An iterable of requested records.
         """
@@ -136,7 +136,7 @@ class Table(ABC):
         Args:
             records (Iterable[dict[str, Any]]): An iterable of dictionaries containing record IDs and field updates.
 
-        Returns
+        Returns:
         -------
             Iterable[Record]: An iterable of updated records.
         """
@@ -153,7 +153,7 @@ class Database(ABC):
         Args:
             name (str): The name of the table.
 
-        Returns
+        Returns:
         -------
             Table: The requested table.
         """
@@ -162,7 +162,7 @@ class Database(ABC):
     def close(self) -> bool:
         """Close the database connection.
 
-        Returns
+        Returns:
         -------
             bool: True if the operation is successful.
         """

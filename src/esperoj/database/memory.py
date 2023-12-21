@@ -20,7 +20,7 @@ class MemoryRecord(Record):
         Args:
             fields (dict[str, Any]): A dictionary of field names and their new values.
 
-        Returns
+        Returns:
         -------
             Self: The updated record.
         """
@@ -49,7 +49,7 @@ class MemoryTable(Table):
         Args:
             fields (dict[str, Any]): A dictionary of field names and their values.
 
-        Returns
+        Returns:
         -------
             MemoryRecord: The created record.
         """
@@ -63,11 +63,11 @@ class MemoryTable(Table):
         Args:
             record_id (Any): The ID of the record to delete.
 
-        Returns
+        Returns:
         -------
             Any: The deleted record ID.
 
-        Raises
+        Raises:
         ------
             RecordNotFoundError: If the record is not found.
         """
@@ -82,11 +82,11 @@ class MemoryTable(Table):
         Args:
             record_id (Any): The ID of the record to get.
 
-        Returns
+        Returns:
         -------
             MemoryRecord: The requested record.
 
-        Raises
+        Raises:
         ------
             RecordNotFoundError: If the record is not found.
         """
@@ -101,11 +101,11 @@ class MemoryTable(Table):
         Args:
             formulas (dict[str, Any], optional): A dictionary of field names and their values to filter records. Defaults to {}.
 
-        Returns
+        Returns:
         -------
             Iterable[MemoryRecord]: An iterable of matching records.
 
-        Raises
+        Raises:
         ------
             ValueError: If the formulas argument is not a dictionary.
         """
@@ -127,7 +127,7 @@ class MemoryTable(Table):
             record_id (Any): The ID of the record to update.
             fields (dict[str, Any]): A dictionary of field names and their new values.
 
-        Returns
+        Returns:
         -------
             MemoryRecord: The updated record.
         """
@@ -157,7 +157,7 @@ class MemoryDatabase(Database):
         Args:
             name (str): The name of the table.
 
-        Returns
+        Returns:
         -------
             MemoryTable: The requested table.
         """
@@ -168,7 +168,7 @@ class MemoryDatabase(Database):
     def close(self) -> bool:
         """Close the in-memory database and clear all tables.
 
-        Returns
+        Returns:
         -------
             bool: True if the operation is successful.
         """
