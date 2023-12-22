@@ -13,3 +13,7 @@ class RecordNotFoundError(Exception):
 
     This exception should be raised when a record that is expected to be in the database or storage cannot be found.
     """
+
+
+class RecordDeletionError(Exception):
+    """Exception raised when a record can't be deleted."""

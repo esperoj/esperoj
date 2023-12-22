@@ -71,7 +71,7 @@ def memory_table(memory_db):
 @pytest.fixture()
 def mock_memory_records():
     """Return a list of mock memory records."""
-    records = [
+    return [
         MemoryRecord(
             uuid4(),
             {
@@ -97,4 +97,3 @@ def mock_memory_records():
             },
         ),
     ]
-    return records

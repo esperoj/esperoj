@@ -112,7 +112,7 @@ def test_memory_table_update(memory_table):
     record = memory_table.create(fields)
     updated_record = memory_table.update(record.record_id, update_fields)
     assert isinstance(updated_record, MemoryRecord)
-    assert updated_record.fields == {**fields, **update_fields}
+    assert updated_record.fields == fields | update_fields
 
 
 def test_memory_table_update_not_found(memory_table):
