@@ -78,8 +78,6 @@ class Table(ABC):
         -------
             Iterable[Record]: An iterable of matching records.
         """
-        if formulas is None:
-            formulas = {}
 
     @abstractmethod
     def update(self, record_id: Any, fields: dict[str, Any]) -> Record:

@@ -1,4 +1,5 @@
-"""Contain list of fixtures."""
+"""Fixtures for testing."""
+
 import os
 from uuid import uuid4
 
@@ -14,11 +15,13 @@ from esperoj.storage import LocalStorage
 
 @pytest.fixture()
 def bucket_name():
+    """Return a test bucket name."""
     return "test_bucket"
 
 
 @pytest.fixture()
 def memory_db():
+    """Return a test memory database."""
     db = MemoryDatabase("test_db")
     yield db
     db.close()
@@ -26,12 +29,14 @@ def memory_db():
 
 @pytest.fixture()
 def s3_storage(s3_client, bucket_name):
+    """Return an S3 storage object."""
     s3_client.create_bucket(Bucket=bucket_name)
     return S3Storage(name="test_storage", config={"bucket_name": bucket_name})
 
 
 @pytest.fixture()
 def _aws_credentials():
+    """Set AWS credentials in the environment."""
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
@@ -40,27 +45,32 @@ def _aws_credentials():
 
 @pytest.fixture()
 def s3_client(_aws_credentials):
+    """Return a mock S3 client."""
     with mock_s3():
         yield boto3.client("s3", region_name="us-east-1")
 
 
 @pytest.fixture()
 def local_storage(tmp_path):
+    """Return a local storage object."""
     return LocalStorage("test_storage", config={"base_path": str(tmp_path / "test_storage")})
 
 
 @pytest.fixture()
 def esperoj(db, local_storage):
+    """Return an Esperoj object."""
     return Esperoj(db, local_storage)
 
 
 @pytest.fixture()
 def memory_table(memory_db):
+    """Return a test memory table."""
     return memory_db.table("test_table")
 
 
 @pytest.fixture()
 def mock_memory_records():
+    """Return a list of mock memory records."""
     records = [
         MemoryRecord(
             uuid4(),
