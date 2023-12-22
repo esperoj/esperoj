@@ -22,10 +22,9 @@ def test_memory_table_creation(memory_db, memory_table):
     assert memory_db.table(name) is memory_table
 
 
-@pytest.mark.parametrize("index", range(2))
-def test_memory_record_creation(memory_table, mock_memory_records, index):
+@pytest.mark.parametrize("fields", [{"Name": "Esperoj"}, {"Age": 12}])
+def test_memory_record_creation(memory_table, fields):
     """Test the creation of a MemoryRecord instance."""
-    fields = mock_memory_records[index].fields
     record = memory_table.create(fields)
     assert isinstance(record, MemoryRecord)
     assert isinstance(record.record_id, UUID)
@@ -112,7 +111,7 @@ def test_memory_table_update(memory_table):
     record = memory_table.create(fields)
     updated_record = memory_table.update(record.record_id, update_fields)
     assert isinstance(updated_record, MemoryRecord)
-    assert updated_record.fields == {**fields, **update_fields}
+    assert updated_record.fields == fields | update_fields
 
 
 def test_memory_table_update_not_found(memory_table):

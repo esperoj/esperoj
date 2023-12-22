@@ -12,18 +12,18 @@ app = typer.Typer()
 
 config = {}
 if os.environ.get("ESPEROJ_DATABASE") == "Airtable":
-    from esperoj.airtable import Airtable
+    from esperoj.database.airtable import Airtable
 
-    config["db"] = Airtable()  # type: ignore
+    config["db"] = Airtable("Airtable")
 else:
-    from esperoj.database import Database
+    from esperoj.database.memory import MemoryDatabase
 
-    config["db"] = Database()  # type: ignore
+    config["db"] = MemoryDatabase("Memory Database")
 
 if os.environ.get("ESPEROJ_STORAGE") == "Storj":
-    from esperoj.s3 import S3Storage
+    from esperoj.storage.s3 import S3Storage
 
-    config["storage"] = S3Storage(  # type: ignore
+    config["storage"] = S3Storage(
         name="Storj",
         config={
             "client_config": {
@@ -35,9 +35,9 @@ if os.environ.get("ESPEROJ_STORAGE") == "Storj":
         },
     )
 else:
-    from esperoj.storage import BaseStorage
+    from esperoj.storage.local import LocalStorage
 
-    config["storage"] = BaseStorage()  # type: ignore
+    config["storage"] = LocalStorage("Local Storage", "/tmp/esperoj")
 
 esperoj = Esperoj(**config)
 

@@ -3,13 +3,13 @@
 import os
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Self
+from typing import Any
 
 from pyairtable import Api
 from pyairtable.formulas import match
 
 from esperoj.database import Database, Record, Table
-from esperoj.exceptions import InvalidRecordError, RecordNotFoundError
+from esperoj.exceptions import InvalidRecordError, RecordDeletionError, RecordNotFoundError
 
 
 @dataclass
@@ -20,9 +20,9 @@ class AirtableRecord(Record):
         table (AirtableTable): The table this record belongs to.
     """
 
-    table: type["AirtableTable"]
+    table: "AirtableTable"
 
-    def update(self, fields: dict[str, Any]) -> Self:
+    def update(self, fields: dict[str, Any]) -> "AirtableRecord":
         """Updates the record with the given fields.
 
         Args:
@@ -63,7 +63,7 @@ class AirtableTable(Table):
         """
         return AirtableRecord(record_dict["id"], record_dict["fields"], self)
 
-    def create(self, fields: dict[str, Any]) -> dict[str, Any]:
+    def create(self, fields: dict[str, Any]) -> AirtableRecord:
         """Creates a new record in the table.
 
         Args:
@@ -76,16 +76,16 @@ class AirtableTable(Table):
             raise InvalidRecordError("fields must be a dictionary.")
         return self._record_from_dict(self.client.create(fields))
 
-    def create_many(self, records: Iterable[dict[str, Any]]) -> Iterable[AirtableRecord]:
+    def create_many(self, fields_list: Iterable[dict[str, Any]]) -> Iterable[AirtableRecord]:
         """Creates multiple new records in the table.
 
         Args:
-            records (Iterable[dict[str, Any]]): The records to create.
+            fields_list (Iterable[dict[str, Any]]): The records to create.
 
         Returns:
             Iterable[AirtableRecord]: The created records.
         """
-        return (self._record_from_dict(record) for record in self.client.batch_create(records))
+        return (self._record_from_dict(record) for record in self.client.batch_create(fields_list))
 
     def delete(self, record_id: str) -> str:
         """Deletes a record from the table.
@@ -103,7 +103,7 @@ class AirtableTable(Table):
         result = self.client.delete(record.record_id)
         if result["deleted"] is True:
             return record_id
-        raise Exception(f"Deletion failed for id: {result['id']}")
+        raise RecordDeletionError(f"Deletion failed for id: {result['id']}")
 
     def delete_many(self, record_ids: Iterable[str]) -> Iterable[str]:
         """Deletes multiple records from the table.
@@ -147,9 +147,8 @@ class AirtableTable(Table):
         Returns:
             Iterable[AirtableRecord]: The retrieved records.
         """
-        if formulas is not None:
-            formulas = match(formulas)
-        return (self._record_from_dict(record) for record in self.client.all(formula=formulas))
+        formula = match(formulas) if formulas is not None else ""
+        return (self._record_from_dict(record) for record in self.client.all(formula=formula))
 
     def get_many(self, record_ids: Iterable[str]) -> Iterable[AirtableRecord]:
         """Gets multiple records from the table.

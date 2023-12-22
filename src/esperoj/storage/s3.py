@@ -6,7 +6,7 @@ import boto3
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
-from esperoj.storage import BaseStorage
+from esperoj.storage import Storage
 
 default_config = {
     "bucket_name": "esperoj",
@@ -21,7 +21,7 @@ default_config = {
 }
 
 
-class S3Storage(BaseStorage):
+class S3Storage(Storage):
     """S3Storage class for handling S3 storage operations.
 
     Attributes:
@@ -36,13 +36,14 @@ class S3Storage(BaseStorage):
 
         Args:
             name (str): The name of the storage.
-            config (dict, optional): Configuration dictionary for the S3 client. Defaults to default_config.
+            config (dict, optional): Configuration for the S3 client. Defaults to default_config.
         """
-        super().__init__(name, config=default_config)
+        self.name = name
+        self.config = default_config
         self.config.update(config)
         self.s3 = boto3.client("s3", **self.config["client_config"])
 
-    def delete_file(self, path: str) -> None:
+    def delete_file(self, path: str) -> bool:
         """Delete a file from the S3 bucket.
 
         Args:
@@ -51,13 +52,13 @@ class S3Storage(BaseStorage):
         Raises:
         ------
             FileNotFoundError: If the file does not exist.
+
+        Returns:
+        -------
+            Deleted: Is it deleted.
         """
-        if not self.file_exists(path):
-            raise FileNotFoundError(f"No such file: '{path}'")
-        try:
-            self.s3.delete_object(Bucket=self.config["bucket_name"], Key=path)
-        except ClientError as e:
-            raise FileNotFoundError(f"No such file: '{path}'") from e
+        self.s3.delete_object(Bucket=self.config["bucket_name"], Key=path)
+        return not self.file_exists(path)
 
     def download_file(self, src: str, dst: str) -> None:
         """Download a file from the S3 bucket.

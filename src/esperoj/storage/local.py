@@ -1,50 +1,28 @@
-"""Storage class."""
-
+"""Local Storage."""
 import shutil
 from pathlib import Path
 
-
-class BaseStorage:
-    """Abstract base class for storage.
-
-    Attributes:
-    ----------
-        name (str): The name of the storage.
-        config (dict): Configuration for the storage.
-    """
-
-    def __init__(self, name: str, config: dict | None = None) -> None:
-        """Initialize the BaseStorage.
-
-        Args:
-            name (str): The name of the storage.
-            config (dict, optional): Configuration for the storage. Defaults to {}.
-        """
-        if config is None:
-            config = {}
-        self.name = name
-        self.config = config
+from esperoj.storage import Storage
 
 
-class LocalStorage(BaseStorage):
+class LocalStorage(Storage):
     """Class for local storage.
 
     Attributes:
     ----------
+        name (str): The name of the storage.
         base_path (Path): The base path for the local storage.
     """
 
-    def __init__(self, name: str, config: dict | None = None) -> None:
+    def __init__(self, name: str, base_path: str) -> None:
         """Initialize the LocalStorage.
 
         Args:
             name (str): The name of the storage.
-            config (dict, optional): Configuration for the storage. Defaults to {}.
+            base_path (str): base path for the storage.
         """
-        if config is None:
-            config = {}
-        super().__init__(name, config)
-        self.base_path = Path(self.config["base_path"])
+        self.name = name
+        self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
 
     def _get_full_path(self, path: str) -> Path:
@@ -59,7 +37,7 @@ class LocalStorage(BaseStorage):
         """
         return self.base_path / Path(path)
 
-    def delete_file(self, path: str) -> None:
+    def delete_file(self, path: str) -> bool:
         """Delete a file at a given path.
 
         Args:
@@ -68,11 +46,16 @@ class LocalStorage(BaseStorage):
         Raises:
         ------
             FileNotFoundError: If the file does not exist.
+
+        Returns:
+        -------
+            Deleted: Is it deleted.
         """
         full_path = self._get_full_path(path)
         if not full_path.is_file():
             raise FileNotFoundError(f"No such file: '{full_path}'")
         full_path.unlink()
+        return not self.file_exists(path)
 
     def download_file(self, src: str, dst: str) -> None:
         """Download a file from a source to a destination.
