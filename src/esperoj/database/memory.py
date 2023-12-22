@@ -109,8 +109,6 @@ class MemoryTable(Table):
         ------
             ValueError: If the formulas argument is not a dictionary.
         """
-        if formulas is None:
-            formulas = {}
         if not formulas:
             return (MemoryRecord(record_id, fields) for record_id, fields in self.records.items())
 
