@@ -54,7 +54,8 @@ class LocalStorage(Storage):
         full_path = self._get_full_path(path)
         if not full_path.is_file():
             raise FileNotFoundError(f"No such file: '{full_path}'")
-        return full_path.unlink() is None
+        full_path.unlink()
+        return not self.file_exists(path)
 
     def download_file(self, src: str, dst: str) -> None:
         """Download a file from a source to a destination.
