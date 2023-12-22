@@ -83,6 +83,7 @@ def test_memory_table_get_not_found(memory_table):
     ],
 )
 def test_memory_table_get_all(memory_table, records, formulas, expected_records):
+    memory_table.create_many(records)
     if formulas:
         fetched_records = list(memory_table.get_all(formulas))
     else:
