@@ -18,8 +18,11 @@ def test_upload_file(s3_storage, tmp_path):
     """Test file upload to S3 storage."""
     tmp_file = tmp_path / "test.txt"
     tmp_file.write_text("test content")
+    download_file = tmp_path / "uploaded.txt"
     s3_storage.upload_file(str(tmp_file), "uploaded.txt")
     assert s3_storage.file_exists("uploaded.txt") is True
+    s3_storage.download_file("uploaded.txt", str(download_file))
+    assert download_file.read_text() == "test content"
 
 
 def test_upload_file_not_found(s3_storage, tmp_path):
