@@ -12,7 +12,7 @@ app = typer.Typer()
 
 config = {}
 if os.environ.get("ESPEROJ_DATABASE") == "Airtable":
-    from esperoj.airtable import Airtable
+    from esperoj.database.airtable import Airtable
 
     config["db"] = Airtable()  # type: ignore
 else:

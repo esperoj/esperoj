@@ -147,9 +147,7 @@ class AirtableTable(Table):
         Returns:
             Iterable[AirtableRecord]: The retrieved records.
         """
-        formula = ""
-        if formulas is not None:
-            formula = match(formulas)
+        formula = match(formulas) if formulas is not None else ""
         return (self._record_from_dict(record) for record in self.client.all(formula=formula))
 
     def get_many(self, record_ids: Iterable[str]) -> Iterable[AirtableRecord]:

@@ -9,8 +9,8 @@ from moto import mock_s3
 
 from esperoj import Esperoj
 from esperoj.database.memory import MemoryDatabase, MemoryRecord
-from esperoj.s3 import S3Storage
-from esperoj.storage import LocalStorage
+from esperoj.storage.local import LocalStorage
+from esperoj.storage.s3 import S3Storage
 
 
 @pytest.fixture()
@@ -53,7 +53,7 @@ def s3_client(_aws_credentials):
 @pytest.fixture()
 def local_storage(tmp_path):
     """Return a local storage object."""
-    return LocalStorage("test_storage", config={"base_path": str(tmp_path / "test_storage")})
+    return LocalStorage("test_storage", str(tmp_path))
 
 
 @pytest.fixture()

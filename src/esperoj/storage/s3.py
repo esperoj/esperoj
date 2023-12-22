@@ -6,7 +6,7 @@ import boto3
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
-from esperoj.storage import BaseStorage
+from esperoj.storage import Storage
 
 default_config = {
     "bucket_name": "esperoj",
@@ -21,7 +21,7 @@ default_config = {
 }
 
 
-class S3Storage(BaseStorage):
+class S3Storage(Storage):
     """S3Storage class for handling S3 storage operations.
 
     Attributes:
