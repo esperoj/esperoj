@@ -21,7 +21,7 @@ else:
     config["db"] = Database()  # type: ignore
 
 if os.environ.get("ESPEROJ_STORAGE") == "Storj":
-    from esperoj.s3 import S3Storage
+    from esperoj.storage.s3 import S3Storage
 
     config["storage"] = S3Storage(  # type: ignore
         name="Storj",
@@ -35,9 +35,9 @@ if os.environ.get("ESPEROJ_STORAGE") == "Storj":
         },
     )
 else:
-    from esperoj.storage import BaseStorage
+    from esperoj.storage import Storage
 
-    config["storage"] = BaseStorage()  # type: ignore
+    config["storage"] = Storage()  # type: ignore
 
 esperoj = Esperoj(**config)
 
