@@ -24,7 +24,7 @@ default_config = {
 class S3Storage(BaseStorage):
     """S3Storage class for handling S3 storage operations.
 
-    Attributes
+    Attributes:
     ----------
         name (str): The name of the storage.
         config (dict): Configuration dictionary for the S3 client.
@@ -32,8 +32,7 @@ class S3Storage(BaseStorage):
     """
 
     def __init__(self, name: str, config: dict = default_config) -> None:
-        """
-        Initialize a S3Storage instance.
+        """Initialize a S3Storage instance.
 
         Args:
             name (str): The name of the storage.
@@ -49,7 +48,7 @@ class S3Storage(BaseStorage):
         Args:
             path (str): The path of the file to delete.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the file does not exist.
         """
@@ -67,7 +66,7 @@ class S3Storage(BaseStorage):
             src (str): The source path of the file in the S3 bucket.
             dst (str): The destination path to save the downloaded file.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the source file does not exist.
         """
@@ -84,7 +83,7 @@ class S3Storage(BaseStorage):
         Args:
             path (str): The path of the file to check.
 
-        Returns
+        Returns:
         -------
             bool: True if the file exists, False otherwise.
         """
@@ -102,11 +101,11 @@ class S3Storage(BaseStorage):
         Args:
             path (str): The path to list files from.
 
-        Returns
+        Returns:
         -------
             list: A list of file keys.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the specified path does not exist.
         """
@@ -125,7 +124,7 @@ class S3Storage(BaseStorage):
             src (str): The source path of the file to upload.
             dst (str): The destination path in the S3 bucket.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the source file does not exist.
         """

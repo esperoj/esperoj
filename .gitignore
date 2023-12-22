@@ -1,6 +1,7 @@
 # Coverage.py
 htmlcov/
 reports/
+.coverage
 
 # cruft
 *.rej

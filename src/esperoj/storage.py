@@ -5,18 +5,16 @@ from pathlib import Path
 
 
 class BaseStorage:
-    """
-    Abstract base class for storage.
+    """Abstract base class for storage.
 
-    Attributes
+    Attributes:
     ----------
         name (str): The name of the storage.
         config (dict): Configuration for the storage.
     """
 
     def __init__(self, name: str, config: dict | None = None) -> None:
-        """
-        Initialize the BaseStorage.
+        """Initialize the BaseStorage.
 
         Args:
             name (str): The name of the storage.
@@ -29,17 +27,15 @@ class BaseStorage:
 
 
 class LocalStorage(BaseStorage):
-    """
-    Class for local storage.
+    """Class for local storage.
 
-    Attributes
+    Attributes:
     ----------
         base_path (Path): The base path for the local storage.
     """
 
     def __init__(self, name: str, config: dict | None = None) -> None:
-        """
-        Initialize the LocalStorage.
+        """Initialize the LocalStorage.
 
         Args:
             name (str): The name of the storage.
@@ -52,26 +48,24 @@ class LocalStorage(BaseStorage):
         self.base_path.mkdir(parents=True, exist_ok=True)
 
     def _get_full_path(self, path: str) -> Path:
-        """
-        Get the full path for a given relative path.
+        """Get the full path for a given relative path.
 
         Args:
             path (str): The relative path.
 
-        Returns
+        Returns:
         -------
             Path: The full path.
         """
         return self.base_path / Path(path)
 
     def delete_file(self, path: str) -> None:
-        """
-        Delete a file at a given path.
+        """Delete a file at a given path.
 
         Args:
             path (str): The path of the file to delete.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the file does not exist.
         """
@@ -81,14 +75,13 @@ class LocalStorage(BaseStorage):
         full_path.unlink()
 
     def download_file(self, src: str, dst: str) -> None:
-        """
-        Download a file from a source to a destination.
+        """Download a file from a source to a destination.
 
         Args:
             src (str): The source file path.
             dst (str): The destination file path.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the source file does not exist.
         """
@@ -100,13 +93,12 @@ class LocalStorage(BaseStorage):
         shutil.copy2(source, destination)
 
     def file_exists(self, path: str) -> bool:
-        """
-        Check if a file exists at a given path.
+        """Check if a file exists at a given path.
 
         Args:
             path (str): The path of the file.
 
-        Returns
+        Returns:
         -------
             bool: True if the file exists, False otherwise.
         """
@@ -114,17 +106,16 @@ class LocalStorage(BaseStorage):
         return full_path.is_file()
 
     def list_files(self, path: str) -> list[str]:
-        """
-        List all files in a given directory.
+        """List all files in a given directory.
 
         Args:
             path (str): The path of the directory.
 
-        Returns
+        Returns:
         -------
             list[str]: A list of file paths.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the directory does not exist.
         """
@@ -136,14 +127,13 @@ class LocalStorage(BaseStorage):
         ]
 
     def upload_file(self, src: str, dst: str) -> None:
-        """
-        Upload a file from a source to a destination.
+        """Upload a file from a source to a destination.
 
         Args:
             src (str): The source file path.
             dst (str): The destination file path.
 
-        Raises
+        Raises:
         ------
             FileNotFoundError: If the source file does not exist.
         """

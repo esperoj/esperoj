@@ -27,6 +27,7 @@ optional = true
 coverage = { extras = ["toml"], version = ">=7.2.5" }
 poethepoet = ">=0.20.0"
 pytest = ">=7.3.1"
+pytest-cov = ">=4.1.0"
 pytest-xdist = ">=3.2.1"
 moto = ">=4.2.12"
 
@@ -41,19 +42,20 @@ pyright = ">=1.1.341"
 pre-commit = ">=3.3.1"
 sourcery = "^1.14.0"
 
-[tool.coverage.report]  # https://coverage.readthedocs.io/en/latest/config.html#report
+[tool.coverage.report]
 precision = 1
 show_missing = true
 skip_covered = true
 
-[tool.coverage.run]  # https://coverage.readthedocs.io/en/latest/config.html#run
+[tool.coverage.run]
 branch = true
 command_line = "--module pytest"
-data_file = "reports/.coverage"
+data_file = ".coverage"
+parallel = true
 source = ["src"]
 
-[tool.coverage.xml]  # https://coverage.readthedocs.io/en/latest/config.html#xml
-output = "reports/coverage.xml"
+[tool.coverage.xml]
+output = "reports/pytest.xml"
 
 [tool.pyright]
 pythonVersion = "3.11"
@@ -64,8 +66,8 @@ exclude = ["**/node_modules",
     "tests"
 ]
 
-[tool.pytest.ini_options]  # https://docs.pytest.org/en/latest/reference/reference.html#ini-options-ref
-addopts = "-n 4 --color=yes --exitfirst --failed-first --verbosity=2 --junitxml=reports/pytest.xml"
+[tool.pytest.ini_options]
+addopts = "-n 4 --cov --color=yes --exitfirst --failed-first --verbosity=2 --junitxml=reports/pytest.xml"
 testpaths = ["tests"]
 xfail_strict = true
 
@@ -83,9 +85,9 @@ target-version = "py311"
 ban-relative-imports = "all"
 
 [tool.ruff.pydocstyle]
-convention = "numpy"
+convention = "google"
 
-[tool.poe.tasks]  # https://github.com/nat-n/poethepoet
+[tool.poe.tasks]
 
   [tool.poe.tasks.docs]
   help = "Generate this package's docs"
@@ -117,15 +119,11 @@ convention = "numpy"
         --all-files
         --color always
       """
+    [[tool.poe.tasks.lint.sequence]]
+    cmd = "pyright"
 
   [tool.poe.tasks.test]
   help = "Test this package"
 
     [[tool.poe.tasks.test.sequence]]
-    cmd = "coverage run"
-
-    [[tool.poe.tasks.test.sequence]]
-    cmd = "coverage report"
-
-    [[tool.poe.tasks.test.sequence]]
-    cmd = "coverage xml"
+    cmd = "pytest"
