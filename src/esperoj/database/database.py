@@ -1,7 +1,7 @@
 """Database module."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Self
 
@@ -66,7 +66,7 @@ class Table(ABC):
         """
 
     @abstractmethod
-    def get_all(self, formulas: dict[str, Any] | None = None) -> Iterable[Record]:
+    def get_all(self, formulas: dict[str, Any] | None = None) -> Iterator[Record]:
         """Get all records from the table that match the given formulas.
 
         Example: get_all({"Name":"Long", "Age":9})
@@ -76,7 +76,7 @@ class Table(ABC):
 
         Returns:
         -------
-            Iterable[Record]: An iterable of matching records.
+            Iterator[Record]: An Iterator of matching records.
         """
 
     @abstractmethod
@@ -92,53 +92,53 @@ class Table(ABC):
             Record: The updated record.
         """
 
-    def create_many(self, fields_list: Iterable[dict[str, Any]]) -> Iterable[Record]:
+    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterator[Record]:
         """Create multiple records in the table.
 
         Args:
-            fields_list (Iterable[dict[str, Any]]): An iterable of dictionaries containing field names and their values.
+            fields_list (Iterator[dict[str, Any]]): An Iterator of dictionaries containing field names and their values.
 
         Returns:
         -------
-            Iterable[Record]: An iterable of created records.
+            Iterator[Record]: An Iterator of created records.
         """
-        return [self.create(fields) for fields in fields_list]
+        return (self.create(fields) for fields in fields_list)
 
-    def delete_many(self, record_ids: Iterable[Any]) -> Iterable[Any]:
+    def delete_many(self, record_ids: Iterator[Any]) -> Iterator[Any]:
         """Delete multiple records from the table.
 
         Args:
-            record_ids (Iterable[Any]): An iterable of record IDs to delete.
+            record_ids (Iterator[Any]): An Iterator of record IDs to delete.
 
         Returns:
         -------
-            Iterable[Any]: An iterable of deleted record IDs.
+            Iterator[Any]: An Iterator of deleted record IDs.
         """
-        return [self.delete(record_id) for record_id in record_ids]
+        return (self.delete(record_id) for record_id in record_ids)
 
-    def get_many(self, record_ids: Iterable[Any]) -> Iterable[Record]:
+    def get_many(self, record_ids: Iterator[Any]) -> Iterator[Record]:
         """Get multiple records from the table.
 
         Args:
-            record_ids (Iterable[Any]): An iterable of record IDs to get.
+            record_ids (Iterator[Any]): An Iterator of record IDs to get.
 
         Returns:
         -------
-            Iterable[Record]: An iterable of requested records.
+            Iterator[Record]: An Iterator of requested records.
         """
-        return [self.get(record_id) for record_id in record_ids]
+        return (self.get(record_id) for record_id in record_ids)
 
-    def update_many(self, records: Iterable[dict[str, Any]]) -> Iterable[Record]:
+    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterator[Record]:
         """Update multiple records in the table.
 
         Args:
-            records (Iterable[dict[str, Any]]): An iterable of dictionaries containing record IDs and field updates.
+            records (Iterator[dict[str, Any]]): An Iterator of dictionaries containing record IDs and field updates.
 
         Returns:
         -------
-            Iterable[Record]: An iterable of updated records.
+            Iterator[Record]: An Iterator of updated records.
         """
-        return [self.update(**record) for record in records]
+        return (self.update(**record) for record in records)
 
 
 class Database(ABC):

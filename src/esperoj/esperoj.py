@@ -44,7 +44,7 @@ class Esperoj:
             url (str): The archived URL.
 
         Raises:
-            RuntimeError: If the URL cannot be archived.
+            RuntimeError: If the URL cannot be archived or if a timeout occurs.
         """
         api_key = os.environ.get("INTERNET_ARCHIVE_ACCESS_KEY")
         api_secret = os.environ.get("INTERNET_ARCHIVE_SECRET_KEY")
@@ -59,18 +59,26 @@ class Esperoj:
         if response.status_code != 200:
             raise RuntimeError(f"Error: {response.text}")
         job_id = response.json()["job_id"]
+
+        start_time = time.time()
+        timeout = 300
+
         while True:
+            if time.time() - start_time > timeout:
+                raise RuntimeError("Error: Archiving process timed out.")
             response = requests.get(
                 f"https://web.archive.org/save/status/{job_id}", headers=headers
             )
             if response.status_code != 200:
                 raise RuntimeError(f"Error: {response.text}")
             status = response.json()
-            if status["status"] == "pending":
-                time.sleep(5)
-            if status["status"] == "success":
-                return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
-            raise RuntimeError(f"Error: {response.text}")
+            match status["status"]:
+                case "pending":
+                    time.sleep(5)
+                case "success":
+                    return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
+                case _:
+                    raise RuntimeError(f"Error: {response.text}")
 
     @staticmethod
     def _calculate_hash(content: bytes, algorithm: str = "sha256") -> str:
@@ -100,7 +108,7 @@ class Esperoj:
             FileNotFoundError: If the file is not in the repository.
         """
         files = self.db.table("Files")
-        record = next(iter(files.get_all({"Name": name})), None)
+        record = next(files.get_all({"Name": name}), None)
         if not record:
             raise FileNotFoundError
         url = self.storage.get_link(name)

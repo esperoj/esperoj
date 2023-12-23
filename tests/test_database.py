@@ -93,7 +93,7 @@ def test_memory_table_get_not_found(memory_table):
 )
 def test_memory_table_get_all(memory_table, records, formulas, expected_records):
     """Test fetching all records from a MemoryTable instance based on given formulas."""
-    memory_table.create_many(records)
+    list(memory_table.create_many(records))
     fetched_records = list(memory_table.get_all(formulas))
     assert len(fetched_records) == len(expected_records)
     assert all(record.fields in expected_records for record in fetched_records)
@@ -155,7 +155,7 @@ def test_get_many(memory_table):
     records_to_create = [{"name": "Alice"}, {"name": "Bob"}]
     created_records = list(memory_table.create_many(records_to_create))
     record_ids = [record.record_id for record in created_records]
-    retrieved_records = memory_table.get_many(record_ids)
+    retrieved_records = list(memory_table.get_many(record_ids))
     assert retrieved_records == created_records
     assert len(list(retrieved_records)) == len(records_to_create)
 
@@ -167,7 +167,7 @@ def test_update_many(memory_table):
     updates = [
         {"record_id": record.record_id, "fields": {"name": "Updated"}} for record in created_records
     ]
-    updated_records = memory_table.update_many(updates)
+    updated_records = list(memory_table.update_many(updates))
     assert len(list(updated_records)) == len(updates)
     assert updated_records[0].fields["name"] == "Updated"
     assert updated_records[1].fields["name"] == "Updated"

@@ -1,6 +1,6 @@
 """Memory database module."""
 
-from collections.abc import Iterable
+from collections.abc import Iterator
 from typing import Any, Self
 from uuid import uuid4
 
@@ -95,7 +95,7 @@ class MemoryTable(Table):
         fields = self.records[record_id]
         return MemoryRecord(record_id, fields)
 
-    def get_all(self, formulas: dict[str, Any] | None = None) -> Iterable[MemoryRecord]:
+    def get_all(self, formulas: dict[str, Any] | None = None) -> Iterator[MemoryRecord]:
         """Get all records from the table that match the given formulas.
 
         Args:
@@ -103,7 +103,7 @@ class MemoryTable(Table):
 
         Returns:
         -------
-            Iterable[MemoryRecord]: An iterable of matching records.
+            Iterator[MemoryRecord]: An Iterator of matching records.
 
         Raises:
         ------
