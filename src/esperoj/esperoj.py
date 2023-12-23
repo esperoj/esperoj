@@ -54,7 +54,14 @@ class Esperoj:
             "Authorization": f"LOW {api_key}:{api_secret}",
         }
 
-        params = {"url": url, "skip_first_archive": 1, "force_get": 1, "email_result": 1}
+        params = {
+            "url": url,
+            "skip_first_archive": 1,
+            "force_get": 1,
+            "email_result": 1,
+            "delay_wb_availability": 0,
+            "capture_screenshot": 0,
+        }
         response = requests.post("https://web.archive.org/save", headers=headers, data=params)
         if response.status_code != 200:
             raise RuntimeError(f"Error: {response.text}")
