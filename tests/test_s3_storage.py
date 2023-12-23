@@ -88,7 +88,7 @@ def test_get_link_error(s3_storage, monkeypatch):
 
 
 def test_get_link_empty_bucket(s3_storage):
-    """Test get_link method for an empty bucket."""
+    """Test get_link method for a file in an empty bucket."""
     with pytest.raises(FileNotFoundError):
         s3_storage.get_link("path/to/file.txt")
 
