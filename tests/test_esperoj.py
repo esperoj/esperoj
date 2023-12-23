@@ -47,7 +47,7 @@ def test_ingest_existing_file_in_storage(esperoj, tmp_path):
 
     esperoj.storage.upload_file(str(file_path), "test_file.txt")
     with pytest.raises(FileExistsError):
-        assert esperoj.ingest(file_path) == 1
+        esperoj.ingest(file_path)
 
 
 def test_ingest_invalid_path(esperoj):
