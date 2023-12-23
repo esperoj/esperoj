@@ -1,7 +1,7 @@
 """Module contains Airtable class."""
 
 import os
-from collections.abc import Iterable
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -76,14 +76,14 @@ class AirtableTable(Table):
             raise InvalidRecordError("fields must be a dictionary.")
         return self._record_from_dict(self.client.create(fields))
 
-    def create_many(self, fields_list: Iterable[dict[str, Any]]) -> Iterable[AirtableRecord]:
+    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterator[AirtableRecord]:
         """Creates multiple new records in the table.
 
         Args:
-            fields_list (Iterable[dict[str, Any]]): The records to create.
+            fields_list (Iterator[dict[str, Any]]): The records to create.
 
         Returns:
-            Iterable[AirtableRecord]: The created records.
+            Iterator[AirtableRecord]: The created records.
         """
         return (self._record_from_dict(record) for record in self.client.batch_create(fields_list))
 
@@ -105,14 +105,14 @@ class AirtableTable(Table):
             return record_id
         raise RecordDeletionError(f"Deletion failed for id: {result['id']}")
 
-    def delete_many(self, record_ids: Iterable[str]) -> Iterable[str]:
+    def delete_many(self, record_ids: Iterator[str]) -> Iterator[str]:
         """Deletes multiple records from the table.
 
         Args:
-            record_ids (Iterable[str]): The IDs of the records to delete.
+            record_ids (Iterator[str]): The IDs of the records to delete.
 
         Returns:
-            Iterable[str]: The IDs of the deleted records.
+            Iterator[str]: The IDs of the deleted records.
         """
         results = self.client.batch_delete(record_ids)
         for result in results:
@@ -138,26 +138,26 @@ class AirtableTable(Table):
 
         return self._record_from_dict(record)
 
-    def get_all(self, formulas: dict[str, Any] | None = None) -> Iterable[AirtableRecord]:
+    def get_all(self, formulas: dict[str, Any] | None = None) -> Iterator[AirtableRecord]:
         """Gets all records from the table.
 
         Args:
             formulas (dict[str, Any] | None, optional): The formulas to filter the records. Defaults to None.
 
         Returns:
-            Iterable[AirtableRecord]: The retrieved records.
+            Iterator[AirtableRecord]: The retrieved records.
         """
         formula = match(formulas) if formulas is not None else ""
         return (self._record_from_dict(record) for record in self.client.all(formula=formula))
 
-    def get_many(self, record_ids: Iterable[str]) -> Iterable[AirtableRecord]:
+    def get_many(self, record_ids: Iterator[str]) -> Iterator[AirtableRecord]:
         """Gets multiple records from the table.
 
         Args:
-            record_ids (Iterable[str]): The IDs of the records to get.
+            record_ids (Iterator[str]): The IDs of the records to get.
 
         Returns:
-            Iterable[AirtableRecord]: The retrieved records.
+            Iterator[AirtableRecord]: The retrieved records.
         """
         return (self.get(record_id) for record_id in record_ids)
 
@@ -173,14 +173,14 @@ class AirtableTable(Table):
         """
         return self._record_from_dict(self.client.update(record_id, fields))
 
-    def update_many(self, records: Iterable[dict[str, Any]]) -> Iterable[AirtableRecord]:
+    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterator[AirtableRecord]:
         """Updates multiple records in the table.
 
         Args:
-            records (Iterable[dict[str, Any]]): The records to update.
+            records (Iterator[dict[str, Any]]): The records to update.
 
         Returns:
-            Iterable[AirtableRecord]: The updated records.
+            Iterator[AirtableRecord]: The updated records.
         """
         return (
             self._record_from_dict(record)

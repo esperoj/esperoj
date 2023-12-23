@@ -1,6 +1,7 @@
 """Tests for S3 storage."""
 
 import pytest
+import requests
 
 from esperoj.storage.s3 import default_config
 
@@ -56,6 +57,40 @@ def test_delete_file(s3_storage):
     )
     assert s3_storage.delete_file("test.txt") is True
     assert s3_storage.file_exists("test.txt") is False
+
+
+def test_get_link_existing_file(s3_storage):
+    """Test get_link method for an existing file."""
+    s3_storage.s3.put_object(
+        Bucket=s3_storage.config["bucket_name"], Key="path/to/file.txt", Body=b"Test content"
+    )
+    url = s3_storage.get_link("path/to/file.txt")
+    response = requests.get(url)
+    assert response.status_code == 200
+    assert response.content == b"Test content"
+
+
+def test_get_link_nonexistent_file(s3_storage):
+    """Test get_link method for a non-existent file."""
+    with pytest.raises(FileNotFoundError):
+        s3_storage.get_link("path/to/nonexistent_file.txt")
+
+
+def test_get_link_error(s3_storage, monkeypatch):
+    """Test get_link method for an error during URL generation."""
+
+    def mock_file_exists(path):
+        raise RuntimeError("Something went wrong!")
+
+    monkeypatch.setattr(s3_storage, "file_exists", mock_file_exists)
+    with pytest.raises(RuntimeError):
+        s3_storage.get_link("path/to/file.txt")
+
+
+def test_get_link_empty_bucket(s3_storage):
+    """Test get_link method for an empty bucket."""
+    with pytest.raises(FileNotFoundError):
+        s3_storage.get_link("path/to/file.txt")
 
 
 def test_list_files(s3_storage):

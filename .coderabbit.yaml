@@ -12,7 +12,8 @@ reviews:
     - path: "src/**/*.py"
       instructions: |
         "Review the Python code for conformity with the Google Python style guide, highlighting any deviations. Confirm that:
-        - The docstrings are up to date with the implementations or not, highlighting the outdated."
+        - The docstrings are up-to-date with the implementations. Please highlight the outdated ones.
+        - When an API in a module changes, ensure that all modules that depend on the changed module are updated accordingly."
     - path: "tests/**/*"
       instructions: |
         "Assess the unit test code employing the Pytest testing framework. Confirm that:
