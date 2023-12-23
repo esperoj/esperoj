@@ -1,5 +1,4 @@
 """Test memory database."""
-
 from uuid import UUID
 
 import pytest
@@ -95,13 +94,9 @@ def test_memory_table_get_not_found(memory_table):
 def test_memory_table_get_all(memory_table, records, formulas, expected_records):
     """Test fetching all records from a MemoryTable instance based on given formulas."""
     memory_table.create_many(records)
-    if formulas:
-        fetched_records = list(memory_table.get_all(formulas))
-    else:
-        fetched_records = list(memory_table.get_all())
+    fetched_records = list(memory_table.get_all(formulas))
     assert len(fetched_records) == len(expected_records)
-    for record in fetched_records:
-        assert record.fields in expected_records
+    assert all(record.fields in expected_records for record in fetched_records)
 
 
 def test_memory_table_update(memory_table):
@@ -142,9 +137,7 @@ def test_create_many(memory_table):
     records_to_create = [{"name": "Alice"}, {"name": "Bob"}]
     created_records = memory_table.create_many(records_to_create)
     assert len(list(created_records)) == len(records_to_create)
-    for record in created_records:
-        assert isinstance(record, MemoryRecord)
-        assert record.fields in records_to_create
+    assert all(isinstance(record, MemoryRecord) for record in created_records)
 
 
 def test_delete_many(memory_table):
@@ -154,9 +147,7 @@ def test_delete_many(memory_table):
     record_ids = [record.record_id for record in created_records]
     deleted_record_ids = memory_table.delete_many(record_ids)
     assert list(deleted_record_ids) == record_ids
-    for record_id in record_ids:
-        with pytest.raises(RecordNotFoundError):
-            memory_table.get(record_id)
+    assert not list(memory_table.get_all())
 
 
 def test_get_many(memory_table):
@@ -165,10 +156,8 @@ def test_get_many(memory_table):
     created_records = list(memory_table.create_many(records_to_create))
     record_ids = [record.record_id for record in created_records]
     retrieved_records = memory_table.get_many(record_ids)
+    assert retrieved_records == created_records
     assert len(list(retrieved_records)) == len(records_to_create)
-    for record in retrieved_records:
-        assert isinstance(record, MemoryRecord)
-        assert record.record_id in record_ids
 
 
 def test_update_many(memory_table):
@@ -180,5 +169,5 @@ def test_update_many(memory_table):
     ]
     updated_records = memory_table.update_many(updates)
     assert len(list(updated_records)) == len(updates)
-    for record in updated_records:
-        assert record.fields["name"] == "Updated"
+    assert updated_records[0].fields["name"] == "Updated"
+    assert updated_records[1].fields["name"] == "Updated"

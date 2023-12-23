@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]  # https://python-poetry.org/docs/pyproject/
 name = "esperoj"
-version = "0.2.0"
+version = "0.3.0"
 description = "Esperoj package with cli."
 authors = ["Esperoj <esperoj@esperoj.eu.org>"]
 readme = "README.md"
@@ -18,7 +18,7 @@ python = ">=3.11"
 typer = { extras = ["all"], version = ">=0.9.0" }
 boto3 = ">=1.34.2"
 pyairtable = ">=2.2.1"
-savepagenow = ">=1.3.0"
+requests = ">=2.31.0"
 
 [tool.poetry.group.test]
 optional = true

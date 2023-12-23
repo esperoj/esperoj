@@ -53,6 +53,10 @@ def ingest(path: Path) -> None:
 
 
 @app.command()
-def info() -> None:
-    """Print info."""
-    print(esperoj)
+def archive(name: str) -> None:
+    """Archive a file in repository.
+
+    Args:
+        name (str): The name of the file.
+    """
+    print(esperoj.archive(name))
