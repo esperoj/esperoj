@@ -96,6 +96,26 @@ class S3Storage(Storage):
                 return False
             raise e
 
+    def get_link(self, path: str) -> str:
+        """Get a pre-signed URL for a file in the S3 bucket.
+
+        Args:
+            path (str): The path of the file to get the URL for.
+
+        Returns:
+            str: A pre-signed URL for the file.
+
+        Raises:
+            FileNotFoundError: If the file does not exist.
+        """
+        if not self.file_exists(path):
+            raise FileNotFoundError(f"No such file: '{path}'")
+        return self.s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.config["bucket_name"], "Key": path},
+            ExpiresIn=3600,
+        )
+
     def list_files(self, path: str) -> list:
         """List all files in the specified path of the S3 bucket.
 

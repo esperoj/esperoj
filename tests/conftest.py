@@ -11,12 +11,6 @@ from esperoj.storage.s3 import S3Storage, default_config
 
 
 @pytest.fixture()
-def bucket_name():
-    """Return a test bucket name."""
-    return "test_bucket"
-
-
-@pytest.fixture()
 def memory_db():
     """Return a test memory database."""
     db = MemoryDatabase("test_db")
@@ -40,9 +34,9 @@ def local_storage(tmp_path):
 
 
 @pytest.fixture()
-def esperoj(db, local_storage):
+def esperoj(memory_db, s3_storage):
     """Return an Esperoj object."""
-    return Esperoj(db, local_storage)
+    return Esperoj(memory_db, s3_storage)
 
 
 @pytest.fixture()

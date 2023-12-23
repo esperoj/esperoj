@@ -1,93 +1,138 @@
-"""Module contain Esperoj class."""
+"""Module that contains the Esperoj class, which can ingest and archive files."""
+
 import hashlib
+import os
+import time
 from pathlib import Path
+
+import requests
+
+from esperoj.database import Record
+from esperoj.database.airtable import Airtable
+from esperoj.database.memory import MemoryDatabase
+from esperoj.storage.s3 import S3Storage
 
 
 class Esperoj:
-    """Esperoj class for handling file ingestion and information retrieval.
+    """A class that handles the ingestion and archiving of files using a database and a storage service.
+
+    The Esperoj class can ingest files from a local path and store them in a database and a storage service. It can also archive files using the savepagenow service, which captures a snapshot of a web page and returns its URL.
 
     Attributes:
-    ----------
-        db: A database object.
-        storage: A storage object.
+        db (Airtable | MemoryDatabase): The database object that stores the file records. It can be either an Airtable or a MemoryDatabase object, which are subclasses of the abstract Database class.
+        storage (S3Storage): The storage object that handles the file upload and download. It is an S3Storage object that uses Amazon S3 as the storage service.
     """
 
-    def __init__(self, db, storage):
-        """Initialize Esperoj with a database and storage.
+    def __init__(self, db: Airtable | MemoryDatabase, storage: S3Storage) -> None:
+        """Initialize the Esperoj object with the given database and storage.
 
         Args:
-            db: A database object.
-            storage: A storage object.
+            db (Airtable | MemoryDatabase): The database object that stores the file records. It can be either an Airtable or a MemoryDatabase object, which are subclasses of the abstract Database class.
+            storage (S3Storage): The storage object that handles the file upload and download. It is an S3Storage object that uses Amazon S3 as the storage service.
         """
         self.db = db
         self.storage = storage
 
-    # TODO: change this to be a static method
-    def calculate_hash(self, content=None, path=None, algorithm="sha256"):
-        """Calculate hash from either content or a file path.
+    @staticmethod
+    def _archive(url: str) -> str:
+        """Archive a URL using the Save Page Now 2 (SPN2) API.
 
         Args:
-            content (str, optional): Content to calculate hash from. Defaults to None.
-            path (str, optional): Path to a file to calculate hash from. Defaults to None.
-            algorithm (str, optional): Hashing algorithm to use. Defaults to "sha256".
-
-        Raises:
-        ------
-            ValueError: If neither content nor path is provided.
-            ValueError: If the provided algorithm is not supported.
+            url (str): The URL to archive.
 
         Returns:
-        -------
-            str: The calculated hash.
+            url (str): The archived URL.
+
+        Raises:
+            RuntimeError: If the URL cannot be archived.
         """
-        if content is None and path is None:
-            raise ValueError("Either content or path must be provided")
-        if algorithm not in hashlib.algorithms_available:
-            raise ValueError(f"Unsupported algorithm: {algorithm}")
-        hash_obj = hashlib.new(algorithm)
-        if content is not None:
-            hash_obj.update(content.encode())
-        else:
-            if isinstance(path, str):
-                path = Path(path)
-            elif not isinstance(path, Path):
-                raise ValueError("Path should be of type str or Path")
-            with path.open("rb") as f:
-                hash_obj.update(f.read())
-        return hash_obj.hexdigest()
+        api_key = os.environ.get("INTERNET_ARCHIVE_ACCESS_KEY")
+        api_secret = os.environ.get("INTERNET_ARCHIVE_SECRET_KEY")
 
-    def archive(self, record_id: str):
-        """Archive file."""
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"LOW {api_key}:{api_secret}",
+        }
 
-    def ingest(self, path: Path) -> dict:
-        """Ingests a file into the database and storage.
+        params = {"url": url, "skip_first_archive": 1, "force_get": 1, "email_result": 1}
+        response = requests.post("https://web.archive.org/save", headers=headers, data=params)
+        if response.status_code != 200:
+            raise RuntimeError(f"Error: {response.text}")
+        job_id = response.json()["job_id"]
+        while True:
+            response = requests.get(
+                f"https://web.archive.org/save/status/{job_id}", headers=headers
+            )
+            if response.status_code != 200:
+                raise RuntimeError(f"Error: {response.text}")
+            status = response.json()
+            if status["status"] == "pending":
+                time.sleep(5)
+            if status["status"] == "success":
+                return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
+            raise RuntimeError(f"Error: {response.text}")
+
+    @staticmethod
+    def _calculate_hash(content: bytes, algorithm: str = "sha256") -> str:
+        """Calculate the hash of the given content using the specified algorithm.
 
         Args:
-            path (Path): Path to the file to ingest.
-
-        Raises:
-        ------
-            FileNotFoundError: If the provided path does not point to a file.
-            FileExistsError: If a file with the same name already exists in the database or storage.
+            content (bytes): The content to be hashed.
+            algorithm (str, optional): The name of the hashing algorithm. Defaults to "sha256".
 
         Returns:
-        -------
-            dict: A dictionary containing information about the ingested file.
+            str: The hexadecimal representation of the hash.
+        """
+        hasher = hashlib.new(algorithm)
+        hasher.update(content)
+        return hasher.hexdigest()
+
+    def archive(self, name: str) -> Record:
+        """Archive the file with the given name using the savepagenow service.
+
+        Args:
+            name (str): The name of the file to be archived.
+
+        Returns:
+            record (Record): The new record with archive url.
+
+        Raises:
+            FileNotFoundError: If the file is not in the repository.
+        """
+        files = self.db.table("Files")
+        record = next(iter(files.get_all({"Name": name})), None)
+        if not record:
+            raise FileNotFoundError
+        url = self.storage.get_link(name)
+        archive_url = Esperoj._archive(url)
+        return files.update(record.record_id, {"Internet Archive": archive_url})
+
+    def ingest(self, path: Path) -> Record:
+        """Ingest the file at the given path into the database and the storage.
+
+        Args:
+            path (Path): The path of the file to be ingested.
+
+        Returns:
+            Record: The record object that represents the file in the database.
+
+        Raises:
+            FileNotFoundError: If the path is not a valid file.
+            FileExistsError: If the file already exists in the database or the storage.
         """
         if not path.is_file():
-            raise FileNotFoundError("Invalid file path. Please enter a valid file path.")
+            raise FileNotFoundError
 
         files = self.db.table("Files")
         name = path.name
 
-        if len(files.match({"Name": name})) > 0:
-            raise FileExistsError("File exists.")
+        if list(files.get_all({"Name": name})) != []:
+            raise FileExistsError
 
         if self.storage.file_exists(name):
-            raise FileExistsError("File exists.")
-
+            raise FileExistsError
         size = path.stat().st_size
-        sha256sum = self.calculate_hash(path=path, algorithm="sha256")
+        sha256sum = Esperoj._calculate_hash(path.read_bytes(), algorithm="sha256")
 
         self.storage.upload_file(str(path), name)
 

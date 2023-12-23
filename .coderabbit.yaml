@@ -9,8 +9,10 @@ reviews:
   path_filters:
     - "!**/.xml"
   path_instructions:
-    - path: "**/*.py"
-      instructions: "Review the Python code for conformity with the Google Python style guide, highlighting any deviations. Check if the docstrings are up to date with the implementations or not, highlighting the outdated."
+    - path: "src/**/*.py"
+      instructions: |
+        "Review the Python code for conformity with the Google Python style guide, highlighting any deviations. Confirm that:
+        - The docstrings are up to date with the implementations or not, highlighting the outdated."
     - path: "tests/**/*"
       instructions: |
         "Assess the unit test code employing the Pytest testing framework. Confirm that:
