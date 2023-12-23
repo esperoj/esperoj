@@ -66,11 +66,13 @@ class Esperoj:
             if response.status_code != 200:
                 raise RuntimeError(f"Error: {response.text}")
             status = response.json()
-            if status["status"] == "pending":
-                time.sleep(5)
-            if status["status"] == "success":
-                return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
-            raise RuntimeError(f"Error: {response.text}")
+            match status["status"]:
+                case "pending":
+                    time.sleep(5)
+                case "success":
+                    return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
+                case _:
+                    raise RuntimeError(f"Error: {response.text}")
 
     @staticmethod
     def _calculate_hash(content: bytes, algorithm: str = "sha256") -> str:
