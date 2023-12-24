@@ -34,7 +34,7 @@ def archive(ctx: Context) -> None:
         start = time.time()
         name = file.fields["Name"]
         print(f"Start to archive file `{name}`")
-        es.archive(name)
+        es.archive(file.record_id)
         print(f"Finish file `{name}` in {time.time() - start} second")
 
 
