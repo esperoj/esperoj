@@ -17,7 +17,7 @@ def test_memory_table_creation(memory_db, memory_table):
     """Test the creation of a MemoryTable instance."""
     name = memory_table.name
     assert isinstance(memory_table, MemoryTable)
-    assert name == "test_table"
+    assert name == "Files"
     assert memory_db.table(name) is memory_table
 
 

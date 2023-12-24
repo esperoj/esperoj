@@ -1,5 +1,6 @@
 """Tests for esperoj module."""
 
+from io import BytesIO
 from unittest.mock import patch
 
 import pytest
@@ -49,6 +50,29 @@ def test__archive_timeout():
         with pytest.raises(RuntimeError) as excinfo:
             Esperoj._archive("http://example.com/test_file.txt")
         assert "Error: Archiving process timed out." in str(excinfo.value)
+
+
+def test_calculate_hash_sha256(esperoj):
+    """Test the _calculate_hash method with the default sha256 algorithm."""
+    data = BytesIO(b"test data")
+    expected_hash = "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9"  # pre-calculated sha256 hash for "test data"
+    calculated_hash = Esperoj._calculate_hash(data)
+    assert calculated_hash == expected_hash
+
+
+def test_calculate_hash_md5(esperoj):
+    """Test the _calculate_hash method with the md5 algorithm."""
+    data = BytesIO(b"test data")
+    expected_hash = "eb733a00c0c9d336e65691a37ab54293"  # pre-calculated md5 hash for "test data"
+    calculated_hash = Esperoj._calculate_hash(data, algorithm="md5")
+    assert calculated_hash == expected_hash
+
+
+def test_calculate_hash_invalid_algorithm(esperoj):
+    """Test the _calculate_hash method with an invalid algorithm."""
+    data = BytesIO(b"test data")
+    with pytest.raises(ValueError, match="unsupported hash type invalid_algorithm"):
+        Esperoj._calculate_hash(data, algorithm="invalid_algorithm")
 
 
 def test_calculate_hash_from_url_success():
