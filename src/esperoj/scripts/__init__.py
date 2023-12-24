@@ -45,7 +45,7 @@ def archive(ctx: Context) -> None:
 
 @app.command()
 def verify(ctx: Context) -> None:
-    """Archives all files that have not been archived yet.
+    """Verifies the integrity of files by weekday.
 
     Args:
         ctx: The Typer context.
