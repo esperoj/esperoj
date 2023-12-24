@@ -54,7 +54,7 @@ def verify(ctx: Context) -> None:
     files = list(es.db.table("Files").get_all(sort=["-Created"]))
     num_shards = 7
     shard_size = len(files) // num_shards
-    today = datetime.datetime.now(datetime.timezone.utc).weekday()
+    today = datetime.datetime.now(datetime.UTC).weekday()
     for i in range(shard_size):
         file = files[today * shard_size + i]
         name = file.fields["Name"]
