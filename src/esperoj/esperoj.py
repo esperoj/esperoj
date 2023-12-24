@@ -187,7 +187,8 @@ class Esperoj:
             bool: True if the file is intact, False otherwise.
 
         Raises:
-            RuntimeError: If the file cannot be found in the database or the storage, or if the archived version of the file cannot be retrieved.
+            FileNotFoundError: If the file cannot be found in the storage.
+            RecordNotFoundError: If the file cannot be found in the database.
         """
         fields = self.db.table("Files").get(record_id).fields
         archive_url = fields.get("Internet Archive", "")
