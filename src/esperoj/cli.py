@@ -1,45 +1,16 @@
 """Esperoj CLI."""
 
-import os
+
 from pathlib import Path
 
 import typer
 
-from esperoj.esperoj import Esperoj
+from esperoj import create_esperoj
+from esperoj.scripts import app as run
 
+esperoj = create_esperoj()
 app = typer.Typer()
-
-
-config = {}
-if os.environ.get("ESPEROJ_DATABASE") == "Airtable":
-    from esperoj.database.airtable import Airtable
-
-    config["db"] = Airtable("Airtable")
-else:
-    from esperoj.database.memory import MemoryDatabase
-
-    config["db"] = MemoryDatabase("Memory Database")
-
-if os.environ.get("ESPEROJ_STORAGE") == "Storj":
-    from esperoj.storage.s3 import S3Storage
-
-    config["storage"] = S3Storage(
-        name="Storj",
-        config={
-            "client_config": {
-                "aws_access_key_id": os.getenv("STORJ_ACCESS_KEY_ID"),
-                "aws_secret_access_key": os.getenv("STORJ_SECRET_ACCESS_KEY"),
-                "endpoint_url": os.getenv("STORJ_ENDPOINT_URL"),
-            },
-            "bucket_name": "esperoj",
-        },
-    )
-else:
-    from esperoj.storage.local import LocalStorage
-
-    config["storage"] = LocalStorage("Local Storage", "/tmp/esperoj")
-
-esperoj = Esperoj(**config)
+app.add_typer(run, name="run", context_settings={"obj": esperoj})
 
 
 @app.command()
