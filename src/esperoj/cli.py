@@ -6,9 +6,11 @@ from pathlib import Path
 import typer
 
 from esperoj import create_esperoj
+from esperoj.scripts import app as run
 
-app = typer.Typer()
 esperoj = create_esperoj()
+app = typer.Typer()
+app.add_typer(run, name="run", context_settings={"obj": esperoj})
 
 
 @app.command()
