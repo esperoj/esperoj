@@ -139,7 +139,7 @@ class AirtableTable(Table):
         return self._record_from_dict(record)
 
     def get_all(
-        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] = []
+        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] | None = None
     ) -> Iterator[AirtableRecord]:
         """Gets all records from the table.
 
@@ -150,6 +150,8 @@ class AirtableTable(Table):
         Returns:
             Iterator[AirtableRecord]: The retrieved records.
         """
+        if sort is None:
+            sort = []
         formula = match(formulas) if formulas is not None else ""
         return (
             self._record_from_dict(record) for record in self.client.all(sort=sort, formula=formula)
