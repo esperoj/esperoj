@@ -114,13 +114,12 @@ class Esperoj:
         Raises:
             FileNotFoundError: If the file is not in the repository.
         """
-        files = self.db.table("Files")
-        record = next(files.get_all({"Name": name}), None)
+        record = next(self.db.table("Files").get_all({"Name": name}), None)
         if not record:
             raise FileNotFoundError
         url = self.storage.get_link(name)
         archive_url = Esperoj._archive(url)
-        return files.update(record.record_id, {"Internet Archive": archive_url})
+        return record.update({"Internet Archive": archive_url})
 
     def ingest(self, path: Path) -> Record:
         """Ingest the file at the given path into the database and the storage.
@@ -138,16 +137,13 @@ class Esperoj:
         if not path.is_file():
             raise FileNotFoundError
 
-        files = self.db.table("Files")
         name = path.name
-
-        if list(files.get_all({"Name": name})) != []:
-            raise FileExistsError
-
-        if self.storage.file_exists(name):
-            raise FileExistsError
         size = path.stat().st_size
         sha256sum = Esperoj._calculate_hash(path.read_bytes(), algorithm="sha256")
+        files = self.db.table("Files")
+
+        if self.storage.file_exists(name) or next(files.get_all({"Name": name}), False):
+            raise FileExistsError
 
         self.storage.upload_file(str(path), name)
 
