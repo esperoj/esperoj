@@ -24,10 +24,20 @@ def ingest(path: Path) -> None:
 
 
 @app.command()
-def archive(name: str) -> None:
+def archive(record_id: str) -> None:
     """Archive a file in repository.
 
     Args:
-        name (str): The name of the file.
+        record_id (str): The id of the file.
     """
-    print(esperoj.archive(name))
+    print(esperoj.archive(record_id))
+
+
+@app.command()
+def verify(record_id: str) -> None:
+    """Verify a file in repository.
+
+    Args:
+        record_id (str): The id of the file.
+    """
+    print(esperoj.verify(record_id))

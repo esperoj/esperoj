@@ -3,6 +3,7 @@
 import hashlib
 import os
 import time
+from collections.abc import Iterator
 from pathlib import Path
 
 import requests
@@ -88,38 +89,57 @@ class Esperoj:
                     raise RuntimeError(f"Error: {response.text}")
 
     @staticmethod
-    def _calculate_hash(content: bytes, algorithm: str = "sha256") -> str:
-        """Calculate the hash of the given content using the specified algorithm.
+    def _calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
+        """Calculate the hash of the given data using the specified algorithm.
 
         Args:
-            content (bytes): The content to be hashed.
+            stream (Iterator): The data to be hashed.
             algorithm (str, optional): The name of the hashing algorithm. Defaults to "sha256".
 
         Returns:
             str: The hexadecimal representation of the hash.
         """
         hasher = hashlib.new(algorithm)
-        hasher.update(content)
+        for chunk in stream:
+            hasher.update(chunk)
         return hasher.hexdigest()
 
-    def archive(self, name: str) -> Record:
-        """Archive the file with the given name using the savepagenow service.
+    @staticmethod
+    def _calculate_hash_from_url(url: str) -> str:
+        """Calculate the hash of the file at the given URL.
 
         Args:
-            name (str): The name of the file to be archived.
+            url (str): The URL of the file to be hashed.
 
         Returns:
-            record (Record): The new record with archive url.
+            str: The hexadecimal representation of the hash.
 
         Raises:
-            FileNotFoundError: If the file is not in the repository.
+            RuntimeError: If the file at the given URL cannot be accessed.
         """
-        record = next(self.db.table("Files").get_all({"Name": name}), None)
-        if not record:
-            raise FileNotFoundError
-        url = self.storage.get_link(name)
+        response = requests.get(url, stream=True)
+        if response.status_code != 200:
+            raise RuntimeError(f"Error: {response.text}")
+        return Esperoj._calculate_hash(response.iter_content(chunk_size=4096))
+
+    def archive(self, record_id: str) -> str:
+        """Archive the file with the given ID using the savepagenow service.
+
+        Args:
+            record_id (str): The ID of the file to be archived.
+
+        Returns:
+            url (str): The URL of the archived file.
+
+        Raises:
+            RuntimeError: If the file cannot be found in the database or the storage, or if the archived version of the file cannot be retrieved.
+            RecordNotFoundError: If can't get the file from database.
+        """
+        record = self.db.table("Files").get(record_id)
+        url = self.storage.get_link(record.fields["Name"])
         archive_url = Esperoj._archive(url)
-        return record.update({"Internet Archive": archive_url})
+        record.update({"Internet Archive": archive_url})
+        return archive_url
 
     def ingest(self, path: Path) -> Record:
         """Ingest the file at the given path into the database and the storage.
@@ -139,7 +159,9 @@ class Esperoj:
 
         name = path.name
         size = path.stat().st_size
-        sha256sum = Esperoj._calculate_hash(path.read_bytes(), algorithm="sha256")
+        f = path.open("rb")
+        sha256sum = Esperoj._calculate_hash(f, algorithm="sha256")
+        f.close()
         files = self.db.table("Files")
 
         if self.storage.file_exists(name) or (
@@ -151,4 +173,28 @@ class Esperoj:
 
         return files.create(
             {"Name": name, "Size": size, "SHA256": sha256sum, self.storage.name: name}
+        )
+
+    def verify(self, record_id: str) -> bool:
+        """Verify the integrity of the file with the given ID by comparing the SHA256 checksums of the file and its archived version.
+
+        The file is verified by calculating the SHA256 checksum of the file in the storage and comparing it to the SHA256 checksum stored in the database. If the checksums match, the file is considered to be intact. If the checksums do not match, the file is considered to be corrupted.
+
+        Args:
+            record_id (str): The ID of the file to be verified.
+
+        Returns:
+            bool: True if the file is intact, False otherwise.
+
+        Raises:
+            RuntimeError: If the file cannot be found in the database or the storage, or if the archived version of the file cannot be retrieved.
+        """
+        fields = self.db.table("Files").get(record_id).fields
+        archive_url = fields.get("Internet Archive", "")
+        if archive_url == "":
+            archive_url = self.archive(record_id)
+        return (
+            Esperoj._calculate_hash_from_url(self.storage.get_link(fields["Name"]))
+            == Esperoj._calculate_hash_from_url(archive_url)
+            == fields["SHA256"]
         )
