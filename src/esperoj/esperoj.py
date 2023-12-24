@@ -142,7 +142,9 @@ class Esperoj:
         sha256sum = Esperoj._calculate_hash(path.read_bytes(), algorithm="sha256")
         files = self.db.table("Files")
 
-        if self.storage.file_exists(name) or next(files.get_all({"Name": name}), None):
+        if self.storage.file_exists(name) or (
+            next(files.get_all({"Name": name}), None) is not None
+        ):
             raise FileExistsError
 
         self.storage.upload_file(str(path), name)
