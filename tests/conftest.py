@@ -10,6 +10,14 @@ from esperoj.storage.s3 import S3Storage, default_config
 
 
 @pytest.fixture()
+def tmp_file(tmp_path):
+    """Return a test file."""
+    file = tmp_path / "tmp_file.txt"
+    file.write_text("Test content")
+    return file
+
+
+@pytest.fixture()
 def memory_db():
     """Return a test memory database."""
     db = MemoryDatabase("test_db")
