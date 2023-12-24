@@ -1,7 +1,7 @@
 """Module contains Airtable class."""
 
 import os
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -139,7 +139,7 @@ class AirtableTable(Table):
         return self._record_from_dict(record)
 
     def get_all(
-        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] | None = None
+        self, formulas: dict[str, Any] | None = None, sort: list[str] | None = None
     ) -> Iterator[AirtableRecord]:
         """Gets all records from the table.
 

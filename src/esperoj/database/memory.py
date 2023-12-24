@@ -1,6 +1,6 @@
 """Memory database module."""
 
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from typing import Any, Self
 from uuid import uuid4
 
@@ -96,7 +96,7 @@ class MemoryTable(Table):
         return MemoryRecord(record_id, fields)
 
     def get_all(
-        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] = []
+        self, formulas: dict[str, Any] | None = None, sort: list[str] | None = None
     ) -> Iterator[MemoryRecord]:
         """Get all records from the table that match the given formulas and sort them.
 
@@ -112,28 +112,19 @@ class MemoryTable(Table):
         ------
             ValueError: If the formulas argument is not a dictionary.
         """
-        filtered_records = (
+        if sort is None:
+            sort = []
+        filtered_records = [
             MemoryRecord(record_id, fields)
             for record_id, fields in self.records.items()
             if not formulas or all(fields.get(key) == value for key, value in formulas.items())
-        )
-
+        ]
         if sort:
-
-            def sort_key(record: MemoryRecord):
-                sort_values = []
-                for field in sort:
-                    desc = field.startswith("-")
-                    field_name = field[1:] if desc else field
-                    value = record.fields.get(field_name)
-                    sort_values.append(
-                        (-value if desc else value) if isinstance(value, (int | float)) else value
-                    )
-                return tuple(sort_values)
-
-            return iter(sorted(filtered_records, key=sort_key))
-
-        return filtered_records
+            for spec in reversed(sort):
+                reverse = spec.startswith("-")
+                key = spec[1:] if reverse else spec
+                filtered_records.sort(key=lambda record: record.fields[key], reverse=reverse)
+        return iter(filtered_records)
 
     def update(self, record_id: Any, fields: dict[str, Any]) -> MemoryRecord:
         """Update a record in the table.

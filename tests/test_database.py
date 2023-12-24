@@ -7,6 +7,17 @@ from esperoj.database.memory import MemoryDatabase, MemoryRecord, MemoryTable
 from esperoj.exceptions import RecordNotFoundError
 
 
+@pytest.fixture()
+def sample_memory_table() -> MemoryTable:
+    """Sample memory table with data to work with."""
+    db = MemoryDatabase(name="TestDB")
+    table = db.table(name="TestTable")
+    table.create({"name": "Alice", "age": 30})
+    table.create({"name": "Charlie", "age": 22})
+    table.create({"name": "Bob", "age": 25})
+    return table
+
+
 def test_memory_database_creation(memory_db):
     """Test the creation of a MemoryDatabase instance."""
     assert isinstance(memory_db, MemoryDatabase)
@@ -97,6 +108,42 @@ def test_memory_table_get_all(memory_table, records, formulas, expected_records)
     fetched_records = list(memory_table.get_all(formulas))
     assert len(fetched_records) == len(expected_records)
     assert all(record.fields in expected_records for record in fetched_records)
+
+
+def test_get_all_sort_numeric_ascending(sample_memory_table):
+    """Test sorting records by a numeric field in ascending order."""
+    sorted_records = list(sample_memory_table.get_all(sort=["age"]))
+    ages = [record.fields["age"] for record in sorted_records]
+    assert ages == [22, 25, 30], "Records should be sorted by age in ascending order"
+
+
+def test_get_all_sort_numeric_descending(sample_memory_table):
+    """Test sorting records by a numeric field in descending order."""
+    sorted_records = list(sample_memory_table.get_all(sort=["-age"]))
+    ages = [record.fields["age"] for record in sorted_records]
+    assert ages == [30, 25, 22], "Records should be sorted by age in descending order"
+
+
+def test_get_all_sort_string_ascending(sample_memory_table):
+    """Test sorting records by a string field in ascending order."""
+    sorted_records = list(sample_memory_table.get_all(sort=["name"]))
+    names = [record.fields["name"] for record in sorted_records]
+    assert names == [
+        "Alice",
+        "Bob",
+        "Charlie",
+    ], "Records should be sorted by name in ascending order"
+
+
+def test_get_all_sort_string_descending(sample_memory_table):
+    """Test sorting records by a string field in descending order."""
+    sorted_records = list(sample_memory_table.get_all(sort=["-name"]))
+    names = [record.fields["name"] for record in sorted_records]
+    assert names == [
+        "Charlie",
+        "Bob",
+        "Alice",
+    ], "Records should be sorted by name in descending order"
 
 
 def test_memory_table_update(memory_table):
