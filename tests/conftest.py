@@ -35,4 +35,4 @@ def esperoj(memory_db, s3_storage):
 @pytest.fixture()
 def memory_table(memory_db):
     """Return a test memory table."""
-    return memory_db.table("test_table")
+    return memory_db.table("Files")
