@@ -95,11 +95,14 @@ class MemoryTable(Table):
         fields = self.records[record_id]
         return MemoryRecord(record_id, fields)
 
-    def get_all(self, formulas: dict[str, Any] | None = None) -> Iterator[MemoryRecord]:
-        """Get all records from the table that match the given formulas.
+    def get_all(
+        self, formulas: dict[str, Any] | None = None, sort: list[str] | None = None
+    ) -> Iterator[MemoryRecord]:
+        """Get all records from the table that match the given formulas and sort them.
 
         Args:
-            formulas (dict[str, Any], optional): A dictionary of field names and their values to filter records. Defaults to {}.
+            formulas (dict[str, Any], optional): A dictionary of field names and their values to filter records. Defaults to None.
+            sort (Iterable[str], optional): A list of field names to sort by, with a minus sign prefix for descending order. Defaults to [].
 
         Returns:
         -------
@@ -109,14 +112,19 @@ class MemoryTable(Table):
         ------
             ValueError: If the formulas argument is not a dictionary.
         """
-        if not formulas:
-            return (MemoryRecord(record_id, fields) for record_id, fields in self.records.items())
-
-        return (
+        if sort is None:
+            sort = []
+        filtered_records = [
             MemoryRecord(record_id, fields)
             for record_id, fields in self.records.items()
-            if all(fields.get(key) == value for key, value in formulas.items())
-        )
+            if not formulas or all(fields.get(key) == value for key, value in formulas.items())
+        ]
+        if sort:
+            for spec in reversed(sort):
+                reverse = spec.startswith("-")
+                key = spec[1:] if reverse else spec
+                filtered_records.sort(key=lambda record: record.fields[key], reverse=reverse)
+        return iter(filtered_records)
 
     def update(self, record_id: Any, fields: dict[str, Any]) -> MemoryRecord:
         """Update a record in the table.
