@@ -161,7 +161,7 @@ class Esperoj:
         sha256sum = ""
         with path.open("rb") as f, ExifToolHelper() as et:
             sha256sum = Esperoj._calculate_hash(f, algorithm="sha256")
-            metadata = et.get_metadata(str(path))
+            metadata = json.dumps(et.get_metadata(str(path)))
         files = self.db.table("Files")
 
         if self.storage.file_exists(name) or (
@@ -177,7 +177,7 @@ class Esperoj:
                 "Size": size,
                 "SHA256": sha256sum,
                 self.storage.name: name,
-                "Metadata": json.dumps(metadata),
+                "Metadata": metadata,
             }
         )
 
