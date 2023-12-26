@@ -38,7 +38,7 @@ class S3Storage(Storage):
             name (str): The name of the storage.
             config (dict, optional): Configuration for the S3 client. Defaults to DEFAULT_CONFIG.
         """
-        self.name = name
+        super().__init__(name)
         self.config = DEFAULT_CONFIG
         self.config.update(config)
         self.s3 = boto3.client("s3", **self.config["client_config"])

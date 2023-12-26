@@ -10,26 +10,24 @@ from pathlib import Path
 import requests
 from exiftool import ExifToolHelper
 
-from esperoj.database import Record
-from esperoj.database.airtable import Airtable
-from esperoj.database.memory import MemoryDatabase
-from esperoj.storage.s3 import S3Storage
+from esperoj.database import Database, Record
+from esperoj.storage import Storage
 
 
 class Esperoj:
     """The Esperoj class.
 
     Attributes:
-        db (Airtable | MemoryDatabase): The database object.
-        storage (S3Storage): The storage object.
+        db (Database): The database object.
+        storage (Storage): The storage object.
     """
 
-    def __init__(self, db: Airtable | MemoryDatabase, storage: S3Storage) -> None:
+    def __init__(self, db: Database, storage: Storage) -> None:
         """Initialize the Esperoj object with the given database and storage.
 
         Args:
-            db (Airtable | MemoryDatabase): The database object that stores the file records. It can be either an Airtable or a MemoryDatabase object, which are subclasses of the abstract Database class.
-            storage (S3Storage): The storage object that handles the file upload and download. It is an S3Storage object that uses Amazon S3 as the storage service.
+            db (Database): The database object that stores the file records.
+            storage (Storage): The storage object that handles the file upload and download.
         """
         self.db = db
         self.storage = storage

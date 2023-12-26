@@ -6,6 +6,14 @@ from abc import ABC, abstractmethod
 class Storage(ABC):
     """Abstract base class for storage."""
 
+    def __init__(self, name) -> None:
+        """Initalize the Storage.
+
+        Args:
+            name (str): The name of the storage.
+        """
+        self.name = name
+
     @abstractmethod
     def delete_file(self, path: str) -> bool:
         """Deletes a file at the specified path.
@@ -35,6 +43,17 @@ class Storage(ABC):
 
         Returns:
             bool: True if the file exists, False otherwise.
+        """
+
+    @abstractmethod
+    def get_link(self, path: str) -> str:
+        """Get a download link from storage.
+
+        Args:
+            path (str): The path to the file.
+
+        Returns:
+            utl (str): Url to download file.
         """
 
     @abstractmethod
