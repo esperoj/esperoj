@@ -17,13 +17,11 @@ from esperoj.storage.s3 import S3Storage
 
 
 class Esperoj:
-    """A class that handles the ingestion and archiving of files using a database and a storage service.
-
-    The Esperoj class can ingest files from a local path and store them in a database and a storage service. It can also archive files using the savepagenow service, which captures a snapshot of a web page and returns its URL.
+    """The Esperoj class.
 
     Attributes:
-        db (Airtable | MemoryDatabase): The database object that stores the file records. It can be either an Airtable or a MemoryDatabase object, which are subclasses of the abstract Database class.
-        storage (S3Storage): The storage object that handles the file upload and download. It is an S3Storage object that uses Amazon S3 as the storage service.
+        db (Airtable | MemoryDatabase): The database object.
+        storage (S3Storage): The storage object.
     """
 
     def __init__(self, db: Airtable | MemoryDatabase, storage: S3Storage) -> None:
@@ -77,7 +75,7 @@ class Esperoj:
             if time.time() - start_time > timeout:
                 raise RuntimeError("Error: Archiving process timed out.")
             response = requests.get(
-                f"https://web.archive.org/save/status/{job_id}", headers=headers
+                f"https://web.archive.org/save/status/{job_id}", headers=headers, timeout=30
             )
             if response.status_code != 200:
                 raise RuntimeError(f"Error: {response.text}")
@@ -119,7 +117,7 @@ class Esperoj:
         Raises:
             RuntimeError: If the file at the given URL cannot be accessed.
         """
-        response = requests.get(url, stream=True)
+        response = requests.get(url, stream=True, timeout=30)
         if response.status_code != 200:
             raise RuntimeError(f"Error: {response.text}")
         return Esperoj._calculate_hash(response.iter_content(chunk_size=4096))
@@ -187,8 +185,6 @@ class Esperoj:
 
     def verify(self, record_id: str) -> bool:
         """Verify the integrity of the file with the given ID by comparing the SHA256 checksums of the file and its archived version.
-
-        The file is verified by calculating the SHA256 checksum of the file in the storage and comparing it to the SHA256 checksum stored in the database. If the checksums match, the file is considered to be intact. If the checksums do not match, the file is considered to be corrupted.
 
         Args:
             record_id (str): The ID of the file to be verified.
