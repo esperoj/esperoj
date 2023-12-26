@@ -1,12 +1,14 @@
 """Module that contains the Esperoj class, which can ingest and archive files."""
 
 import hashlib
+import json
 import os
 import time
 from collections.abc import Iterator
 from pathlib import Path
 
 import requests
+from exiftool import ExifToolHelper
 
 from esperoj.database import Record
 from esperoj.database.airtable import Airtable
@@ -159,9 +161,11 @@ class Esperoj:
 
         name = path.name
         size = path.stat().st_size
-        f = path.open("rb")
-        sha256sum = Esperoj._calculate_hash(f, algorithm="sha256")
-        f.close()
+        metadata = ""
+        sha256sum = ""
+        with path.open("rb") as f, ExifToolHelper() as et:
+            sha256sum = Esperoj._calculate_hash(f, algorithm="sha256")
+            metadata = et.get_metadata(str(path))
         files = self.db.table("Files")
 
         if self.storage.file_exists(name) or (
@@ -172,7 +176,13 @@ class Esperoj:
         self.storage.upload_file(str(path), name)
 
         return files.create(
-            {"Name": name, "Size": size, "SHA256": sha256sum, self.storage.name: name}
+            {
+                "Name": name,
+                "Size": size,
+                "SHA256": sha256sum,
+                self.storage.name: name,
+                "Metadata": json.dumps(metadata),
+            }
         )
 
     def verify(self, record_id: str) -> bool:

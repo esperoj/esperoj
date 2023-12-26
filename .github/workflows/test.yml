@@ -38,4 +38,4 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
-          files: reports/coverage.xml
+          files: reports/pytest.xml
