@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install exiftool
-        run: apt-get install -qy exiftool
+        run: sudo apt-get install -qy exiftool
 
       - name: Install poetry
         run: pipx install poetry
