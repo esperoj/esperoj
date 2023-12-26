@@ -6,7 +6,7 @@ from moto import mock_s3
 
 from esperoj import Esperoj
 from esperoj.database.memory import MemoryDatabase
-from esperoj.storage.s3 import S3Storage, default_config
+from esperoj.storage.s3 import DEFAULT_CONFIG, S3Storage
 
 
 @pytest.fixture()
@@ -29,8 +29,8 @@ def memory_db():
 def s3_storage():
     """Return a mocked instance of S3Storage."""
     with mock_s3():
-        s3 = S3Storage("test_storage", default_config)
-        s3.s3.create_bucket(Bucket=default_config["bucket_name"])
+        s3 = S3Storage("test_storage", DEFAULT_CONFIG)
+        s3.s3.create_bucket(Bucket=DEFAULT_CONFIG["bucket_name"])
         yield s3
 
 

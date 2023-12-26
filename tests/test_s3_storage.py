@@ -3,13 +3,13 @@
 import pytest
 import requests
 
-from esperoj.storage.s3 import default_config
+from esperoj.storage.s3 import DEFAULT_CONFIG
 
 
 def test_file_exists(s3_storage):
     """Test file existence check in S3 storage."""
     s3_storage.s3.put_object(
-        Bucket=default_config["bucket_name"], Key="test.txt", Body="test content"
+        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test.txt", Body="test content"
     )
     assert s3_storage.file_exists("test.txt") is True
     assert s3_storage.file_exists("nonexistent.txt") is False
@@ -36,7 +36,7 @@ def test_upload_file_not_found(s3_storage, tmp_path):
 def test_download_file(s3_storage, tmp_path):
     """Test file download from S3 storage."""
     s3_storage.s3.put_object(
-        Bucket=default_config["bucket_name"], Key="test.txt", Body="test content"
+        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test.txt", Body="test content"
     )
     tmp_file = tmp_path / "downloaded.txt"
     s3_storage.download_file("test.txt", str(tmp_file))
@@ -53,7 +53,7 @@ def test_download_file_not_found(s3_storage, tmp_path):
 def test_delete_file(s3_storage):
     """Test file deletion in S3 storage."""
     s3_storage.s3.put_object(
-        Bucket=default_config["bucket_name"], Key="test.txt", Body="test content"
+        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test.txt", Body="test content"
     )
     assert s3_storage.delete_file("test.txt") is True
     assert s3_storage.file_exists("test.txt") is False
@@ -96,10 +96,10 @@ def test_get_link_empty_bucket(s3_storage):
 def test_list_files(s3_storage):
     """Test listing files in S3 storage."""
     s3_storage.s3.put_object(
-        Bucket=default_config["bucket_name"], Key="test1.txt", Body="test content"
+        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test1.txt", Body="test content"
     )
     s3_storage.s3.put_object(
-        Bucket=default_config["bucket_name"], Key="test2.txt", Body="test content"
+        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test2.txt", Body="test content"
     )
     files = s3_storage.list_files("")
     assert len(files) == 2

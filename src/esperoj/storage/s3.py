@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 
 from esperoj.storage import Storage
 
-default_config = {
+DEFAULT_CONFIG = {
     "bucket_name": "esperoj",
     "client_config": {
         "aws_access_key_id": os.getenv("AWS_ACCESS_KEY_ID"),
@@ -31,15 +31,15 @@ class S3Storage(Storage):
         s3 (boto3.client): The S3 client instance.
     """
 
-    def __init__(self, name: str, config: dict = default_config) -> None:
+    def __init__(self, name: str, config: dict = DEFAULT_CONFIG) -> None:
         """Initialize a S3Storage instance.
 
         Args:
             name (str): The name of the storage.
-            config (dict, optional): Configuration for the S3 client. Defaults to default_config.
+            config (dict, optional): Configuration for the S3 client. Defaults to DEFAULT_CONFIG.
         """
-        self.name = name
-        self.config = default_config
+        super().__init__(name)
+        self.config = DEFAULT_CONFIG
         self.config.update(config)
         self.s3 = boto3.client("s3", **self.config["client_config"])
 

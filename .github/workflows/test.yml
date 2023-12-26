@@ -21,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install exiftool
+        run: sudo apt-get install -qy exiftool
+
       - name: Install poetry
         run: pipx install poetry
 
@@ -38,4 +41,4 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
-          files: reports/coverage.xml
+          files: reports/pytest.xml

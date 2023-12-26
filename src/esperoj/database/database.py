@@ -1,7 +1,7 @@
 """Database module."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import Any, Self
 
@@ -66,13 +66,16 @@ class Table(ABC):
         """
 
     @abstractmethod
-    def get_all(self, formulas: dict[str, Any] | None = None) -> Iterator[Record]:
+    def get_all(
+        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] | None = None
+    ) -> Iterator[Record]:
         """Get all records from the table that match the given formulas.
 
         Example: get_all({"Name":"Long", "Age":9})
 
         Args:
             formulas (dict[str, Any], optional): A dictionary of field names and their values to filter records. Defaults to {}.
+            sort (Iterable[str], optional): A list of field names to sort by, with a minus sign prefix for descending order. Defaults to [].
 
         Returns:
         -------
