@@ -5,10 +5,10 @@ from pathlib import Path
 
 import typer
 
-from esperoj import create_esperoj
+from esperoj import Esperoj
 from esperoj.scripts import app as run
 
-esperoj = create_esperoj(db=None)
+esperoj = Esperoj()
 app = typer.Typer()
 app.add_typer(run, name="run", context_settings={"obj": esperoj})
 

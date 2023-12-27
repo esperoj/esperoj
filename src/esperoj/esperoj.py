@@ -18,19 +18,43 @@ class Esperoj:
     """The Esperoj class.
 
     Attributes:
-        db (Database): The database object.
-        storage (Storage): The storage object.
+        db (Database | None): The database object.
+        storage (Storage | None): The storage object.
     """
 
-    def __init__(self, db: Database, storage: Storage) -> None:
+    def __init__(self, db: Database | None = None, storage: Storage | None = None):
         """Initialize the Esperoj object with the given database and storage.
 
         Args:
-            db (Database): The database object that stores the file records.
-            storage (Storage): The storage object that handles the file upload and download.
+            db (Database | None): The database object that stores the file records.
+            storage (Storage | None): The storage object that handles the file upload and download.
         """
-        self.db = db
-        self.storage = storage
+        if db is not None:
+            self.db = db
+        elif os.environ.get("ESPEROJ_DATABASE") == "Airtable":
+            from esperoj.database.airtable import Airtable
+
+            self.db = Airtable("Airtable")
+        else:
+            from esperoj.database.memory import MemoryDatabase
+
+            self.db = MemoryDatabase("Memory Database")
+        if storage is not None:
+            self.storage = storage
+        else:
+            from esperoj.storage.s3 import S3Storage
+
+            self.storage = S3Storage(
+                name="Storj",
+                config={
+                    "client_config": {
+                        "aws_access_key_id": os.getenv("STORJ_ACCESS_KEY_ID"),
+                        "aws_secret_access_key": os.getenv("STORJ_SECRET_ACCESS_KEY"),
+                        "endpoint_url": os.getenv("STORJ_ENDPOINT_URL"),
+                    },
+                    "bucket_name": "esperoj",
+                },
+            )
 
     @staticmethod
     def _archive(url: str) -> str:

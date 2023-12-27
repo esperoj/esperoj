@@ -37,7 +37,7 @@ def s3_storage():
 @pytest.fixture()
 def esperoj(memory_db, s3_storage):
     """Return an Esperoj object."""
-    return Esperoj(memory_db, s3_storage)
+    return Esperoj(db=memory_db, storage=s3_storage)
 
 
 @pytest.fixture()
