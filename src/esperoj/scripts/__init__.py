@@ -37,20 +37,21 @@ def verify(ctx: Context) -> None:
     es = get_obj(ctx)
     files = list(es.db.table("Files").get_all(sort=["-Created"]))
     num_shards = 7
-    shard_size = len(files) // num_shards
+    shard_size, extra = divmod(len(files), num_shards)
     today = datetime.datetime.now(datetime.UTC).weekday()
 
-    def verify_file(i):
-        file = files[today * shard_size + i]
+    def verify_file(file):
         name = file.fields["Name"]
         print(f"Start to verify file `{name}`")
-        start = time.time()
+        start_time = time.time()
         if es.verify(file.record_id) is not True:
             raise VerifyError(f"Failed to verify {name}")
-        print(f"Verified file `{name}` in {time.time() - start} second")
+        print(f"Verified file `{name}` in {time.time() - start_time} second")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        executor.map(verify_file, range(shard_size))
+        begin = (shard_size + 1) * today if today < extra else shard_size * today
+        end = begin + shard_size + (1 if today < extra else 0)
+        executor.map(verify_file, files[begin:end])
 
 
 if __name__ == "__main__":
