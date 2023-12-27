@@ -55,7 +55,7 @@ parallel = true
 source = ["src"]
 
 [tool.coverage.xml]
-output = "reports/pytest.xml"
+output = "reports/coverage.xml"
 
 [tool.pyright]
 pythonVersion = "3.11"
@@ -67,7 +67,7 @@ exclude = ["**/node_modules",
 ]
 
 [tool.pytest.ini_options]
-addopts = "-n 4 --cov --color=yes --exitfirst --failed-first --verbosity=2 --junitxml=reports/pytest.xml"
+addopts = "-n 4 --cov-report xml --cov=src/esperoj --color=yes --exitfirst --failed-first --verbosity=2"
 testpaths = ["tests"]
 xfail_strict = true
 

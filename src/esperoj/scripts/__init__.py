@@ -52,7 +52,7 @@ def verify(ctx: Context) -> None:
     """
     es = get_obj(ctx)
     files = list(es.db.table("Files").get_all(sort=["-Created"]))
-    num_shards = 28
+    num_shards = 7
     shard_size = len(files) // num_shards
     today = datetime.datetime.now(datetime.UTC).weekday()
     for i in range(shard_size):
