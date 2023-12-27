@@ -8,7 +8,7 @@ import typer
 from esperoj import create_esperoj
 from esperoj.scripts import app as run
 
-esperoj = create_esperoj()
+esperoj = create_esperoj(db=None)
 app = typer.Typer()
 app.add_typer(run, name="run", context_settings={"obj": esperoj})
 

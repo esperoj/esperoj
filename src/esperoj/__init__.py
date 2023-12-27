@@ -13,9 +13,10 @@ Functions:
 import os
 
 from esperoj.esperoj import Esperoj
+from esperoj.database.memory import MemoryDatabase
 
 
-def create_esperoj() -> Esperoj:
+def create_esperoj(db=None) -> Esperoj:
     """Create an instance of the Esperoj class.
 
     Returns:
@@ -33,7 +34,11 @@ def create_esperoj() -> Esperoj:
     else:
         from esperoj.database.memory import MemoryDatabase
 
-        config["db"] = MemoryDatabase("Memory Database")
+        if db is None:
+            from esperoj.database.memory import MemoryDatabase
+            config["db"] = MemoryDatabase("Memory Database")
+        else:
+            config["db"] = db
     from esperoj.storage.s3 import S3Storage
 
     config["storage"] = S3Storage(
