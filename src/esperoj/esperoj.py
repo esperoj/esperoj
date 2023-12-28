@@ -129,9 +129,8 @@ class Esperoj(EsperojLogger):
                     time.sleep(5)
                 case "success":
                     return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
-                case _:
-                    self.logger.error("Error: %s", response.text)
-                    raise RuntimeError(f"Error: {response.text}")
+                self.logger.error("Error: %s", response.text)
+                raise RuntimeError(f"Error: {response.text}")
 
     @staticmethod
     def _calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
@@ -187,7 +186,6 @@ class Esperoj(EsperojLogger):
 
     def ingest(self, path: Path) -> Record:
         """Ingest the file at the given path into the database and the storage.
-
         Args:
             path (Path): The path of the file to be ingested.
 
