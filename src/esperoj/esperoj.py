@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 import os
 import time
 from collections.abc import Iterator
@@ -20,31 +21,35 @@ class Esperoj:
     Attributes:
         db (Database | None): The database object.
         storage (Storage | None): The storage object.
+        logger (logging.Logger | None): The logger to log.
     """
 
-    def __init__(self, db: Database | None = None, storage: Storage | None = None):
+    def __init__(
+        self,
+        db: Database | None = None,
+        storage: Storage | None = None,
+        logger: logging.Logger | None = None,
+    ):
         """Initialize the Esperoj object with the given database and storage.
 
         Args:
             db (Database | None): The database object that stores the file records.
             storage (Storage | None): The storage object that handles the file upload and download.
+            logger (logging.Logger | None): The logger to log.
         """
-        if db is not None:
-            self.db = db
-        elif os.environ.get("ESPEROJ_DATABASE") == "Airtable":
-            from esperoj.database.airtable import Airtable
+        if db is None:
+            if os.environ.get("ESPEROJ_DATABASE") == "Airtable":
+                from esperoj.database.airtable import Airtable
 
-            self.db = Airtable("Airtable")
-        else:
-            from esperoj.database.memory import MemoryDatabase
+                db = Airtable("Airtable")
+            else:
+                from esperoj.database.memory import MemoryDatabase
 
-            self.db = MemoryDatabase("Memory Database")
-        if storage is not None:
-            self.storage = storage
-        else:
+                db = MemoryDatabase("Memory Database")
+        if storage is None:
             from esperoj.storage.s3 import S3Storage
 
-            self.storage = S3Storage(
+            storage = S3Storage(
                 name="Storj",
                 config={
                     "client_config": {
@@ -55,6 +60,16 @@ class Esperoj:
                     "bucket_name": "esperoj",
                 },
             )
+        if logger is None:
+            logger = logging.getLogger("Esperoj")
+            logger.setLevel(logging.INFO)
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+        self.db = db
+        self.logger = logger
+        self.storage = storage
 
     @staticmethod
     def _archive(url: str) -> str:

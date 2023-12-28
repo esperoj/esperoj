@@ -37,7 +37,7 @@ def test_memory_record_creation(memory_table, fields):
     """Test the creation of a MemoryRecord instance."""
     record = memory_table.create(fields)
     assert isinstance(record, MemoryRecord)
-    assert isinstance(record.record_id, UUID)
+    assert isinstance(record.record_id, str)
     assert record.fields == fields
 
 

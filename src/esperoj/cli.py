@@ -30,7 +30,7 @@ def archive(record_id: str) -> None:
     Args:
         record_id (str): The id of the file.
     """
-    print(esperoj.archive(record_id))
+    esperoj.archive(record_id)
 
 
 @app.command()
@@ -40,4 +40,4 @@ def verify(record_id: str) -> None:
     Args:
         record_id (str): The id of the file.
     """
-    print(esperoj.verify(record_id))
+    esperoj.verify(record_id)

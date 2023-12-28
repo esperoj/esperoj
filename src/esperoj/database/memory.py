@@ -1,6 +1,6 @@
 """Memory database module."""
 
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from typing import Any, Self
 from uuid import uuid4
 
@@ -43,6 +43,20 @@ class MemoryTable(Table):
         self.records: dict[Any, dict[str, Any]] = {}
         self.name = name
 
+    def copy(self, table: Self) -> Self:
+        """Copy from another table.
+
+        Args:
+             table (Table): The table to import to.
+
+        Returns:
+        -------
+            table (Table): The copied table.
+        """
+        for record in table.get_all():
+            self.records[record.record_id] = record.fields
+        return self
+
     def create(self, fields: dict[str, Any]) -> MemoryRecord:
         """Create a new record in the table.
 
@@ -53,7 +67,7 @@ class MemoryTable(Table):
         -------
             MemoryRecord: The created record.
         """
-        record_id = uuid4()
+        record_id = str(uuid4())
         self.records[record_id] = fields
         return MemoryRecord(record_id, fields)
 
@@ -96,7 +110,7 @@ class MemoryTable(Table):
         return MemoryRecord(record_id, fields)
 
     def get_all(
-        self, formulas: dict[str, Any] | None = None, sort: list[str] | None = None
+        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] | None = None
     ) -> Iterator[MemoryRecord]:
         """Get all records from the table that match the given formulas and sort them.
 
@@ -120,7 +134,7 @@ class MemoryTable(Table):
             if not formulas or all(fields.get(key) == value for key, value in formulas.items())
         ]
         if sort:
-            for spec in reversed(sort):
+            for spec in reversed(list(sort)):
                 reverse = spec.startswith("-")
                 key = spec[1:] if reverse else spec
                 filtered_records.sort(key=lambda record: record.fields[key], reverse=reverse)
