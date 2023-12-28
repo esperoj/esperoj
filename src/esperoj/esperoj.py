@@ -25,6 +25,7 @@ class Esperoj:
 
     Attributes:
         db (Database | None): The database object.
+        logger (logging.Logger),
         logger (logging.Logger): The logger object.
         logger (logging.Logger): The logger object.
         logger (logging.Logger): The logger object.
@@ -253,7 +254,7 @@ class Esperoj:
         if archive_url == "":
             archive_url = self.archive(record_id)
         return (
-            Esperoj._calculate_hash_from_url(self.storage.get_link(fields["Name"]))
-            == Esperoj._calculate_hash_from_url(archive_url)
+            Esperoj._calculate_hash(self.storage.get_link(fields["Name"]))
+            == Esperoj._calculate_hash(archive_url)
             == fields["SHA256"]
         )
