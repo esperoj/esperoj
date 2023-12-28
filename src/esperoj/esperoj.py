@@ -205,10 +205,12 @@ class Esperoj:
         )
         match path.suffix:
             case ".flac":
+                title = metadata[0].get("Vorbis:Title", "Unknown Title")
+                artist = metadata[0].get("Vorbis:Artist", "Unknown Artist")
                 self.db.table("Musics").create(
                     {
-                        "Name": metadata[0]["Vorbis:Title"],
-                        "Artist": metadata[0]["Vorbis:Artist"],
+                        "Name": title,
+                        "Artist": artist,
                         "Files": [record.record_id],
                     }
                 )
