@@ -1,7 +1,7 @@
 """Module contains Airtable class."""
 
 import os
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import Any
 
@@ -31,6 +31,7 @@ class AirtableRecord(Record):
         Returns:
             Self: The updated record.
         """
+        self.fields.update(fields)
         return self.table.update(self.record_id, fields)
 
 
@@ -139,7 +140,7 @@ class AirtableTable(Table):
         return self._record_from_dict(record)
 
     def get_all(
-        self, formulas: dict[str, Any] | None = None, sort: list[str] | None = None
+        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] | None = None
     ) -> Iterator[AirtableRecord]:
         """Gets all records from the table.
 
@@ -154,7 +155,8 @@ class AirtableTable(Table):
             sort = []
         formula = match(formulas) if formulas is not None else ""
         return (
-            self._record_from_dict(record) for record in self.client.all(sort=sort, formula=formula)
+            self._record_from_dict(record)
+            for record in self.client.all(sort=list(sort), formula=formula)
         )
 
     def get_many(self, record_ids: Iterator[str]) -> Iterator[AirtableRecord]:

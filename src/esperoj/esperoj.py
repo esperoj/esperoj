@@ -185,7 +185,7 @@ class Esperoj:
         sha256sum = ""
         with path.open("rb") as f, ExifToolHelper() as et:
             sha256sum = Esperoj._calculate_hash(f, algorithm="sha256")
-            metadata = json.dumps(et.get_metadata(str(path)))
+            metadata = et.get_metadata(str(path))
         files = self.db.table("Files")
 
         if self.storage.file_exists(name) or (
@@ -194,16 +194,25 @@ class Esperoj:
             raise FileExistsError
 
         self.storage.upload_file(str(path), name)
-
-        return files.create(
+        record = files.create(
             {
                 "Name": name,
                 "Size": size,
                 "SHA256": sha256sum,
                 self.storage.name: name,
-                "Metadata": metadata,
+                "Metadata": json.dumps(metadata),
             }
         )
+        match path.suffix:
+            case ".flac":
+                self.db.table("Musics").create(
+                    {
+                        "Name": metadata[0]["Vorbis:Title"],
+                        "Artist": metadata[0]["Vorbis:Artist"],
+                        "Files": [record.record_id],
+                    }
+                )
+        return record
 
     def verify(self, record_id: str) -> bool:
         """Verify the integrity of the file with the given ID by comparing the SHA256 checksums of the file and its archived version.
