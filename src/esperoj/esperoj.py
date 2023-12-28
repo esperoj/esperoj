@@ -91,8 +91,10 @@ class Esperoj(EsperojLogger):
             "delay_wb_availability": 0,
             "capture_screenshot": 0,
         }
+        self.logger.info("Archiving URL: %s", url)
         response = requests.post("https://web.archive.org/save", headers=headers, data=params)
         if response.status_code != 200:
+            self.logger.error("Error: %s", response.text)
             raise RuntimeError(f"Error: {response.text}")
         job_id = response.json()["job_id"]
 
@@ -101,9 +103,24 @@ class Esperoj(EsperojLogger):
 
         while True:
             if time.time() - start_time > timeout:
+                self.logger.error("Error: Archiving process timed out.")
                 raise RuntimeError("Error: Archiving process timed out.")
             response = requests.get(
                 f"https://web.archive.org/save/status/{job_id}", headers=headers, timeout=30
+            )
+            if response.status_code != 200:
+                self.logger.error("Error: %s", response.text)
+                raise RuntimeError(f"Error: {response.text}")
+            status = response.json()
+            match status["status"]:
+                case "pending":
+                    time.sleep(5)
+                case "success":
+                    self.logger.info("Archiving process completed successfully.")
+                    return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
+                case _:
+                    self.logger.error("Error: %s", response.text)
+                    raise RuntimeError(f"Error: {response.text}")
             )
             if response.status_code != 200:
                 raise RuntimeError(f"Error: {response.text}")
