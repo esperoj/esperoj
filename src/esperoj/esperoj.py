@@ -158,8 +158,6 @@ class Esperoj:
         archive_url = fields.get("Internet Archive", "")
         if archive_url == "":
             archive_url = self.archive(record_id)
-        return (
-            calculate_hash_from_url(self.storage.get_link(fields["Name"]))
-            == calculate_hash_from_url(archive_url)
-            == fields["SHA256"]
-        )
+        storage_hash = calculate_hash_from_url(self.storage.get_link(fields["Name"]))
+        archive_hash = calculate_hash_from_url(archive_url)
+        return storage_hash == archive_hash == fields["SHA256"]

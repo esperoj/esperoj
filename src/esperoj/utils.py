@@ -35,7 +35,9 @@ def archive(url: str) -> str:
         "delay_wb_availability": 0,
         "capture_screenshot": 0,
     }
-    response = requests.post("https://web.archive.org/save", headers=headers, data=params)
+    response = requests.post(
+        "https://web.archive.org/save", headers=headers, data=params, timeout=30
+    )
     if response.status_code != 200:
         raise RuntimeError(f"Error: {response.text}")
     job_id = response.json()["job_id"]
