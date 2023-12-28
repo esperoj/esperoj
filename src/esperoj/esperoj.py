@@ -9,6 +9,8 @@ from pathlib import Path
 
 import requests
 import logging
+import logging
+import logging
 from src.esperoj.logger import logger
 
 from exiftool import ExifToolHelper
@@ -22,6 +24,7 @@ class Esperoj:
 
     Attributes:
         db (Database | None): The database object.
+        logger (logging.Logger): The logger object.
         logger (logging.Logger): The logger object.
         storage (Storage | None): The storage object.
         logger (logging.Logger): The logger object.
