@@ -8,6 +8,9 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import requests
+import logging
+from src.esperoj.logger import logger
+
 from exiftool import ExifToolHelper
 
 from esperoj.database import Database, Record
@@ -19,7 +22,11 @@ class Esperoj:
 
     Attributes:
         db (Database | None): The database object.
+        logger (logging.Logger): The logger object.
         storage (Storage | None): The storage object.
+        logger (logging.Logger): The logger object.
+        storage (Storage | None): The storage object.
+        logger (logging.Logger): The logger object.
     """
 
     def __init__(self, db: Database | None = None, storage: Storage | None = None):
