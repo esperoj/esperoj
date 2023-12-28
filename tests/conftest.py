@@ -9,6 +9,15 @@ from esperoj.database.memory import MemoryDatabase
 from esperoj.storage.s3 import DEFAULT_CONFIG, S3Storage
 
 
+@pytest.fixture(autouse=True)
+def _mock_env(mocker):
+    """Mock the environment variables for Internet Archive access."""
+    mocker.patch.dict(
+        "os.environ",
+        {"INTERNET_ARCHIVE_ACCESS_KEY": "test_key", "INTERNET_ARCHIVE_SECRET_KEY": "test_secret"},
+    )
+
+
 @pytest.fixture()
 def tmp_file(tmp_path):
     """Return a test file."""
