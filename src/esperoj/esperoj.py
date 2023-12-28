@@ -96,6 +96,8 @@ class Esperoj(EsperojLogger)(EsperojLogger):
         """
         if not path.is_file():
                 self.logger.error("FileNotFoundError: %s", str(path))
+            raise FileNotFoundError
+                self.logger.error("FileNotFoundError: %s", str(path))
         raise FileNotFoundError
 
         name = path.name
