@@ -44,9 +44,14 @@ def verify(ctx: Context) -> None:
         name = file.fields["Name"]
         print(f"Start to verify file `{name}`")
         start_time = time.time()
-        if es.verify(file.record_id) is not True:
-            raise VerifyError(f"Failed to verify {name}")
+        try:
+            if es.verify(file.record_id) is not True:
+                raise VerifyError(f"Failed to verify {name}")
+        except VerifyError as e:
+            print(e)
+            return False
         print(f"Verified file `{name}` in {time.time() - start_time} second")
+        return True
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         begin = (shard_size + 1) * today if today < extra else shard_size * today
