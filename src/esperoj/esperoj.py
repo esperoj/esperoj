@@ -1,6 +1,10 @@
 """Module that contains the Esperoj class, which can ingest and archive files."""
 
 import hashlib
+import logging
+from src.esperoj.logger import EsperojLogger
+import logging
+from src.esperoj.logger import EsperojLogger
 import json
 import os
 import time
@@ -14,7 +18,9 @@ from esperoj.database import Database, Record
 from esperoj.storage import Storage
 
 
-class Esperoj:
+from src.esperoj.logger import EsperojLogger
+
+class Esperoj(EsperojLogger):
     """The Esperoj class.
 
     Attributes:
