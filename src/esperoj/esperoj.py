@@ -145,18 +145,21 @@ class Esperoj(EsperojLogger):
             bool: True if the file is intact, False otherwise.
 
         Raises:
-            FileNotFoundError: If the file cannot be found in the storage.
-            RecordNotFoundError: If the file cannot be found in the database.
+            self.logger.error("FileNotFoundError: %s", record_id)
+            self.logger.error("RecordNotFoundError: File with id %s not found.", record_id)
         """
         fields = self.db.table("Files").get(record_id).fields
         archive_url = fields.get("Internet Archive", "")
         if archive_url == "":
             archive_url = self.archive(record_id)
-        return (
+        result = (
             Esperoj._calculate_hash_from_url(self.storage.get_link(fields["Name"]))
             == Esperoj._calculate_hash_from_url(archive_url)
             == fields["SHA256"]
         )
+        if not result:
+            self.logger.error("Integrity verification failed for file with id %s", record_id)
+        return result
                 raise RuntimeError(f"Error: {response.text}")
             status = response.json()
             match status["status"]:
