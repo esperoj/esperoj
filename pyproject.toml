@@ -70,6 +70,9 @@ exclude = ["**/node_modules",
 addopts = "--verbose -n 4 --cov-report xml --cov-report term --cov=src/esperoj --color=yes --exitfirst --failed-first"
 testpaths = ["tests"]
 xfail_strict = true
+markers = [
+  "only: run this only"
+]
 
 [tool.ruff]
 fix = true

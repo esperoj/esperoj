@@ -1,9 +1,45 @@
 """Tests for Esperoj class."""
 
+import logging
+
 import pytest
 
+from esperoj import Esperoj
 from esperoj.database.memory import MemoryRecord
 from esperoj.exceptions import RecordNotFoundError
+
+
+@pytest.mark.parametrize(
+    ("db_env_value", "expected_db_class", "logger"),
+    [
+        ("Airtable", "Airtable", None),
+        ("", "MemoryDatabase", logging.getLogger("TestLogger")),
+    ],
+)
+def test_esperoj_default_initialization(mocker, db_env_value, expected_db_class, logger):
+    """Test default initialization of Esperoj with different database environment values and logger."""
+    mocker.patch.dict(
+        "os.environ",
+        {
+            "ESPEROJ_DATABASE": db_env_value,
+            "STORJ_ACCESS_KEY_ID": "test_access_key",
+            "STORJ_SECRET_ACCESS_KEY": "test_secret_key",
+            "STORJ_ENDPOINT_URL": "test_endpoint_url",
+        },
+    )
+
+    mock_airtable = mocker.MagicMock(name="Airtable")
+    mock_memory_database = mocker.MagicMock(name="MemoryDatabase")
+    mock_s3storage = mocker.MagicMock(name="S3Storage")
+    mocker.patch("esperoj.database.airtable.Airtable", return_value=mock_airtable)
+    mocker.patch("esperoj.database.memory.MemoryDatabase", return_value=mock_memory_database)
+    mocker.patch("esperoj.storage.s3.S3Storage", return_value=mock_s3storage)
+
+    esperoj = Esperoj(db=None, storage=None, logger=logger)
+    db_classes = {"Airtable": mock_airtable, "MemoryDatabase": mock_memory_database}
+    assert esperoj.db == db_classes[expected_db_class]
+    assert esperoj.storage == mock_s3storage
+    assert isinstance(esperoj.logger, logging.Logger)
 
 
 def test_archive_success(mocker, esperoj, memory_table, s3_storage):
@@ -63,6 +99,32 @@ def test_ingest_success(esperoj, memory_table, s3_storage, tmp_file):
     assert s3_storage.file_exists(tmp_file.name)
 
 
+def test_ingest_flac_success(mocker, esperoj, memory_table, s3_storage, tmp_path):
+    """Test successful ingestion of a .flac file."""
+    temp_file_path = tmp_path / "test.flac"
+    temp_file_path.touch()
+    mock_exiftool_helper = mocker.patch("esperoj.esperoj.ExifToolHelper")
+    mock_exiftool_helper_instance = mock_exiftool_helper.return_value.__enter__.return_value
+    mock_exiftool_helper_instance.get_metadata.return_value = [
+        {
+            "File:FileName": "test.flac",
+            "File:FileSize": 0,
+            "File:MIMEType": "audio/flac",
+            "Vorbis:Title": "Test Title",
+            "Vorbis:Artist": "Test Artist",
+        }
+    ]
+    record = esperoj.ingest(temp_file_path)
+    assert isinstance(record, MemoryRecord)
+    assert record.fields["Name"] == "test.flac"
+    assert record.fields["Size"] == 0
+    assert "SHA256" in record.fields
+    music_record = next(esperoj.db.table("Musics").get_all({"Files": [record.record_id]}))
+    assert music_record.fields["Name"] == "Test Title"
+    assert music_record.fields["Artist"] == "Test Artist"
+    assert s3_storage.file_exists("test.flac")
+
+
 def test_verify_integrity_success(mocker, esperoj, memory_table, s3_storage):
     """Test successful integrity verification of a record."""
     record = memory_table.create({"Name": "test_file.txt", "SHA256": "validhash"})
@@ -96,3 +158,17 @@ def test_verify_storage_error(mocker, esperoj, memory_table, s3_storage):
     mocker.patch("esperoj.esperoj.archive", return_value="http://archive.org/test_file.txt")
     with pytest.raises(FileNotFoundError):
         esperoj.verify(record.record_id)
+
+
+def test_verify_with_internet_archive_field(mocker, esperoj, memory_table, s3_storage):
+    """Test integrity verification when the 'Internet Archive' field is set."""
+    record = memory_table.create(
+        {
+            "Name": "test_file.txt",
+            "SHA256": "validhash",
+            "Internet Archive": "http://archive.org/test_file.txt",
+        }
+    )
+    mocker.patch.object(s3_storage, "get_link", return_value="http://example.com/test_file.txt")
+    mocker.patch("esperoj.esperoj.calculate_hash_from_url", return_value="validhash")
+    assert esperoj.verify(record.record_id)
