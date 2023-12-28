@@ -6,6 +6,7 @@ import os
 import time
 from collections.abc import Iterator
 from pathlib import Path
+import logging
 
 import requests
 from exiftool import ExifToolHelper
@@ -29,6 +30,7 @@ class Esperoj:
             db (Database | None): The database object that stores the file records.
             storage (Storage | None): The storage object that handles the file upload and download.
         """
+        self.logger = logging.getLogger(__name__)
         if db is not None:
             self.db = db
         elif os.environ.get("ESPEROJ_DATABASE") == "Airtable":
@@ -56,8 +58,7 @@ class Esperoj:
                 },
             )
 
-    @staticmethod
-    def _archive(url: str) -> str:
+    def _archive(self, url: str) -> str:
         """Archive a URL using the Save Page Now 2 (SPN2) API.
 
         Args:
@@ -87,6 +88,7 @@ class Esperoj:
         }
         response = requests.post("https://web.archive.org/save", headers=headers, data=params)
         if response.status_code != 200:
+            self.logger.error(f"Error: {response.text}")
             raise RuntimeError(f"Error: {response.text}")
         job_id = response.json()["job_id"]
 
@@ -95,11 +97,13 @@ class Esperoj:
 
         while True:
             if time.time() - start_time > timeout:
+                self.logger.error("Error: Archiving process timed out.")
                 raise RuntimeError("Error: Archiving process timed out.")
             response = requests.get(
                 f"https://web.archive.org/save/status/{job_id}", headers=headers, timeout=30
             )
             if response.status_code != 200:
+                self.logger.error(f"Error: {response.text}")
                 raise RuntimeError(f"Error: {response.text}")
             status = response.json()
             match status["status"]:
@@ -110,8 +114,7 @@ class Esperoj:
                 case _:
                     raise RuntimeError(f"Error: {response.text}")
 
-    @staticmethod
-    def _calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
+    def _calculate_hash(self, stream: Iterator, algorithm: str = "sha256") -> str:
         """Calculate the hash of the given data using the specified algorithm.
 
         Args:
@@ -126,8 +129,7 @@ class Esperoj:
             hasher.update(chunk)
         return hasher.hexdigest()
 
-    @staticmethod
-    def _calculate_hash_from_url(url: str) -> str:
+    def _calculate_hash_from_url(self, url: str) -> str:
         """Calculate the hash of the file at the given URL.
 
         Args:
@@ -141,8 +143,9 @@ class Esperoj:
         """
         response = requests.get(url, stream=True, timeout=30)
         if response.status_code != 200:
+            self.logger.error(f"Error: {response.text}")
             raise RuntimeError(f"Error: {response.text}")
-        return Esperoj._calculate_hash(response.iter_content(chunk_size=4096))
+        return self._calculate_hash(response.iter_content(chunk_size=4096))
 
     def archive(self, record_id: str) -> str:
         """Archive the file with the given ID using the savepagenow service.
@@ -159,7 +162,7 @@ class Esperoj:
         """
         record = self.db.table("Files").get(record_id)
         url = self.storage.get_link(record.fields["Name"])
-        archive_url = Esperoj._archive(url)
+        archive_url = self._archive(url)
         record.update({"Internet Archive": archive_url})
         return archive_url
 
@@ -177,6 +180,7 @@ class Esperoj:
             FileExistsError: If the file already exists in the database or the storage.
         """
         if not path.is_file():
+            self.logger.error(f"FileNotFoundError: The file at {path} does not exist.")
             raise FileNotFoundError
 
         name = path.name
@@ -184,13 +188,14 @@ class Esperoj:
         metadata = ""
         sha256sum = ""
         with path.open("rb") as f, ExifToolHelper() as et:
-            sha256sum = Esperoj._calculate_hash(f, algorithm="sha256")
+            sha256sum = self._calculate_hash(f, algorithm="sha256")
             metadata = et.get_metadata(str(path))
         files = self.db.table("Files")
 
         if self.storage.file_exists(name) or (
             next(files.get_all({"Name": name}), None) is not None
         ):
+            self.logger.error(f"FileExistsError: The file '{name}' already exists in the storage or the database.")
             raise FileExistsError
 
         self.storage.upload_file(str(path), name)
@@ -234,7 +239,7 @@ class Esperoj:
         if archive_url == "":
             archive_url = self.archive(record_id)
         return (
-            Esperoj._calculate_hash_from_url(self.storage.get_link(fields["Name"]))
-            == Esperoj._calculate_hash_from_url(archive_url)
+            self._calculate_hash_from_url(self.storage.get_link(fields["Name"]))
+            == self._calculate_hash_from_url(archive_url)
             == fields["SHA256"]
         )
