@@ -63,65 +63,98 @@ class Esperoj(EsperojLogger):
             )
 
     @staticmethod
-    def _archive(url: str) -> str:
-        """Archive a URL using the Save Page Now 2 (SPN2) API.
-
+    def archive(self, record_id: str) -> str:
+        """Archive the file with the given ID using the savepagenow service.
         Args:
-            url (str): The URL to archive.
+            record_id (str): The ID of the file to be archived.
 
         Returns:
-            url (str): The archived URL.
+            url (str): The URL of the archived file.
 
         Raises:
-            RuntimeError: If the URL cannot be archived or if a timeout occurs.
+            RuntimeError: If the file cannot be found in the database or the storage, or if the archived version of the file cannot be retrieved.
+            RecordNotFoundError: If can't get the file from database.
         """
-        api_key = os.environ.get("INTERNET_ARCHIVE_ACCESS_KEY")
-        api_secret = os.environ.get("INTERNET_ARCHIVE_SECRET_KEY")
+        record = self.db.table("Files").get(record_id)
+        url = self.storage.get_link(record.fields["Name"])
+        archive_url = Esperoj._archive(url)
+        record.update({"Internet Archive": archive_url})
+        return archive_url
 
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"LOW {api_key}:{api_secret}",
-        }
+    def ingest(self, path: Path) -> Record:
+        """Ingest the file at the given path into the database and the storage.
+        Args:
+            path (Path): The path of the file to be ingested.
 
-        params = {
-            "url": url,
-            "skip_first_archive": 1,
-            "force_get": 1,
-            "email_result": 1,
-            "delay_wb_availability": 0,
-            "capture_screenshot": 0,
-        }
-        self.logger.info("Archiving URL: %s", url)
-        response = requests.post("https://web.archive.org/save", headers=headers, data=params)
-        if response.status_code != 200:
-            self.logger.error("Error: %s", response.text)
-            raise RuntimeError(f"Error: {response.text}")
-        job_id = response.json()["job_id"]
+        Returns:
+            Record: The record object that represents the file in the database.
 
-        start_time = time.time()
-        timeout = 300
+        Raises:
+            FileNotFoundError: If the path is not a valid file.
+            FileExistsError: If the file already exists in the database or the storage.
+        """
+        if not path.is_file():
+            raise FileNotFoundError
 
-        while True:
-            if time.time() - start_time > timeout:
-                self.logger.error("Error: Archiving process timed out.")
-                raise RuntimeError("Error: Archiving process timed out.")
-            response = requests.get(
-                f"https://web.archive.org/save/status/{job_id}", headers=headers, timeout=30
-            )
-            if response.status_code != 200:
-                self.logger.error("Error: %s", response.text)
-                raise RuntimeError(f"Error: {response.text}")
-            status = response.json()
-            match status["status"]:
-                case "pending":
-                    time.sleep(5)
-                case "success":
-                    self.logger.info("Archiving process completed successfully.")
-                    return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
-                case _:
-                    self.logger.error("Error: %s", response.text)
-                    raise RuntimeError(f"Error: {response.text}")
-            if response.status_code != 200:
+        name = path.name
+        size = path.stat().st_size
+        metadata = ""
+        sha256sum = ""
+        with path.open("rb") as f, ExifToolHelper() as et:
+            sha256sum = Esperoj._calculate_hash(f, algorithm="sha256")
+            metadata = et.get_metadata(str(path))
+        files = self.db.table("Files")
+
+        if self.storage.file_exists(name) or (
+            next(files.get_all({"Name": name}), None) is not None
+        ):
+            raise FileExistsError
+
+        self.storage.upload_file(str(path), name)
+        record = files.create(
+            {
+                "Name": name,
+                "Size": size,
+                "SHA256": sha256sum,
+                self.storage.name: name,
+                "Metadata": json.dumps(metadata),
+            }
+        )
+        match path.suffix:
+            case ".flac":
+                title = metadata[0].get("Vorbis:Title", "Unknown Title")
+                artist = metadata[0].get("Vorbis:Artist", "Unknown Artist")
+                self.db.table("Musics").create(
+                    {
+                        "Name": title,
+                        "Artist": artist,
+                        "Files": [record.record_id],
+                    }
+                )
+        return record
+
+    def verify(self, record_id: str) -> bool:
+        """Verify the integrity of the file with the given ID by comparing the SHA256 checksums of the file and its archived version.
+
+        Args:
+            record_id (str): The ID of the file to be verified.
+
+        Returns:
+            bool: True if the file is intact, False otherwise.
+
+        Raises:
+            FileNotFoundError: If the file cannot be found in the storage.
+            RecordNotFoundError: If the file cannot be found in the database.
+        """
+        fields = self.db.table("Files").get(record_id).fields
+        archive_url = fields.get("Internet Archive", "")
+        if archive_url == "":
+            archive_url = self.archive(record_id)
+        return (
+            Esperoj._calculate_hash_from_url(self.storage.get_link(fields["Name"]))
+            == Esperoj._calculate_hash_from_url(archive_url)
+            == fields["SHA256"]
+        )
                 raise RuntimeError(f"Error: {response.text}")
             status = response.json()
             match status["status"]:
