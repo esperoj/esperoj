@@ -35,7 +35,7 @@ class Esperoj:
         logger (logging.Logger): The logger object.
         logger (logging.Logger): The logger object.
         storage (Storage | None): The storage object.
-        self.logger.error("Error: {response.text}")
+        self.logger.debug("Error: {response.text}")
         logger (logging.Logger): The logger object.
         storage (Storage | None): The storage object.
         logger (logging.Logger): The logger object.
