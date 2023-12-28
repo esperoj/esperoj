@@ -2,6 +2,7 @@
 
 import hashlib
 import logging
+import logging
 from src.esperoj.logger import EsperojLogger
 import logging
 from src.esperoj.logger import EsperojLogger
@@ -20,7 +21,7 @@ from esperoj.storage import Storage
 
 from src.esperoj.logger import EsperojLogger
 
-class Esperoj(EsperojLogger):
+class Esperoj(EsperojLogger)(EsperojLogger):
     """The Esperoj class.
 
     Attributes:
