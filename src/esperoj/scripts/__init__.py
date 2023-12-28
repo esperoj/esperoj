@@ -1,4 +1,5 @@
 """Module to run scripts."""
+import concurrent.futures
 import datetime
 import time
 
@@ -27,23 +28,6 @@ def get_obj(ctx: Context) -> Esperoj:
 
 
 @app.command()
-def archive(ctx: Context) -> None:
-    """Archives all files that have not been archived yet.
-
-    Args:
-        ctx: The Typer context.
-    """
-    es = get_obj(ctx)
-    files = es.db.table("Files").get_all({"Internet Archive": ""})
-    for file in files:
-        start = time.time()
-        name = file.fields["Name"]
-        print(f"Start to archive file `{name}`")
-        es.archive(file.record_id)
-        print(f"Finish file `{name}` in {time.time() - start} second")
-
-
-@app.command()
 def verify(ctx: Context) -> None:
     """Verifies the integrity of files by weekday.
 
@@ -53,16 +37,26 @@ def verify(ctx: Context) -> None:
     es = get_obj(ctx)
     files = list(es.db.table("Files").get_all(sort=["-Created"]))
     num_shards = 7
-    shard_size = len(files) // num_shards
+    shard_size, extra = divmod(len(files), num_shards)
     today = datetime.datetime.now(datetime.UTC).weekday()
-    for i in range(shard_size):
-        file = files[today * shard_size + i]
+
+    def verify_file(file):
         name = file.fields["Name"]
         print(f"Start to verify file `{name}`")
-        start = time.time()
-        if es.verify(file.record_id) is not True:
-            raise VerifyError(f"Failed to verify {name}")
-        print(f"Verified file `{name}` in {time.time() - start} second")
+        start_time = time.time()
+        try:
+            if es.verify(file.record_id) is not True:
+                raise VerifyError(f"Failed to verify {name}")
+        except VerifyError as e:
+            print(e)
+            return False
+        print(f"Verified file `{name}` in {time.time() - start_time} second")
+        return True
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        begin = (shard_size + 1) * today if today < extra else shard_size * today
+        end = begin + shard_size + (1 if today < extra else 0)
+        executor.map(verify_file, files[begin:end])
 
 
 if __name__ == "__main__":
