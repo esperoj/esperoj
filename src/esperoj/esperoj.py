@@ -121,7 +121,6 @@ class Esperoj(EsperojLogger):
                 case _:
                     self.logger.error("Error: %s", response.text)
                     raise RuntimeError(f"Error: {response.text}")
-            )
             if response.status_code != 200:
                 raise RuntimeError(f"Error: {response.text}")
             status = response.json()
@@ -131,6 +130,7 @@ class Esperoj(EsperojLogger):
                 case "success":
                     return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
                 case _:
+                    self.logger.error("Error: %s", response.text)
                     raise RuntimeError(f"Error: {response.text}")
 
     @staticmethod
@@ -169,7 +169,6 @@ class Esperoj(EsperojLogger):
 
     def archive(self, record_id: str) -> str:
         """Archive the file with the given ID using the savepagenow service.
-
         Args:
             record_id (str): The ID of the file to be archived.
 
