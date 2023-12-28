@@ -94,7 +94,8 @@ class Esperoj(EsperojLogger):
             FileExistsError: If the file already exists in the database or the storage.
         """
         if not path.is_file():
-            raise FileNotFoundError
+                self.logger.error("FileNotFoundError: %s", str(path))
+        raise FileNotFoundError
 
         name = path.name
         size = path.stat().st_size
@@ -108,6 +109,7 @@ class Esperoj(EsperojLogger):
         if self.storage.file_exists(name) or (
             next(files.get_all({"Name": name}), None) is not None
         ):
+                self.logger.error("FileExistsError: %s", str(path))
             raise FileExistsError
 
         self.storage.upload_file(str(path), name)
@@ -244,6 +246,7 @@ class Esperoj(EsperojLogger):
         if self.storage.file_exists(name) or (
             next(files.get_all({"Name": name}), None) is not None
         ):
+                self.logger.error("FileExistsError: %s", str(path))
             raise FileExistsError
 
         self.storage.upload_file(str(path), name)
