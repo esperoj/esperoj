@@ -1,5 +1,7 @@
 """Esperoj CLI."""
 
+import logging
+
 
 from pathlib import Path
 
@@ -9,6 +11,7 @@ from esperoj import Esperoj
 from esperoj.scripts import app as run
 
 esperoj = Esperoj()
+logger = logging.getLogger(__name__)
 app = typer.Typer()
 app.add_typer(run, name="run", context_settings={"obj": esperoj})
 
@@ -30,7 +33,7 @@ def archive(record_id: str) -> None:
     Args:
         record_id (str): The id of the file.
     """
-    print(esperoj.archive(record_id))
+    logger.info(esperoj.archive(record_id))
 
 
 @app.command()
@@ -40,4 +43,4 @@ def verify(record_id: str) -> None:
     Args:
         record_id (str): The id of the file.
     """
-    print(esperoj.verify(record_id))
+    logger.info(esperoj.verify(record_id))
