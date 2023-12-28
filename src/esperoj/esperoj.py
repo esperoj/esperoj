@@ -11,6 +11,7 @@ import requests
 import logging
 import logging
 import logging
+import logging
 from src.esperoj.logger import logger
 
 from exiftool import ExifToolHelper
@@ -26,7 +27,15 @@ class Esperoj:
         db (Database | None): The database object.
         logger (logging.Logger): The logger object.
         logger (logging.Logger): The logger object.
+        logger (logging.Logger): The logger object.
+        logger (logging.Logger): The logger object.
         storage (Storage | None): The storage object.
+        logger (logging.Logger): The logger object.
+        storage (Storage | None): The storage object.
+        logger (logging.Logger): The logger object.
+        logger (logging.Logger): The logger object.
+        storage (Storage | None): The storage object.
+        self.logger.error("Error: {response.text}")
         logger (logging.Logger): The logger object.
         storage (Storage | None): The storage object.
         logger (logging.Logger): The logger object.
