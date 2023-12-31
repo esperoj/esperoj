@@ -5,8 +5,8 @@ from esperoj.database.airtable import Airtable
 # Implement the backup functionality using the Airtable class
 
 def backup_tables():
-    airtable = Airtable("database_name")
-    tables = ["table1", "table2", "table3"]  # Replace with the actual table names
+    airtable = Airtable("your_database_name", "your_api_key", "your_base_id")
+    table_names = ["table1", "table2", "table3"]  # Replace with the actual table names
 
     for table_name in tables:
         table = airtable.table(table_name)
@@ -16,11 +16,11 @@ def backup_tables():
         csv_filename = f"{table_name}.csv"
         with open(csv_filename, "w") as csv_file:
             # Write CSV header
-            csv_file.write("Record ID,Field 1,Field 2,...\n")
+            csv_file.write("field1,field2,field3\n")
 
             # Write records to CSV file
             for record in records:
-                csv_file.write(f"{record.record_id},{record.fields['Field 1']},{record.fields['Field 2']},...\n")
+                csv_file.write(f"{record.field1},{record.field2},{record.field3}\n")
 
         # Backup records to JSON file
         json_filename = f"{table_name}.json"
