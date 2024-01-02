@@ -1,6 +1,5 @@
 """Module that contains the Esperoj class, which can ingest and archive files."""
 
-
 import json
 import logging
 import os
@@ -91,6 +90,10 @@ class Esperoj:
     def ingest(self, path: Path) -> Record:
         """Ingest the file at the given path into the database and the storage.
 
+        This method ingests the file, extracts metadata, and creates a record in the
+        "Files" table. If the file is a music file (FLAC, MP3, or M4A), it also creates
+        a record in the "Musics" table.
+
         Args:
             path (Path): The path of the file to be ingested.
 
@@ -106,11 +109,11 @@ class Esperoj:
 
         name = path.name
         size = path.stat().st_size
-        metadata = ""
-        sha256sum = ""
+        metadata, sha256sum = "", ""
         with path.open("rb") as f, ExifToolHelper() as et:
             sha256sum = calculate_hash(f, algorithm="sha256")
             metadata = et.get_metadata(str(path))
+
         files = self.db.table("Files")
 
         if self.storage.file_exists(name) or (
@@ -128,17 +131,27 @@ class Esperoj:
                 "Metadata": json.dumps(metadata),
             }
         )
+
+        title_key, artist_key = "", ""
         match path.suffix:
             case ".flac":
-                title = metadata[0].get("Vorbis:Title", "Unknown Title")
-                artist = metadata[0].get("Vorbis:Artist", "Unknown Artist")
-                self.db.table("Musics").create(
-                    {
-                        "Name": title,
-                        "Artist": artist,
-                        "Files": [record.record_id],
-                    }
-                )
+                title_key, artist_key = "Vorbis:Title", "Vorbis:Artist"
+            case ".mp3":
+                title_key, artist_key = "ID3:Title", "ID3:Artist"
+            case ".m4a":
+                title_key, artist_key = "QuickTime:Title", "QuickTime:Artist"
+
+        if title_key and artist_key:
+            title = metadata[0].get(title_key, "Unknown Title")
+            artist = metadata[0].get(artist_key, "Unknown Artist")
+            self.db.table("Musics").create(
+                {
+                    "Name": title,
+                    "Artist": str(artist),
+                    "Files": [record.record_id],
+                }
+            )
+
         return record
 
     def verify(self, record_id: str) -> bool:
@@ -156,8 +169,8 @@ class Esperoj:
         """
         fields = self.db.table("Files").get(record_id).fields
         archive_url = fields.get("Internet Archive", "")
+        storage_hash = calculate_hash_from_url(self.storage.get_link(fields["Name"]))
         if archive_url == "":
             archive_url = self.archive(record_id)
-        storage_hash = calculate_hash_from_url(self.storage.get_link(fields["Name"]))
         archive_hash = calculate_hash_from_url(archive_url)
         return storage_hash == archive_hash == fields["SHA256"]

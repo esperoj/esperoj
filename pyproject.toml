@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "esperoj"
-version = "0.6.0"
+version = "0.6.1"
 description = "Esperoj package with cli."
 authors = ["Esperoj <esperoj@esperoj.eu.org>"]
 readme = "README.md"
@@ -79,7 +79,7 @@ fix = true
 ignore-init-module-imports = true
 line-length = 100
 select = ["A", "ASYNC", "B", "C4", "C90", "D", "DTZ", "E", "F", "FLY", "I", "N", "NPY", "PERF", "PGH", "PIE", "PLC", "PLE", "PLR", "PLW", "PT", "RET", "RUF", "RSE", "SIM", "TID", "UP", "W", "YTT"]
-ignore = ["PLR2004", "E501", "PGH001", "PGH002", "PGH003", "RET504", "S101"]
+ignore = ["PLR0913", "PLR2004", "E501", "PGH001", "PGH002", "PGH003", "RET504", "S101"]
 unfixable = ["F401", "F841"]
 src = ["src", "tests"]
 target-version = "py311"

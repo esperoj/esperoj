@@ -5,6 +5,7 @@ import time
 from collections.abc import Iterator
 
 import requests
+from requests.adapters import HTTPAdapter, Retry
 
 
 def archive(url: str) -> str:
@@ -35,21 +36,34 @@ def archive(url: str) -> str:
         "delay_wb_availability": 0,
         "capture_screenshot": 0,
     }
-    response = requests.post(
-        "https://web.archive.org/save", headers=headers, data=params, timeout=30
+
+    session = requests.Session()
+
+    retry_strategy = Retry(
+        total=2,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+
+    response = session.post(
+        "https://web.archive.org/save", headers=headers, data=params, timeout=12
     )
     if response.status_code != 200:
         raise RuntimeError(f"Error: {response.text}")
     job_id = response.json()["job_id"]
 
     start_time = time.time()
-    timeout = 300
+    timeout = 60 * 15
 
     while True:
         if time.time() - start_time > timeout:
             raise RuntimeError("Error: Archiving process timed out.")
-        response = requests.get(
-            f"https://web.archive.org/save/status/{job_id}", headers=headers, timeout=30
+        response = session.get(
+            f"https://web.archive.org/save/status/{job_id}", headers=headers, timeout=12
         )
         if response.status_code != 200:
             raise RuntimeError(f"Error: {response.text}")
@@ -91,7 +105,7 @@ def calculate_hash_from_url(url: str) -> str:
     Raises:
         RuntimeError: If the file at the given URL cannot be accessed.
     """
-    response = requests.get(url, stream=True, timeout=30)
+    response = requests.get(url, stream=True, timeout=60)
     if response.status_code != 200:
         raise RuntimeError(f"Error: {response.text}")
     return calculate_hash(response.iter_content(chunk_size=4096))

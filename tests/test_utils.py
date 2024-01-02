@@ -7,10 +7,11 @@ from esperoj.utils import archive, calculate_hash, calculate_hash_from_url
 def test_archive(mocker):
     """Test that a URL can be archived successfully."""
     mocker.patch(
-        "requests.post", return_value=mocker.Mock(status_code=200, json=lambda: {"job_id": "123"})
+        "requests.Session.post",
+        return_value=mocker.Mock(status_code=200, json=lambda: {"job_id": "123"}),
     )
     mocker.patch(
-        "requests.get",
+        "requests.Session.get",
         return_value=mocker.Mock(
             status_code=200,
             json=lambda: {
@@ -27,7 +28,7 @@ def test_archive(mocker):
 
 def test_archive_error(mocker):
     """Test that an error is raised when the archive request fails."""
-    mocker.patch("requests.post", return_value=mocker.Mock(status_code=400, text="Error"))
+    mocker.patch("requests.Session.post", return_value=mocker.Mock(status_code=400, text="Error"))
     with pytest.raises(RuntimeError, match="Error: Error"):
         archive("http://example.com")
 
@@ -35,10 +36,11 @@ def test_archive_error(mocker):
 def test_archive_non_200_status(mocker):
     """Test that an error is raised when the archive response is not 200."""
     mocker.patch(
-        "requests.post", return_value=mocker.Mock(status_code=200, json=lambda: {"job_id": "123"})
+        "requests.Session.post",
+        return_value=mocker.Mock(status_code=200, json=lambda: {"job_id": "123"}),
     )
     mock_response = mocker.Mock(status_code=400, text="Error")
-    mocker.patch("requests.get", return_value=mock_response)
+    mocker.patch("requests.Session.get", return_value=mock_response)
     with pytest.raises(RuntimeError, match="Error: Error"):
         archive("http://example.com")
 
@@ -46,14 +48,15 @@ def test_archive_non_200_status(mocker):
 def test_archive_timeout(mocker):
     """Test that an error is raised when the archiving process times out."""
     mocker.patch(
-        "requests.post", return_value=mocker.Mock(status_code=200, json=lambda: {"job_id": "123"})
+        "requests.Session.post",
+        return_value=mocker.Mock(status_code=200, json=lambda: {"job_id": "123"}),
     )
     mocker.patch(
-        "requests.get",
+        "requests.Session.get",
         return_value=mocker.Mock(status_code=200, json=lambda: {"status": "pending"}),
     )
     mocker.patch("time.sleep", return_value=None)
-    mocker.patch("time.time", side_effect=[0, 30, 301])
+    mocker.patch("time.time", side_effect=[0, 30, 60 * 16])
     with pytest.raises(RuntimeError, match="Error: Archiving process timed out."):
         archive("http://example.com")
 
@@ -61,11 +64,12 @@ def test_archive_timeout(mocker):
 def test_archive_unknown_status(mocker):
     """Test that an error is raised when the archive status is unknown."""
     mocker.patch(
-        "requests.post", return_value=mocker.Mock(status_code=200, json=lambda: {"job_id": "123"})
+        "requests.Session.post",
+        return_value=mocker.Mock(status_code=200, json=lambda: {"job_id": "123"}),
     )
     mock_response = mocker.Mock(status_code=200)
     mock_response.json.side_effect = [{"status": "unknown"}]
-    mocker.patch("requests.get", return_value=mock_response)
+    mocker.patch("requests.Session.get", return_value=mock_response)
     with pytest.raises(RuntimeError, match="Error: .*"):
         archive("http://example.com")
 
