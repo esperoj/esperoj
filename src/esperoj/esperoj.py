@@ -111,6 +111,7 @@ class Esperoj:
         with path.open("rb") as f, ExifToolHelper() as et:
             sha256sum = calculate_hash(f, algorithm="sha256")
             metadata = et.get_metadata(str(path))
+
         files = self.db.table("Files")
 
         if self.storage.file_exists(name) or (
@@ -135,7 +136,27 @@ class Esperoj:
                 self.db.table("Musics").create(
                     {
                         "Name": title,
-                        "Artist": artist,
+                        "Artist": str(artist),
+                        "Files": [record.record_id],
+                    }
+                )
+            case ".mp3":
+                title = metadata[0].get("ID3:Title", "Unknown Title")
+                artist = metadata[0].get("ID3:Artist", "Unknown Artist")
+                self.db.table("Musics").create(
+                    {
+                        "Name": title,
+                        "Artist": str(artist),
+                        "Files": [record.record_id],
+                    }
+                )
+            case ".m4a":
+                title = metadata[0].get("QuickTime:Title", "Unknown Title")
+                artist = metadata[0].get("QuickTime:Artist", "Unknown Artist")
+                self.db.table("Musics").create(
+                    {
+                        "Name": title,
+                        "Artist": str(artist),
                         "Files": [record.record_id],
                     }
                 )
@@ -156,8 +177,8 @@ class Esperoj:
         """
         fields = self.db.table("Files").get(record_id).fields
         archive_url = fields.get("Internet Archive", "")
+        storage_hash = calculate_hash_from_url(self.storage.get_link(fields["Name"]))
         if archive_url == "":
             archive_url = self.archive(record_id)
-        storage_hash = calculate_hash_from_url(self.storage.get_link(fields["Name"]))
         archive_hash = calculate_hash_from_url(archive_url)
         return storage_hash == archive_hash == fields["SHA256"]
