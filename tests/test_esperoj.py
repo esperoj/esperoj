@@ -99,30 +99,40 @@ def test_ingest_success(esperoj, memory_table, s3_storage, tmp_file):
     assert s3_storage.file_exists(tmp_file.name)
 
 
-def test_ingest_flac_success(mocker, esperoj, memory_table, s3_storage, tmp_path):
-    """Test successful ingestion of a .flac file."""
-    temp_file_path = tmp_path / "test.flac"
+@pytest.mark.parametrize(
+    ("file_ext", "title_key", "artist_key"),
+    [
+        (".flac", "Vorbis:Title", "Vorbis:Artist"),
+        (".mp3", "ID3:Title", "ID3:Artist"),
+        (".m4a", "QuickTime:Title", "QuickTime:Artist"),
+    ],
+)
+def test_ingest_audio_file_success(
+    mocker, esperoj, memory_table, s3_storage, tmp_path, file_ext, title_key, artist_key
+):
+    """Test successful ingestion of audio files (.flac, .mp3, .m4a)."""
+    temp_file_path = tmp_path / f"test{file_ext}"
     temp_file_path.touch()
     mock_exiftool_helper = mocker.patch("esperoj.esperoj.ExifToolHelper")
     mock_exiftool_helper_instance = mock_exiftool_helper.return_value.__enter__.return_value
     mock_exiftool_helper_instance.get_metadata.return_value = [
         {
-            "File:FileName": "test.flac",
+            "File:FileName": f"test{file_ext}",
             "File:FileSize": 0,
-            "File:MIMEType": "audio/flac",
-            "Vorbis:Title": "Test Title",
-            "Vorbis:Artist": "Test Artist",
+            "File:MIMEType": f"audio/{file_ext[1:]}",
+            title_key: "Test Title",
+            artist_key: "Test Artist",
         }
     ]
     record = esperoj.ingest(temp_file_path)
     assert isinstance(record, MemoryRecord)
-    assert record.fields["Name"] == "test.flac"
+    assert record.fields["Name"] == f"test{file_ext}"
     assert record.fields["Size"] == 0
     assert "SHA256" in record.fields
     music_record = next(esperoj.db.table("Musics").get_all({"Files": [record.record_id]}))
     assert music_record.fields["Name"] == "Test Title"
     assert music_record.fields["Artist"] == "Test Artist"
-    assert s3_storage.file_exists("test.flac")
+    assert s3_storage.file_exists(f"test{file_ext}")
 
 
 def test_verify_integrity_success(mocker, esperoj, memory_table, s3_storage):
