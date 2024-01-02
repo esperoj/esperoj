@@ -45,8 +45,6 @@ def test_archive_non_200_status(mocker):
         archive("http://example.com")
 
 
-# TODO: This throw errors because mocking time.time will affect other 3rd party library. I am thinking of a way to solve this
-@pytest.mark.skip()
 def test_archive_timeout(mocker):
     """Test that an error is raised when the archiving process times out."""
     mocker.patch(
@@ -58,7 +56,7 @@ def test_archive_timeout(mocker):
         return_value=mocker.Mock(status_code=200, json=lambda: {"status": "pending"}),
     )
     mocker.patch("time.sleep", return_value=None)
-    mocker.patch("time.time", side_effect=[0, 30, 301])
+    mocker.patch("time.time", side_effect=[0, 30, 60 * 16])
     with pytest.raises(RuntimeError, match="Error: Archiving process timed out."):
         archive("http://example.com")
 
