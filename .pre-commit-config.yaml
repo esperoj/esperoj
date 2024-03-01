@@ -46,12 +46,12 @@ repos:
   - id: trailing-whitespace
     types: [python]
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.1.9
+  rev: v0.2.0
   hooks:
   - id: ruff
   - id: ruff-format
 - repo: https://github.com/sourcery-ai/sourcery
-  rev: v1.15.0
+  rev: v1.15.1b41
   hooks:
   - id: sourcery
     args: [--diff=git diff HEAD, --no-summary]
