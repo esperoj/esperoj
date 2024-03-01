@@ -30,11 +30,15 @@ def archive(url: str) -> str:
 
     params = {
         "url": url,
-        "skip_first_archive": 1,
-        "force_get": 1,
-        "email_result": 1,
-        "delay_wb_availability": 0,
+        "capture_all": 0,
+        "capture_outlinks": 0,
         "capture_screenshot": 0,
+        "delay_wb_availability": 0,
+        "force_get": 1,
+        "skip_first_archive": 1,
+        "outlinks_availability": 0,
+        "email_result": 1,
+        "js_behavior_timeout": 0,
     }
 
     session = requests.Session()
