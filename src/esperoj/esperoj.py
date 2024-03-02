@@ -9,7 +9,7 @@ from exiftool import ExifToolHelper
 
 from esperoj.database import Database, Record
 from esperoj.storage import Storage
-from esperoj.utils import archive, calculate_hash, calculate_hash_from_url
+from esperoj.utils import archive, calculate_hash, calculate_hash_from_url, get_db
 
 
 class Esperoj:
@@ -36,13 +36,9 @@ class Esperoj:
         """
         if db is None:
             if os.environ.get("ESPEROJ_DATABASE") == "Airtable":
-                from esperoj.database.airtable import Airtable
-
-                db = Airtable("Airtable")
+                db = get_db("Airtable")
             else:
-                from esperoj.database.memory import MemoryDatabase
-
-                db = MemoryDatabase("Memory Database")
+                db = get_db("Memory")
         if storage is None:
             from esperoj.storage.s3 import S3Storage
 

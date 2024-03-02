@@ -43,20 +43,6 @@ class MemoryTable(Table):
         self.records: dict[Any, dict[str, Any]] = {}
         self.name = name
 
-    def copy(self, table: Self) -> Self:
-        """Copy from another table.
-
-        Args:
-             table (Table): The table to import to.
-
-        Returns:
-        -------
-            table (Table): The copied table.
-        """
-        for record in table.get_all():
-            self.records[record.record_id] = record.fields
-        return self
-
     def create(self, fields: dict[str, Any]) -> MemoryRecord:
         """Create a new record in the table.
 

@@ -77,16 +77,16 @@ class AirtableTable(Table):
             raise InvalidRecordError("fields must be a dictionary.")
         return self._record_from_dict(self.client.create(fields))
 
-    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterator[AirtableRecord]:
+    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterable[AirtableRecord]:
         """Creates multiple new records in the table.
 
         Args:
             fields_list (Iterator[dict[str, Any]]): The records to create.
 
         Returns:
-            Iterator[AirtableRecord]: The created records.
+            Iterable[AirtableRecord]: The created records.
         """
-        return (self._record_from_dict(record) for record in self.client.batch_create(fields_list))
+        return [self._record_from_dict(record) for record in self.client.batch_create(fields_list)]
 
     def delete(self, record_id: str) -> str:
         """Deletes a record from the table.
@@ -106,14 +106,14 @@ class AirtableTable(Table):
             return record_id
         raise RecordDeletionError(f"Deletion failed for id: {result['id']}")
 
-    def delete_many(self, record_ids: Iterator[str]) -> Iterator[str]:
+    def delete_many(self, record_ids: Iterator[str]) -> Iterable[str]:
         """Deletes multiple records from the table.
 
         Args:
             record_ids (Iterator[str]): The IDs of the records to delete.
 
         Returns:
-            Iterator[str]: The IDs of the deleted records.
+            Iterable[str]: The IDs of the deleted records.
         """
         results = self.client.batch_delete(record_ids)
         for result in results:
@@ -182,21 +182,21 @@ class AirtableTable(Table):
         """
         return self._record_from_dict(self.client.update(record_id, fields))
 
-    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterator[AirtableRecord]:
+    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterable[AirtableRecord]:
         """Updates multiple records in the table.
 
         Args:
             records (Iterator[dict[str, Any]]): The records to update.
 
         Returns:
-            Iterator[AirtableRecord]: The updated records.
+            Iterable[AirtableRecord]: The updated records.
         """
-        return (
+        return [
             self._record_from_dict(record)
             for record in self.client.batch_update(
                 {"id": r["record_id"], "fields": r["fields"]} for r in records
             )
-        )
+        ]
 
 
 class Airtable(Database):

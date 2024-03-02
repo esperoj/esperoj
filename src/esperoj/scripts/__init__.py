@@ -5,26 +5,17 @@ import time
 
 import typer
 
-from esperoj import Esperoj
+from esperoj.scripts.migrate import migrate
+from esperoj.scripts.utils import Context, get_obj
 
 app = typer.Typer()
-Context = typer.Context
 
 
 class VerificationError(Exception):
     """Raised when the verification of one or more files fails."""
 
 
-def get_obj(ctx: Context) -> Esperoj:
-    """Gets the Esperoj object from the Typer context.
-
-    Args:
-        ctx: The Typer context.
-
-    Returns:
-        The Esperoj object.
-    """
-    return ctx.obj
+app.command()(migrate)
 
 
 @app.command()
