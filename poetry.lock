@@ -726,6 +726,17 @@ dev = ["pre-commit", "tox"]
 testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
+name = "ply"
+version = "3.11"
+description = "Python Lex & Yacc"
+optional = false
+python-versions = "*"
+files = [
+    {file = "ply-3.11-py2.py3-none-any.whl", hash = "sha256:096f9b8350b65ebd2fd1346b12452efe5b9607f7482813ffca50c22722a807ce"},
+    {file = "ply-3.11.tar.gz", hash = "sha256:00c7c1aaa88358b9c765b6d3000c6eec0ba42abca5351b095321aef446081da3"},
+]
+
+[[package]]
 name = "poethepoet"
 version = "0.25.0"
 description = "A task runner that works well with poetry."
@@ -1039,6 +1050,43 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-engineio"
+version = "3.14.2"
+description = "Engine.IO server"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-engineio-3.14.2.tar.gz", hash = "sha256:eab4553f2804c1ce97054c8b22cf0d5a9ab23128075248b97e1a5b2f29553085"},
+    {file = "python_engineio-3.14.2-py2.py3-none-any.whl", hash = "sha256:5a9e6086d192463b04a1428ff1f85b6ba631bbb19d453b144ffc04f530542b84"},
+]
+
+[package.dependencies]
+six = ">=1.9.0"
+
+[package.extras]
+asyncio-client = ["aiohttp (>=3.4)"]
+client = ["requests (>=2.21.0)", "websocket-client (>=0.54.0)"]
+
+[[package]]
+name = "python-socketio"
+version = "4.6.1"
+description = "Socket.IO server"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-socketio-4.6.1.tar.gz", hash = "sha256:cd1f5aa492c1eb2be77838e837a495f117e17f686029ebc03d62c09e33f4fa10"},
+    {file = "python_socketio-4.6.1-py2.py3-none-any.whl", hash = "sha256:5a21da53fdbdc6bb6c8071f40e13d100e0b279ad997681c2492478e06f370523"},
+]
+
+[package.dependencies]
+python-engineio = ">=3.13.0,<4"
+six = ">=1.9.0"
+
+[package.extras]
+asyncio-client = ["aiohttp (>=3.4)", "websockets (>=7.0)"]
+client = ["requests (>=2.21.0)", "websocket-client (>=0.54.0)"]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.1"
 description = "YAML parser and emitter for Python"
@@ -1200,6 +1248,23 @@ botocore = ">=1.33.2,<2.0a.0"
 crt = ["botocore[crt] (>=1.33.2,<2.0a.0)"]
 
 [[package]]
+name = "seatable-api"
+version = "2.6.11"
+description = "Python client for SeaTable web api"
+optional = false
+python-versions = "*"
+files = [
+    {file = "seatable-api-2.6.11.tar.gz", hash = "sha256:82b0254300798dff32c5d9f2e16aaeac78b0371cb03cb0a90ff9274789752154"},
+    {file = "seatable_api-2.6.11-py3-none-any.whl", hash = "sha256:1749f9246221e897fb90500cffe4beb3a918f3bd6ea65a985869be7933894ef0"},
+]
+
+[package.dependencies]
+ply = "*"
+python-dateutil = "*"
+python-socketio = "<5"
+requests = "*"
+
+[[package]]
 name = "setuptools"
 version = "69.1.1"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -1351,4 +1416,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11"
-content-hash = "93024c304ce9243e194804e2f483163b3ea417acd5d0994cdcf90b3bb27d6eb2"
+content-hash = "10ebc33398ba6897560797a31027ff7efa370e31b425d46c690549c98f8061ba"

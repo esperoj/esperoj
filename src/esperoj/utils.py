@@ -132,6 +132,11 @@ def get_db(name: str) -> Database:
 
         return Airtable(name)
 
+    if name == "Seatable":
+        from esperoj.database.seatable import Seatable
+
+        return Seatable(name)
+
     from esperoj.database.memory import MemoryDatabase
 
     return MemoryDatabase(name)
