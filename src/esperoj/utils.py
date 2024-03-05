@@ -7,6 +7,8 @@ from collections.abc import Iterator
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
+from esperoj.database import Database
+
 
 def archive(url: str) -> str:
     """Archive a URL using the Save Page Now 2 (SPN2) API.
@@ -113,3 +115,28 @@ def calculate_hash_from_url(url: str) -> str:
     if response.status_code != 200:
         raise RuntimeError(f"Error: {response.text}")
     return calculate_hash(response.iter_content(chunk_size=4096))
+
+
+def get_db(name: str) -> Database:
+    """Get the database by name.
+
+    Args:
+        name (str): The name of the database to get.
+
+    Returns:
+        Database: The database instance.
+
+    """
+    if name == "Airtable":
+        from esperoj.database.airtable import Airtable
+
+        return Airtable(name)
+
+    if name == "Seatable":
+        from esperoj.database.seatable import Seatable
+
+        return Seatable(name)
+
+    from esperoj.database.memory import MemoryDatabase
+
+    return MemoryDatabase(name)

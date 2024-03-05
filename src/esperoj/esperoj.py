@@ -9,7 +9,7 @@ from exiftool import ExifToolHelper
 
 from esperoj.database import Database, Record
 from esperoj.storage import Storage
-from esperoj.utils import archive, calculate_hash, calculate_hash_from_url
+from esperoj.utils import archive, calculate_hash, calculate_hash_from_url, get_db
 
 
 class Esperoj:
@@ -36,25 +36,23 @@ class Esperoj:
         """
         if db is None:
             if os.environ.get("ESPEROJ_DATABASE") == "Airtable":
-                from esperoj.database.airtable import Airtable
-
-                db = Airtable("Airtable")
+                db = get_db("Airtable")
+            if os.environ.get("ESPEROJ_DATABASE") == "Seatable":
+                db = get_db("Seatable")
             else:
-                from esperoj.database.memory import MemoryDatabase
-
-                db = MemoryDatabase("Memory Database")
+                db = get_db("Memory")
         if storage is None:
             from esperoj.storage.s3 import S3Storage
 
             storage = S3Storage(
-                name="Storj",
+                name="S3",
                 config={
                     "client_config": {
-                        "aws_access_key_id": os.getenv("STORJ_ACCESS_KEY_ID"),
-                        "aws_secret_access_key": os.getenv("STORJ_SECRET_ACCESS_KEY"),
-                        "endpoint_url": os.getenv("STORJ_ENDPOINT_URL"),
+                        "aws_access_key_id": os.getenv("S3_ACCESS_KEY_ID"),
+                        "aws_secret_access_key": os.getenv("S3_SECRET_ACCESS_KEY"),
+                        "endpoint_url": os.getenv("S3_ENDPOINT_URL"),
                     },
-                    "bucket_name": "esperoj",
+                    "bucket_name": "hlongn",
                 },
             )
         if logger is None:

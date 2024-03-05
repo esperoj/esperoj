@@ -2,7 +2,7 @@
 
 
 import pytest
-from moto import mock_s3
+from moto import mock_aws
 
 from esperoj import Esperoj
 from esperoj.database.memory import MemoryDatabase
@@ -14,7 +14,15 @@ def _mock_env(mocker):
     """Mock the environment variables for Internet Archive access."""
     mocker.patch.dict(
         "os.environ",
-        {"INTERNET_ARCHIVE_ACCESS_KEY": "test_key", "INTERNET_ARCHIVE_SECRET_KEY": "test_secret"},
+        {
+            "AWS_ACCESS_KEY_ID": "testing",
+            "AWS_SECRET_ACCESS_KEY": "testing",
+            "AWS_SECURITY_TOKEN": "testing",
+            "AWS_SESSION_TOKEN": "testing",
+            "AWS_DEFAULT_REGION": "us-east-1",
+            "INTERNET_ARCHIVE_ACCESS_KEY": "test_key",
+            "INTERNET_ARCHIVE_SECRET_KEY": "test_secret",
+        },
     )
 
 
@@ -37,7 +45,7 @@ def memory_db():
 @pytest.fixture()
 def s3_storage():
     """Return a mocked instance of S3Storage."""
-    with mock_s3():
+    with mock_aws():
         s3 = S3Storage("test_storage", DEFAULT_CONFIG)
         s3.s3.create_bucket(Bucket=DEFAULT_CONFIG["bucket_name"])
         yield s3

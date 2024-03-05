@@ -95,7 +95,7 @@ class Table(ABC):
             Record: The updated record.
         """
 
-    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterator[Record]:
+    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterable[Record]:
         """Create multiple records in the table.
 
         Args:
@@ -103,11 +103,24 @@ class Table(ABC):
 
         Returns:
         -------
-            Iterator[Record]: An Iterator of created records.
+            Iterable[Record]: An Iterable of created records.
         """
-        return (self.create(fields) for fields in fields_list)
+        return [self.create(fields) for fields in fields_list]
 
-    def delete_many(self, record_ids: Iterator[Any]) -> Iterator[Any]:
+    def copy(self, table: Self) -> Self:
+        """Copy from another table.
+
+        Args:
+             table (Table): The table to import to.
+
+        Returns:
+        -------
+            table (Table): The copied table.
+        """
+        self.create_many(record.fields for record in table.get_all())
+        return self
+
+    def delete_many(self, record_ids: Iterator[Any]) -> Iterable[Any]:
         """Delete multiple records from the table.
 
         Args:
@@ -115,7 +128,7 @@ class Table(ABC):
 
         Returns:
         -------
-            Iterator[Any]: An Iterator of deleted record IDs.
+            Iterable[Any]: An Iterable of deleted record IDs.
         """
         return (self.delete(record_id) for record_id in record_ids)
 
@@ -131,7 +144,7 @@ class Table(ABC):
         """
         return (self.get(record_id) for record_id in record_ids)
 
-    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterator[Record]:
+    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterable[Record]:
         """Update multiple records in the table.
 
         Args:
@@ -141,7 +154,7 @@ class Table(ABC):
         -------
             Iterator[Record]: An Iterator of updated records.
         """
-        return (self.update(**record) for record in records)
+        return [self.update(**record) for record in records]
 
 
 class Database(ABC):

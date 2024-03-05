@@ -1,28 +1,27 @@
-"""Module contains Airtable class."""
+"""Module contains Seatable class."""
 
 import os
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import Any
 
-from pyairtable import Api
-from pyairtable.formulas import match
+from seatable_api import Base, context
 
 from esperoj.database import Database, Record, Table
 from esperoj.exceptions import InvalidRecordError, RecordDeletionError, RecordNotFoundError
 
 
 @dataclass
-class AirtableRecord(Record):
-    """A class representing a record in an Airtable table.
+class SeatableRecord(Record):
+    """A class representing a record in an Seatable table.
 
     Attributes:
-        table (AirtableTable): The table this record belongs to.
+        table (SeatableTable): The table this record belongs to.
     """
 
-    table: "AirtableTable"
+    table: "SeatableTable"
 
-    def update(self, fields: dict[str, Any]) -> "AirtableRecord":
+    def update(self, fields: dict[str, Any]) -> "SeatableRecord":
         """Updates the record with the given fields.
 
         Args:
@@ -35,36 +34,40 @@ class AirtableRecord(Record):
         return self.table.update(self.record_id, fields)
 
 
-class AirtableTable(Table):
-    """A class representing a table in Airtable.
+class SeatableTable(Table):
+    """A class representing a table in Seatable.
 
     Attributes:
         name (str): The name of the table.
-        client (Api): The Airtable API client.
+        client: The Seatable API client.
     """
 
     def __init__(self, name: str, client):
-        """Initializes an AirtableTable instance.
+        """Initializes an SeatableTable instance.
 
         Args:
             name (str): The name of the table.
-            client (Api): The Airtable API client.
+            client: The Seatable API client.
         """
         self.name = name
         self.client = client
 
-    def _record_from_dict(self, record_dict: dict[str, Any]) -> AirtableRecord:
-        """Creates an AirtableRecord from a dictionary.
+    def _record_from_dict(self, record_dict: dict[str, Any]) -> SeatableRecord:
+        """Creates an SeatableRecord from a dictionary.
 
         Args:
             record_dict (dict[str, Any]): The dictionary to create the record from.
 
         Returns:
-            AirtableRecord: The created record.
+            SeatableRecord: The created record.
         """
-        return AirtableRecord(record_dict["id"], record_dict["fields"], self)
+        record_id = record_dict["_id"]
+        record_dict.pop("_id", None)
+        record_dict.pop("_ctime", None)
+        record_dict.pop("_mtime", None)
+        return SeatableRecord(record_id, record_dict, self)
 
-    def create(self, fields: dict[str, Any]) -> AirtableRecord:
+    def create(self, fields: dict[str, Any]) -> SeatableRecord:
         """Creates a new record in the table.
 
         Args:
@@ -75,18 +78,19 @@ class AirtableTable(Table):
         """
         if not isinstance(fields, dict):
             raise InvalidRecordError("fields must be a dictionary.")
-        return self._record_from_dict(self.client.create(fields))
+        return self.get(self.client.append_row(self.name, fields)["_id"])
 
-    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterable[AirtableRecord]:
+    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterable[SeatableRecord]:
         """Creates multiple new records in the table.
 
         Args:
             fields_list (Iterator[dict[str, Any]]): The records to create.
 
         Returns:
-            Iterable[AirtableRecord]: The created records.
+            Iterable[SeatableRecord]: The created records.
         """
-        return [self._record_from_dict(record) for record in self.client.batch_create(fields_list)]
+        return self.client.batch_append_rows(self.name, fields_list)
+        # return [self._record_from_dict(record) for record in self.client.batch_append_rows(self.name, fields_list)]
 
     def delete(self, record_id: str) -> str:
         """Deletes a record from the table.
@@ -121,27 +125,27 @@ class AirtableTable(Table):
                 raise ValueError(f"Deletion failed for id: {result['id']}")
         return record_ids
 
-    def get(self, record_id: str) -> AirtableRecord:
+    def get(self, record_id: str) -> SeatableRecord:
         """Gets a record from the table.
 
         Args:
             record_id (str): The ID of the record to get.
 
         Returns:
-            AirtableRecord: The retrieved record.
+            SeatableRecord: The retrieved record.
         """
         if not isinstance(record_id, str):
             raise InvalidRecordError("record_id must be a string.")
 
-        record = self.client.get(record_id)
-        if record is None:
+        record = self.client.get_row(self.name, record_id)
+        if not record:
             raise RecordNotFoundError(f"Record with id '{record_id}' not found.")
 
         return self._record_from_dict(record)
 
     def get_all(
         self, formulas: dict[str, Any] | None = None, sort: Iterable[str] | None = None
-    ) -> Iterator[AirtableRecord]:
+    ) -> Iterator[SeatableRecord]:
         """Gets all records from the table.
 
         Args:
@@ -149,28 +153,32 @@ class AirtableTable(Table):
             sort (Iterable[str], optional): A list of field names to sort by, with a minus sign prefix for descending order. Defaults to [].
 
         Returns:
-            Iterator[AirtableRecord]: The retrieved records.
+            Iterator[SeatableRecord]: The retrieved records.
         """
+        print(self.name)
         if sort is None:
             sort = []
-        formula = match(formulas) if formulas is not None else ""
-        return (
-            self._record_from_dict(record)
-            for record in self.client.all(sort=list(sort), formula=formula)
-        )
+        i = 0
+        records = []
+        while True:
+            new_records = self.client.list_rows(self.name, start=i, limit=1000)
+            records.extend(new_records)
+            if new_records == []:
+                return (self._record_from_dict(record) for record in records)
+            i += 1000
 
-    def get_many(self, record_ids: Iterator[str]) -> Iterator[AirtableRecord]:
+    def get_many(self, record_ids: Iterator[str]) -> Iterator[SeatableRecord]:
         """Gets multiple records from the table.
 
         Args:
             record_ids (Iterator[str]): The IDs of the records to get.
 
         Returns:
-            Iterator[AirtableRecord]: The retrieved records.
+            Iterator[SeatableRecord]: The retrieved records.
         """
         return (self.get(record_id) for record_id in record_ids)
 
-    def update(self, record_id: str, fields: dict[str, Any]) -> AirtableRecord:
+    def update(self, record_id: str, fields: dict[str, Any]) -> SeatableRecord:
         """Updates a record in the table.
 
         Args:
@@ -178,18 +186,18 @@ class AirtableTable(Table):
             fields (dict[str, Any]): The fields to update.
 
         Returns:
-            AirtableRecord: The updated record.
+            SeatableRecord: The updated record.
         """
         return self._record_from_dict(self.client.update(record_id, fields))
 
-    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterable[AirtableRecord]:
+    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterable[SeatableRecord]:
         """Updates multiple records in the table.
 
         Args:
             records (Iterator[dict[str, Any]]): The records to update.
 
         Returns:
-            Iterable[AirtableRecord]: The updated records.
+            Iterable[SeatableRecord]: The updated records.
         """
         return [
             self._record_from_dict(record)
@@ -199,39 +207,39 @@ class AirtableTable(Table):
         ]
 
 
-class Airtable(Database):
-    """A class representing an Airtable database.
+class Seatable(Database):
+    """A class representing an Seatable database.
 
     Attributes:
         name (str): The name of the database.
-        api_key (str): The API key for the Airtable API.
-        base_id (str): The base ID of the Airtable database.
-        client (Api): The Airtable API client.
+        api_token (str): The API key for the Airtable API.
+        client (Api): The Seatable API client.
+        server_url (str): The url of the server.
     """
 
-    def __init__(self, name: str, api_key: str = "", base_id: str = ""):
-        """Initializes an Airtable instance.
+    def __init__(self, name: str, api_token: str = ""):
+        """Initializes an Seatable instance.
 
         Args:
             name (str): The name of the database.
-            api_key (str, optional): The API key for the Airtable API. Defaults to "".
-            base_id (str, optional): The base ID of the Airtable database. Defaults to "".
+            api_token (str, optional): The API key for the Seatable API. Defaults to "".
         """
         self.name = name
-        self.api_key = api_key or str(os.getenv("AIRTABLE_API_KEY"))
-        self.base_id = base_id or str(os.getenv("AIRTABLE_BASE_ID"))
-        self.client = Api(self.api_key)
+        self.server_url = context.server_url or "https://cloud.seatable.io"
+        self.api_token = api_token or context.api_token or os.getenv("SEATABLE_API_TOKEN")
+        self.client = Base(self.api_token, self.server_url)
+        self.client.auth()
 
-    def table(self, name: str) -> AirtableTable:
-        """Gets a table from the Airtable database.
+    def table(self, name: str) -> SeatableTable:
+        """Gets a table from the Seatable database.
 
         Args:
             name (str): The name of the table.
 
         Returns:
-            AirtableTable: The retrieved table.
+            SeatableTable: The retrieved table.
         """
-        return AirtableTable(name, self.client.table(self.base_id, name))
+        return SeatableTable(name, self.client)
 
     def close(self) -> bool:
         """Closes the Airtable database connection.
