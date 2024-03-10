@@ -1,0 +1,7 @@
+FILENAME: statichost.yml
+# Docker image to use for building
+image: python:3.11
+# Build command
+command: ./scripts/build.sh
+# Public directory
+public: docs
