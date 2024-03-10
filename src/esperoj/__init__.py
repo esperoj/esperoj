@@ -7,6 +7,6 @@ Classes:
 """
 
 
-from esperoj.esperoj import Esperoj
+# from esperoj.esperoj import Esperoj
 
-__all__ = ["Esperoj"]
+# __all__ = ["Esperoj"]
