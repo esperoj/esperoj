@@ -5,3 +5,5 @@ image: python:3.11
 command: ./scripts/build.sh
 # Public directory
 public: docs
+domains:
+  - www.esperoj.eu.org
