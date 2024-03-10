@@ -1,4 +1,5 @@
 #!/bin/bash
 
-pip install poethepoet pdoc
+pip install poetry
+poetry install --with test,dev
 poe docs
