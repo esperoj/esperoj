@@ -1,4 +1,4 @@
 #!/bin/bash
 
-pip install poethepoet
+pip install poethepoet pdoc
 poe docs
