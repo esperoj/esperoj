@@ -2,4 +2,4 @@
 
 pip install poetry
 poetry install --with test,dev
-poe docs
+poetry run poe docs
