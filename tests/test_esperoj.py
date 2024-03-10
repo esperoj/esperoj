@@ -4,8 +4,8 @@ import logging
 
 import pytest
 
-from esperoj import Esperoj
 from esperoj.database.memory import MemoryRecord
+from esperoj.esperoj import Esperoj
 from esperoj.exceptions import RecordNotFoundError
 
 

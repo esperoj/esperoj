@@ -1,7 +1,7 @@
 """Utils module to be used in scripts."""
 import typer
 
-from esperoj import Esperoj
+from esperoj.esperoj import Esperoj
 
 Context = typer.Context
 

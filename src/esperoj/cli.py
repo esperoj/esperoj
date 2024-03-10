@@ -5,7 +5,7 @@ from pathlib import Path
 
 import typer
 
-from esperoj import Esperoj
+from esperoj.esperoj import Esperoj
 from esperoj.scripts import app as run
 
 esperoj = Esperoj()

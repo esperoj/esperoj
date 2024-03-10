@@ -4,8 +4,8 @@
 import pytest
 from moto import mock_aws
 
-from esperoj import Esperoj
 from esperoj.database.memory import MemoryDatabase
+from esperoj.esperoj import Esperoj
 from esperoj.storage.s3 import DEFAULT_CONFIG, S3Storage
 
 
