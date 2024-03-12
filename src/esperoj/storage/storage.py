@@ -103,8 +103,6 @@ class StorageFactory:
         """
         storage_type = config["type"]
         if storage_type == "s3":
-            from boto3.s3.transfer import TransferConfig
-
             from esperoj.storage.s3 import S3Storage
 
             configs = {
@@ -113,6 +111,6 @@ class StorageFactory:
             }
             transfer_config = config.get("transfer_config")
             if transfer_config is not None:
-                configs["transfer_config"] = TransferConfig(**transfer_config)
+                configs["transfer_config"] = transfer_config
             return S3Storage(config["name"], configs)
         raise ValueError(f"Unknown storage type: {storage_type}")

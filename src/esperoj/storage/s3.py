@@ -21,9 +21,7 @@ class S3Storage(Storage):
     DEFAULT_CONFIG = namedtuple("Config", ["bucket_name", "client_config", "transfer_config"])(
         "esperoj",
         {},
-        TransferConfig(
-            multipart_threshold=8 * 2**20, max_concurrency=10, multipart_chunksize=8 * 2**20
-        ),
+        {"multipart_threshold": 8 * 2**20, "max_concurrency": 10, "multipart_chunksize": 8 * 2**20},
     )
 
     def __init__(self, name: str, config: dict) -> None:
@@ -37,7 +35,7 @@ class S3Storage(Storage):
         self.config = {**self.DEFAULT_CONFIG._asdict(), **config}
         self.bucket_name = self.config["bucket_name"]
         self.client_config = self.config["client_config"]
-        self.transfer_config = self.config["transfer_config"]
+        self.transfer_config = TransferConfig(**self.config["transfer_config"])
         self.client = boto3.client("s3", **self.client_config)
 
     def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
