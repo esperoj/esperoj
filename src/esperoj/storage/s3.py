@@ -5,18 +5,6 @@ from botocore.exceptions import ClientError
 
 from esperoj.storage.storage import DeleteFilesResponse, Storage
 
-DEFAULT_CONFIG = {
-    "name": "S3 Storage",
-    "bucket_name": "esperoj",
-    "aliases": [],
-    "client_config": {},
-    "transfer_config": {
-        "multipart_threshold": 8 * 2**20,
-        "max_concurrency": 10,
-        "multipart_chunksize": 8 * 2**20,
-    },
-}
-
 
 class S3Storage(Storage):
     """S3Storage class for handling S3 storage operations.
@@ -33,13 +21,24 @@ class S3Storage(Storage):
         Args:
             config (dict): Configuration for S3Storage.
         """
-        self.config = DEFAULT_CONFIG | config
-        self.config["aliases"] = [*DEFAULT_CONFIG["aliases"], *config.get("aliases", [])]
-        self.config["client_config"] = DEFAULT_CONFIG["client_config"] | config.get(
+        self.__DEFAULT_CONFIG = {
+            "name": "S3 Storage",
+            "bucket_name": "esperoj",
+            "aliases": [],
+            "client_config": {},
+            "transfer_config": {
+                "multipart_threshold": 8 * 2**20,
+                "max_concurrency": 10,
+                "multipart_chunksize": 8 * 2**20,
+            },
+        }
+        self.config = self.__DEFAULT_CONFIG | config
+        self.config["aliases"] = [*self.__DEFAULT_CONFIG["aliases"], *config.get("aliases", [])]
+        self.config["client_config"] = self.__DEFAULT_CONFIG["client_config"] | config.get(
             "client_config", {}
         )
         self.config["transfer_config"] = TransferConfig(
-            **(DEFAULT_CONFIG["transfer_config"] | config.get("transfer_config", {}))
+            **(self.__DEFAULT_CONFIG["transfer_config"] | config.get("transfer_config", {}))
         )
         self.client = boto3.client("s3", **self.config["client_config"])
 
