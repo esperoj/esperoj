@@ -20,13 +20,13 @@ class DeleteFilesResponse(TypedDict):
 class Storage(ABC):
     """Abstract base class for storage."""
 
-    def __init__(self, name: str) -> None:
+    @abstractmethod
+    def __init__(self, config: dict) -> None:
         """Initalize the Storage.
 
         Args:
-            name (str): The name of the storage.
+            config (dict): Config for the storage.
         """
-        self.name = name
 
     @abstractmethod
     def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
@@ -102,15 +102,9 @@ class StorageFactory:
             config (dict): The configs of the storage.
         """
         storage_type = config["type"]
-        if storage_type == "s3":
-            from esperoj.storage.s3 import S3Storage
+        match storage_type:
+            case "s3":
+                from esperoj.storage.s3 import S3Storage
 
-            configs = {
-                "bucket_name": config["bucket_name"],
-                "client_config": config["client_config"],
-            }
-            transfer_config = config.get("transfer_config")
-            if transfer_config is not None:
-                configs["transfer_config"] = transfer_config
-            return S3Storage(config["name"], configs)
+                return S3Storage(config)
         raise ValueError(f"Unknown storage type: {storage_type}")

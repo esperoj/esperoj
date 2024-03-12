@@ -7,6 +7,8 @@ from botocore.exceptions import ClientError
 
 from esperoj.storage.storage import DeleteFilesResponse, Storage
 
+Config = namedtuple("Config", ["bucket_name", "client_config", "transfer_config"])
+
 
 class S3Storage(Storage):
     """S3Storage class for handling S3 storage operations.
@@ -18,24 +20,29 @@ class S3Storage(Storage):
         s3 (boto3.client): The S3 client instance.
     """
 
-    DEFAULT_CONFIG = namedtuple("Config", ["bucket_name", "client_config", "transfer_config"])(
-        "esperoj",
-        {},
-        {"multipart_threshold": 8 * 2**20, "max_concurrency": 10, "multipart_chunksize": 8 * 2**20},
+    _DEFAULT_CONFIG = Config(
+        bucket_name="esperoj",
+        client_config={},
+        transfer_config={
+            "multipart_threshold": 8 * 2**20,
+            "max_concurrency": 10,
+            "multipart_chunksize": 8 * 2**20,
+        },
     )
 
-    def __init__(self, name: str, config: dict) -> None:
+    def __init__(self, config: dict) -> None:
         """Initialize a S3Storage instance.
 
         Args:
-            name (str): The name of the storage.
             config (dict): Configuration for the S3Storage.
         """
-        super().__init__(name)
-        self.config = {**self.DEFAULT_CONFIG._asdict(), **config}
-        self.bucket_name = self.config["bucket_name"]
-        self.client_config = self.config["client_config"]
-        self.transfer_config = TransferConfig(**self.config["transfer_config"])
+        self.name = config.get("name", "S3 Storage")
+        self.aliases = config.get("aliases", [])
+        self.bucket_name = config.get("bucket_name", self._DEFAULT_CONFIG.bucket_name)
+        self.client_config = self._DEFAULT_CONFIG.client_config | config.get("client_config", {})
+        self.transfer_config = TransferConfig(
+            **(self._DEFAULT_CONFIG.transfer_config | config.get("transfer_config", {}))
+        )
         self.client = boto3.client("s3", **self.client_config)
 
     def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
