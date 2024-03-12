@@ -1,12 +1,26 @@
-"""Storage class."""
+"""Storage module."""
 
 from abc import ABC, abstractmethod
+from typing import TypedDict
+
+
+class DeleteFileError(TypedDict):
+    """DeleteFileError type."""
+
+    path: str
+    message: str
+
+
+class DeleteFilesResponse(TypedDict):
+    """DeleteFilesResponse type."""
+
+    errors: list[DeleteFileError]
 
 
 class Storage(ABC):
     """Abstract base class for storage."""
 
-    def __init__(self, name) -> None:
+    def __init__(self, name: str) -> None:
         """Initalize the Storage.
 
         Args:
@@ -15,14 +29,14 @@ class Storage(ABC):
         self.name = name
 
     @abstractmethod
-    def delete_file(self, path: str) -> bool:
-        """Deletes a file at the specified path.
+    def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
+        """Deletes files at the paths.
 
         Args:
-            path (str): The path of the file to delete.
+            paths (list[str]): The paths of the files to delete.
 
         Returns:
-            bool: True if the file was deleted successfully, False otherwise.
+            response (DeleteFilesResponse): Response includes list of errors.
         """
 
     @abstractmethod
@@ -42,7 +56,7 @@ class Storage(ABC):
             path (str): The path of the file to check.
 
         Returns:
-            bool: True if the file exists, False otherwise.
+            status (bool): True if the file exists, False otherwise.
         """
 
     @abstractmethod
@@ -75,3 +89,23 @@ class Storage(ABC):
             src (str): The source path of the file to upload.
             dst (str): The destination path where the file will be saved.
         """
+
+
+class StorageFactory:
+    """StorageFactory class."""
+
+    @staticmethod
+    def create(storage_type: str, config: dict):
+        """Method to create storage."""
+        if storage_type == "s3":
+            from esperoj.storage.s3 import S3Storage
+
+            configs = {
+                "bucket_name": config["bucket_name"],
+                "client_config": config["client_config"],
+            }
+            transfer_config = config.get("transfer_config")
+            if transfer_config is not None:
+                configs["transfer_config"] = transfer_config
+            return S3Storage(config["name"], configs)
+        raise ValueError(f"Unknown storage type: {storage_type}")

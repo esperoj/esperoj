@@ -3,13 +3,11 @@
 import pytest
 import requests
 
-from esperoj.storage.s3 import DEFAULT_CONFIG
 
-
-def test_file_exists(s3_storage):
+def test_file_exists(config, s3_storage):
     """Test file existence check in S3 storage."""
-    s3_storage.s3.put_object(
-        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test.txt", Body="test content"
+    s3_storage.client.put_object(
+        Bucket=config["storages"][0]["bucket_name"], Key="test.txt", Body="test content"
     )
     assert s3_storage.file_exists("test.txt") is True
     assert s3_storage.file_exists("nonexistent.txt") is False
@@ -33,10 +31,10 @@ def test_upload_file_not_found(s3_storage, tmp_path):
         s3_storage.upload_file(str(tmp_file), "uploaded.txt")
 
 
-def test_download_file(s3_storage, tmp_path):
+def test_download_file(config, s3_storage, tmp_path):
     """Test file download from S3 storage."""
-    s3_storage.s3.put_object(
-        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test.txt", Body="test content"
+    s3_storage.client.put_object(
+        Bucket=config["storages"][0]["bucket_name"], Key="test.txt", Body="test content"
     )
     tmp_file = tmp_path / "downloaded.txt"
     s3_storage.download_file("test.txt", str(tmp_file))
@@ -50,18 +48,18 @@ def test_download_file_not_found(s3_storage, tmp_path):
         s3_storage.download_file("nonexistent.txt", str(tmp_file))
 
 
-def test_delete_file(s3_storage):
+def test_delete_files(config, s3_storage):
     """Test file deletion in S3 storage."""
-    s3_storage.s3.put_object(
-        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test.txt", Body="test content"
+    s3_storage.client.put_object(
+        Bucket=config["storages"][0]["bucket_name"], Key="test.txt", Body="test content"
     )
-    assert s3_storage.delete_file("test.txt") is True
+    assert s3_storage.delete_files(["test.txt"])["errors"] == []
     assert s3_storage.file_exists("test.txt") is False
 
 
 def test_get_link_existing_file(s3_storage):
     """Test get_link method for an existing file."""
-    s3_storage.s3.put_object(
+    s3_storage.client.put_object(
         Bucket=s3_storage.config["bucket_name"], Key="path/to/file.txt", Body=b"Test content"
     )
     url = s3_storage.get_link("path/to/file.txt")
@@ -93,13 +91,13 @@ def test_get_link_empty_bucket(s3_storage):
         s3_storage.get_link("path/to/file.txt")
 
 
-def test_list_files(s3_storage):
+def test_list_files(config, s3_storage):
     """Test listing files in S3 storage."""
-    s3_storage.s3.put_object(
-        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test1.txt", Body="test content"
+    s3_storage.client.put_object(
+        Bucket=config["storages"][0]["bucket_name"], Key="test1.txt", Body="test content"
     )
-    s3_storage.s3.put_object(
-        Bucket=DEFAULT_CONFIG["bucket_name"], Key="test2.txt", Body="test content"
+    s3_storage.client.put_object(
+        Bucket=config["storages"][0]["bucket_name"], Key="test2.txt", Body="test content"
     )
     files = s3_storage.list_files("")
     assert len(files) == 2

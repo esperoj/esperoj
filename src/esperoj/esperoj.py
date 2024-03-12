@@ -8,7 +8,7 @@ from pathlib import Path
 from exiftool import ExifToolHelper
 
 from esperoj.database import Database, Record
-from esperoj.storage import Storage
+from esperoj.storage.storage import Storage
 from esperoj.utils import archive, calculate_hash, calculate_hash_from_url, get_db
 
 

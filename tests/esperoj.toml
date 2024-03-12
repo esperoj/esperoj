@@ -1,0 +1,9 @@
+[[storages]]
+name = "Testing Storage"
+type = "s3"
+alias = [ "Audio Storage", "Document Storage" ]
+bucket_name = "esperoj"
+
+[storages.client_config]
+aws_access_key_id = "testing"
+aws_secret_access_key = "testing"

@@ -1,12 +1,14 @@
 """Fixtures for testing."""
 
+import tomllib
+from pathlib import Path
 
 import pytest
 from moto import mock_aws
 
 from esperoj.database.memory import MemoryDatabase
 from esperoj.esperoj import Esperoj
-from esperoj.storage.s3 import DEFAULT_CONFIG, S3Storage
+from esperoj.storage.storage import StorageFactory
 
 
 @pytest.fixture(autouse=True)
@@ -15,15 +17,18 @@ def _mock_env(mocker):
     mocker.patch.dict(
         "os.environ",
         {
-            "AWS_ACCESS_KEY_ID": "testing",
-            "AWS_SECRET_ACCESS_KEY": "testing",
-            "AWS_SECURITY_TOKEN": "testing",
-            "AWS_SESSION_TOKEN": "testing",
-            "AWS_DEFAULT_REGION": "us-east-1",
             "INTERNET_ARCHIVE_ACCESS_KEY": "test_key",
             "INTERNET_ARCHIVE_SECRET_KEY": "test_secret",
         },
     )
+
+
+@pytest.fixture()
+def config():
+    """Return a config."""
+    p = Path(__file__).with_name("esperoj.toml")
+    with p.open("rb") as f:
+        yield tomllib.load(f)
 
 
 @pytest.fixture()
@@ -43,11 +48,11 @@ def memory_db():
 
 
 @pytest.fixture()
-def s3_storage():
+def s3_storage(config):
     """Return a mocked instance of S3Storage."""
     with mock_aws():
-        s3 = S3Storage("test_storage", DEFAULT_CONFIG)
-        s3.s3.create_bucket(Bucket=DEFAULT_CONFIG["bucket_name"])
+        s3 = StorageFactory.create("s3", config["storages"][0])
+        s3.client.create_bucket(Bucket=config["storages"][0]["bucket_name"])
         yield s3
 
 
