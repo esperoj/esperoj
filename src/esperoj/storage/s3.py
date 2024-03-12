@@ -1,13 +1,21 @@
 """Module contains S3Storage class."""
-from collections import namedtuple
-
 import boto3
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
 from esperoj.storage.storage import DeleteFilesResponse, Storage
 
-Config = namedtuple("Config", ["bucket_name", "client_config", "transfer_config"])
+DEFAULT_CONFIG = {
+    "name": "S3 Storage",
+    "bucket_name": "esperoj",
+    "aliases": [],
+    "client_config": {},
+    "transfer_config": {
+        "multipart_threshold": 8 * 2**20,
+        "max_concurrency": 10,
+        "multipart_chunksize": 8 * 2**20,
+    },
+}
 
 
 class S3Storage(Storage):
@@ -15,35 +23,25 @@ class S3Storage(Storage):
 
     Attributes:
     ----------
-        name (str): The name of the storage.
-        config (dict): Configuration dictionary for the S3 client.
-        s3 (boto3.client): The S3 client instance.
+        config (dict): Configuration for S3Storage.
+        client (boto3.client): The S3 client instance.
     """
-
-    _DEFAULT_CONFIG = Config(
-        bucket_name="esperoj",
-        client_config={},
-        transfer_config={
-            "multipart_threshold": 8 * 2**20,
-            "max_concurrency": 10,
-            "multipart_chunksize": 8 * 2**20,
-        },
-    )
 
     def __init__(self, config: dict) -> None:
         """Initialize a S3Storage instance.
 
         Args:
-            config (dict): Configuration for the S3Storage.
+            config (dict): Configuration for S3Storage.
         """
-        self.name = config.get("name", "S3 Storage")
-        self.aliases = config.get("aliases", [])
-        self.bucket_name = config.get("bucket_name", self._DEFAULT_CONFIG.bucket_name)
-        self.client_config = self._DEFAULT_CONFIG.client_config | config.get("client_config", {})
-        self.transfer_config = TransferConfig(
-            **(self._DEFAULT_CONFIG.transfer_config | config.get("transfer_config", {}))
+        self.config = DEFAULT_CONFIG | config
+        self.config["aliases"] = [*DEFAULT_CONFIG["aliases"], *config.get("aliases", [])]
+        self.config["client_config"] = DEFAULT_CONFIG["client_config"] | config.get(
+            "client_config", {}
         )
-        self.client = boto3.client("s3", **self.client_config)
+        self.config["transfer_config"] = TransferConfig(
+            **(DEFAULT_CONFIG["transfer_config"] | config.get("transfer_config", {}))
+        )
+        self.client = boto3.client("s3", **self.config["client_config"])
 
     def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
         """Delete files from the S3 bucket.
@@ -56,7 +54,7 @@ class S3Storage(Storage):
             response (DeleteFilesResponse): Response includes list of errors.
         """
         response = self.client.delete_objects(
-            Bucket=self.bucket_name, Delete={"Objects": [{"Key": path} for path in paths]}
+            Bucket=self.config["bucket_name"], Delete={"Objects": [{"Key": path} for path in paths]}
         )
         if response.get("Errors") is None:
             return {"errors": []}
@@ -74,7 +72,9 @@ class S3Storage(Storage):
             FileNotFoundError: If the source file does not exist.
         """
         try:
-            self.client.download_file(self.bucket_name, src, dst, Config=self.transfer_config)
+            self.client.download_file(
+                self.config["bucket_name"], src, dst, Config=self.config["transfer_config"]
+            )
         except ClientError as e:
             raise FileNotFoundError(f"No such file: '{src}'") from e
 
@@ -89,7 +89,7 @@ class S3Storage(Storage):
             bool: True if the file exists, False otherwise.
         """
         try:
-            self.client.head_object(Bucket=self.bucket_name, Key=path)
+            self.client.head_object(Bucket=self.config["bucket_name"], Key=path)
             return True
         except ClientError as e:
             if e.response["Error"]["Code"] == "404":
@@ -112,7 +112,7 @@ class S3Storage(Storage):
             raise FileNotFoundError(f"No such file: '{path}'")
         return self.client.generate_presigned_url(
             "get_object",
-            Params={"Bucket": self.bucket_name, "Key": path},
+            Params={"Bucket": self.config["bucket_name"], "Key": path},
             ExpiresIn=3600 * 24 * 7,
         )
 
@@ -132,7 +132,7 @@ class S3Storage(Storage):
         """
         paginator = self.client.get_paginator("list_objects_v2")
         files: list[str] = []
-        for page in paginator.paginate(Bucket=self.bucket_name, Prefix=path):
+        for page in paginator.paginate(Bucket=self.config["bucket_name"], Prefix=path):
             files.extend(obj["Key"] for obj in page.get("Contents", []))
         if not files:
             raise FileNotFoundError(f"No such directory: '{path}'")
@@ -150,7 +150,9 @@ class S3Storage(Storage):
             FileNotFoundError: If the source file does not exist.
         """
         try:
-            self.client.upload_file(src, self.bucket_name, dst, Config=self.transfer_config)
+            self.client.upload_file(
+                src, self.config["bucket_name"], dst, Config=self.config["transfer_config"]
+            )
         except ClientError as e:
             raise e
         except FileNotFoundError as e:

@@ -62,7 +62,7 @@ def test_delete_files(config, s3_storage):
 def test_get_link_existing_file(s3_storage):
     """Test get_link method for an existing file."""
     s3_storage.client.put_object(
-        Bucket=s3_storage.bucket_name, Key="path/to/file.txt", Body=b"Test content"
+        Bucket=s3_storage.config["bucket_name"], Key="path/to/file.txt", Body=b"Test content"
     )
     url = s3_storage.get_link("path/to/file.txt")
     response = requests.get(url)
