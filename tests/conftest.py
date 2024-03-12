@@ -51,7 +51,7 @@ def memory_db():
 def s3_storage(config):
     """Return a mocked instance of S3Storage."""
     with mock_aws():
-        s3 = StorageFactory.create("s3", config["storages"][0])
+        s3 = StorageFactory.create(config["storages"][0])
         s3.client.create_bucket(Bucket=config["storages"][0]["bucket_name"])
         yield s3
 

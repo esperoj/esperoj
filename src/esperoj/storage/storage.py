@@ -95,8 +95,13 @@ class StorageFactory:
     """StorageFactory class."""
 
     @staticmethod
-    def create(storage_type: str, config: dict):
-        """Method to create storage."""
+    def create(config: dict):
+        """Method to create storage.
+
+        Args:
+            config (dict): The configs of the storage.
+        """
+        storage_type = config["type"]
         if storage_type == "s3":
             from esperoj.storage.s3 import S3Storage
 
