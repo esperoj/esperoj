@@ -1,7 +1,7 @@
 [[storages]]
 name = "Testing Storage"
 type = "s3"
-alias = [ "Audio Storage", "Document Storage" ]
+aliases = [ "Audio Storage", "Document Storage" ]
 bucket_name = "esperoj"
 
 [storages.client_config]
