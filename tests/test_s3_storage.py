@@ -3,6 +3,8 @@
 import pytest
 import requests
 
+from esperoj.storage.storage import StorageFactory
+
 
 def test_file_exists(config, s3_storage):
     """Test file existence check in S3 storage."""
@@ -109,3 +111,18 @@ def test_list_files_not_found(s3_storage):
     """Test listing files in a non-existent directory in S3 storage raises FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
         s3_storage.list_files("nonexistent")
+
+
+def test_create_storage(s3_storage):
+    """Test create storage."""
+    assert type(
+        StorageFactory.create(
+            {"name": "Test", "bucket_name": "esperoj", "type": "s3", "client_config": {}}
+        )
+    ) is type(s3_storage)
+
+
+def test_create_storage_with_invalid_type():
+    """Test create storage with invalid type."""
+    with pytest.raises(ValueError, match=r"Unknown storage type: invalid_type"):
+        StorageFactory.create({"type": "invalid_type"})

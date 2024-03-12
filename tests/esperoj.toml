@@ -7,3 +7,6 @@ bucket_name = "esperoj"
 [storages.client_config]
 aws_access_key_id = "testing"
 aws_secret_access_key = "testing"
+
+[storages.transfer_config]
+max_concurrency = 4
