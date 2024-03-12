@@ -6,7 +6,7 @@ import boto3
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
-from esperoj.storage import Storage
+from esperoj.storage.storage import Storage
 
 DEFAULT_CONFIG = {
     "bucket_name": "esperoj",
