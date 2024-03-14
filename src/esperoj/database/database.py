@@ -1,182 +1,172 @@
-"""Database module."""
+"""Database module contain abstractions and types."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Self
+
+RecordId = str | int
+FieldValue = Any
+FieldKey = str | int
+Fields = dict[FieldKey, FieldValue]
 
 
 @dataclass
 class Record(ABC):
-    """A class representing a generic database record."""
+    """Base class for all records."""
 
-    record_id: Any
-    fields: dict[str, Any]
+    record_id: RecordId
+    fields: Fields
+    table: "Table"
 
-    @abstractmethod
-    def update(self, fields: dict[str, Any]) -> Self:
-        """Update the record with the given fields.
+    def __getitem__(self, key: FieldKey) -> FieldValue:
+        """Get the value of the field with the given key."""
+        return self.fields[key]
 
-        Args:
-            fields (dict[str, Any]): A dictionary of field names and their new values.
+    def __setitem__(self, key: FieldKey, value: FieldValue):
+        """Set the value of the field with the given key."""
+        self.update({key: value}).fields[key] = value
 
-        Returns:
-        -------
-            Self: The updated record.
-        """
+    def __iter__(self) -> Iterator[tuple[FieldKey, FieldValue]]:
+        """Iterate over the fields of the record."""
+        return iter(self.fields)
+
+    def delete(self) -> RecordId:
+        """Delete the record from the database."""
+        return self.table.delete(self.record_id)
+
+    def update(self, fields: Fields) -> Self:
+        """Update the record with the given fields."""
+        self.table.update(self.record_id, fields)
+        return self
 
 
 class Table(ABC):
-    """A class representing a generic database table."""
+    """Base class for all tables."""
+
+    def __init__(self, name: str):
+        """Initialize the table with the given name."""
+        self.name = name
+
+    def __iter__(self) -> Iterator[Record]:
+        """Iterate over the records in the table."""
+        return iter(self.query(query=f"SELECT * FROM {self.name}"))
+
+    def add_link(
+        self,
+        field_key: FieldKey,
+        other_table_name: str,
+        record_id: RecordId,
+        other_record_id: RecordId,
+    ):
+        """Add a link between the record with the given record_id and the record with the given other_record_id in the other table."""
+        return self.batch_add_link(field_key, other_table_name, {record_id: [other_record_id]})
+
+    def batch_add_link(
+        self,
+        field_key: FieldKey,
+        other_table_name: str,
+        record_ids_map: dict[RecordId, list[RecordId]],
+    ):
+        """Add links between the records with the given record_ids and the records with the given other_record_ids in the other table."""
+        record_ids = list(record_ids_map.keys())
+        current_other_record_ids_map = self.get_linked_records(field_key, record_ids)
+        updated_record_ids_map = {}
+        for record_id, other_record_ids in record_ids_map.items():
+            current_other_record_ids = current_other_record_ids_map[record_id]
+            updated_record_ids_map[record_id] = current_other_record_ids + other_record_ids
+        self.batch_update_links(field_key, other_table_name, updated_record_ids_map)
+
+    def create(self, fields: Fields) -> Record:
+        """Create a new record with the given fields."""
+        return self.batch_create([fields])[0]
+
+    def delete(self, record_id: RecordId) -> RecordId:
+        """Delete the record with the given record_id."""
+        return self.batch_delete([record_id])[0]
+
+    def get(self, record_id: RecordId) -> Record:
+        """Get the record with the given record_id."""
+        return self.batch_get([record_id])[record_id]
+
+    def get_link_id(self, field_key: FieldKey) -> str:
+        """Get the link id for the given field key."""
+        return self.batch_get_link_id([field_key])[field_key]
+
+    def update(self, record_id: RecordId, fields: Fields) -> Record:
+        """Update the record with the given record_id with the given fields."""
+        return self.batch_update([(record_id, fields)])[record_id]
+
+    def update_link(
+        self,
+        field_key: FieldKey,
+        other_table_name: str,
+        record_id: RecordId,
+        other_record_ids: list[RecordId],
+    ):
+        """Update the link between the record with the given record_id and the records with the given other_record_ids in the other table."""
+        return self.batch_update_links(field_key, other_table_name, {record_id: other_record_ids})
 
     @abstractmethod
-    def create(self, fields: dict[str, Any]) -> Record:
-        """Create a new record in the table.
-
-        Args:
-            fields (dict[str, Any]): A dictionary of field names and their values.
-
-        Returns:
-        -------
-            Record: The created record.
-        """
+    def batch_get(self, record_ids: list[RecordId]) -> dict[RecordId, Record]:
+        """Get the records with the given record_ids."""
 
     @abstractmethod
-    def delete(self, record_id: Any) -> Any:
-        """Delete a record from the table and return its ID.
-
-        Args:
-            record_id (Any): The ID of the record to delete.
-
-        Returns:
-        -------
-            Any: The deleted record ID.
-        """
+    def batch_get_link_id(self, field_keys: list[FieldKey]) -> dict[FieldKey, str]:
+        """Get the link ids for the given field keys."""
 
     @abstractmethod
-    def get(self, record_id: Any) -> Record:
-        """Get a record from the table.
-
-        Args:
-            record_id (Any): The ID of the record to get.
-
-        Returns:
-        -------
-            Record: The requested record.
-        """
+    def batch_create(self, fields_list: list[Fields]) -> list[Record]:
+        """Create new records with the given fields."""
 
     @abstractmethod
-    def get_all(
-        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] | None = None
-    ) -> Iterator[Record]:
-        """Get all records from the table that match the given formulas.
-
-        Example: get_all({"Name":"Long", "Age":9})
-
-        Args:
-            formulas (dict[str, Any], optional): A dictionary of field names and their values to filter records. Defaults to {}.
-            sort (Iterable[str], optional): A list of field names to sort by, with a minus sign prefix for descending order. Defaults to [].
-
-        Returns:
-        -------
-            Iterator[Record]: An Iterator of matching records.
-        """
+    def batch_delete(self, record_ids: list[RecordId]) -> list[RecordId]:
+        """Delete the records with the given record_ids."""
 
     @abstractmethod
-    def update(self, record_id: Any, fields: dict[str, Any]) -> Record:
-        """Update a record in the table.
+    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> dict[RecordId, Record]:
+        """Update the records with the given record_ids with the given fields."""
 
-        Args:
-            record_id (Any): The ID of the record to update.
-            fields (dict[str, Any]): A dictionary of field names and their new values.
+    @abstractmethod
+    def batch_update_links(
+        self,
+        field_key: FieldKey,
+        other_table_name: str,
+        record_ids_map: dict[RecordId, list[RecordId]],
+    ):
+        """Update the links between the records with the given record_ids and the records with the given other_record_ids in the other table."""
 
-        Returns:
-        -------
-            Record: The updated record.
-        """
+    @abstractmethod
+    def get_linked_records(
+        self, field_key: FieldKey, record_ids: list[RecordId]
+    ) -> dict[RecordId, list[RecordId]]:
+        """Get the linked records for the given record_ids."""
 
-    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterable[Record]:
-        """Create multiple records in the table.
-
-        Args:
-            fields_list (Iterator[dict[str, Any]]): An Iterator of dictionaries containing field names and their values.
-
-        Returns:
-        -------
-            Iterable[Record]: An Iterable of created records.
-        """
-        return [self.create(fields) for fields in fields_list]
-
-    def copy(self, table: Self) -> Self:
-        """Copy from another table.
-
-        Args:
-             table (Table): The table to import to.
-
-        Returns:
-        -------
-            table (Table): The copied table.
-        """
-        self.create_many(record.fields for record in table.get_all())
-        return self
-
-    def delete_many(self, record_ids: Iterator[Any]) -> Iterable[Any]:
-        """Delete multiple records from the table.
-
-        Args:
-            record_ids (Iterator[Any]): An Iterator of record IDs to delete.
-
-        Returns:
-        -------
-            Iterable[Any]: An Iterable of deleted record IDs.
-        """
-        return (self.delete(record_id) for record_id in record_ids)
-
-    def get_many(self, record_ids: Iterator[Any]) -> Iterator[Record]:
-        """Get multiple records from the table.
-
-        Args:
-            record_ids (Iterator[Any]): An Iterator of record IDs to get.
-
-        Returns:
-        -------
-            Iterator[Record]: An Iterator of requested records.
-        """
-        return (self.get(record_id) for record_id in record_ids)
-
-    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterable[Record]:
-        """Update multiple records in the table.
-
-        Args:
-            records (Iterator[dict[str, Any]]): An Iterator of dictionaries containing record IDs and field updates.
-
-        Returns:
-        -------
-            Iterator[Record]: An Iterator of updated records.
-        """
-        return [self.update(**record) for record in records]
+    @abstractmethod
+    def query(self, query: str, params: tuple = ()) -> list[Record]:
+        """Query the table with the given query."""
 
 
 class Database(ABC):
-    """A class representing a generic database."""
+    """Base class for all databases."""
 
-    @abstractmethod
-    def table(self, name: str) -> Table:
-        """Get or create a table in the database.
+    def __enter__(self):
+        """Enter the database context."""
+        return self
 
-        Args:
-            name (str): The name of the table.
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit the database context."""
+        self.close()
 
-        Returns:
-        -------
-            Table: The requested table.
-        """
+    def __init__(self, name: str, config: dict[Any, Any]):
+        """Initialize the database with the given name and config."""
+        self.name = name
+        self.config = config
 
     @abstractmethod
     def close(self) -> bool:
-        """Close the database connection.
+        """Close the database."""
 
-        Returns:
-        -------
-            bool: True if the operation is successful.
-        """
+    @abstractmethod
+    def create_table(self, name: str) -> Table:
+        """Create a new table with the given name."""
