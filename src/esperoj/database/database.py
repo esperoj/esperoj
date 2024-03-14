@@ -44,9 +44,11 @@ class Record(ABC):
 class Table(ABC):
     """Base class for all tables."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, database: "Database"):
         """Initialize the table with the given name."""
         self.name = name
+        self.database = database
+        self.client = database.client
 
     def __iter__(self) -> Iterator[Record]:
         """Iterate over the records in the table."""
@@ -108,20 +110,20 @@ class Table(ABC):
         return self.batch_update_links(field_key, other_table_name, {record_id: other_record_ids})
 
     @abstractmethod
-    def batch_get(self, record_ids: list[RecordId]) -> dict[RecordId, Record]:
-        """Get the records with the given record_ids."""
-
-    @abstractmethod
-    def batch_get_link_id(self, field_keys: list[FieldKey]) -> dict[FieldKey, str]:
-        """Get the link ids for the given field keys."""
-
-    @abstractmethod
     def batch_create(self, fields_list: list[Fields]) -> list[Record]:
         """Create new records with the given fields."""
 
     @abstractmethod
     def batch_delete(self, record_ids: list[RecordId]) -> list[RecordId]:
         """Delete the records with the given record_ids."""
+
+    @abstractmethod
+    def batch_get(self, record_ids: list[RecordId]) -> dict[RecordId, Record]:
+        """Get the records with the given record_ids."""
+
+    @abstractmethod
+    def batch_get_link_id(self, field_keys: list[FieldKey]) -> dict[FieldKey, str]:
+        """Get the link ids for the given field keys."""
 
     @abstractmethod
     def batch_update(self, records: list[tuple[RecordId, Fields]]) -> dict[RecordId, Record]:
@@ -158,9 +160,9 @@ class Database(ABC):
         """Exit the database context."""
         self.close()
 
-    def __init__(self, name: str, config: dict[Any, Any]):
+    def __init__(self, config: dict[Any, Any]):
         """Initialize the database with the given name and config."""
-        self.name = name
+        self.name = config["name"]
         self.config = config
 
     @abstractmethod
