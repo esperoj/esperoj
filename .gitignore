@@ -1,3 +1,5 @@
+tmp.py
+
 # Coverage.py
 htmlcov/
 reports/
@@ -62,4 +64,4 @@ __pycache__/
 .terraform/
 
 # VS Code
-.vscode/
+.vscode/1
