@@ -30,30 +30,32 @@ class SeatableTable(Table):
         self.links = next(({link["name"]: link["data"]} for link in self.metadata["columns"] if link["type"] == "link"), {})
 
     def _record_from_dict(self, record_dict: dict[str, Any]) -> SeatableRecord:
-        record_id = record_dict.pop("_id")
-        for key in list(record_dict.keys()):
-            if key.startswith("_"):
-                record_dict.pop(key)
+        record_id = record_dict["_id"]
+        fields = {}
+        for key, value in record_dict.items():
+            if not key.startswith("_"):
+                fields[key] = value
             if key in self.links:
-                record_dict[key] = [item["row_id"] if isinstance(item, dict) else item for item in record_dict[key]]
-        return SeatableRecord(record_id=record_id, fields=record_dict, table=self)
+                fields[key] = [item["row_id"] if isinstance(item, dict) else item for item in record_dict[key]]
+        return SeatableRecord(record_id=record_id, fields=fields, table=self)
 
-    def _update_links_from_fields_list(self, fields_list: list[Fields]) -> bool:
+    def _update_links(self, records: list[SeatableRecord]) -> bool:
         links = {key: {} for key in self.links}
-        for fields in fields_list:
-            for key, value in fields.items():
+        for record in records:
+            for key, value in record.fields.items():
                 if key in links:
-                    links[key][fields["_id"]] = value
+                    links[key][record.record_id] = value
         return all(self.batch_update_links(key, value) for key, value in links.items() if value != {})
 
     def batch_create(self, fields_list: list[Fields]) -> list[Record]:
         # BUG: The batch_delete yield error for different id format.
         fields_list = [{"_id": str(uuid.uuid4())[:22]} | fields for fields in fields_list]
+        records =  [self._record_from_dict(fields) for fields in fields_list]
         if self.client.batch_append_rows(self.name, fields_list)["inserted_row_count"] is not len(fields_list):
             raise RuntimeError("Failed to create all rows")
-        if not self._update_links_from_fields_list(fields_list):
+        if not self._update_links(records):
             raise RuntimeError("Failed to link all records")
-        return [self._record_from_dict(fields) for fields in fields_list]
+        return records
 
     def batch_delete(self, record_ids: list[RecordId]) -> list[RecordId]:
         """Delete the records with the given record_ids."""
@@ -71,8 +73,11 @@ class SeatableTable(Table):
         """Get the link ids for the given field keys."""
         return {key : self.links[key]["link_id"] for key in field_keys}
 
-    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> dict[RecordId, Record]:
+    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> bool:
         """Update the records with the given record_ids with the given fields."""
+        if not self._update_links([self._record_from_dict({"_id": record_id, **fields}) for record_id, fields in records]):
+            raise RuntimeError("Failed to link all records")
+        return self.client.batch_update_rows(self.name, [{"row_id": record_id, "row": fields} for record_id, fields in records])["success"]
 
     def batch_update_links(
         self,
@@ -88,6 +93,7 @@ class SeatableTable(Table):
         self, field_key: FieldKey, record_ids: list[RecordId]
     ) -> dict[RecordId, list[RecordId]]:
         """Get the linked records for the given record_ids."""
+        return {record_id: [item["row_id"] for item in record_ids ] for record_id, record_ids in self.client.get_linked_records(self.name, field_key, [{"row_id": item} for item in record_ids]).items()}
 
     def query(self, query: str, params: tuple = ()) -> list[Record]:
         """Query the table with the given query."""
