@@ -68,7 +68,7 @@ class Table(ABC):
 
     def delete(self, record_id: RecordId) -> bool:
         """Delete the record with the given record_id."""
-        return self.batch_delete([record_id])[0]
+        return self.batch_delete([record_id])
 
     def get(self, record_id: RecordId) -> Record:
         """Get the record with the given record_id."""
@@ -80,7 +80,7 @@ class Table(ABC):
 
     def update(self, record_id: RecordId, fields: Fields) -> bool:
         """Update the record with the given record_id with the given fields."""
-        return self.batch_update([(record_id, fields)])[record_id]
+        return self.batch_update([(record_id, fields)])
 
     def update_link(
         self,
@@ -149,3 +149,22 @@ class Database(ABC):
     @abstractmethod
     def create_table(self, name: str) -> Table:
         """Create a new table with the given name."""
+
+
+class DatabaseFactory:
+    """DatabaseFactory class."""
+
+    @staticmethod
+    def create(config: dict):
+        """Method to create database.
+
+        Args:
+            config (dict): The configs of the database.
+        """
+        database_type = config["type"]
+        match database_type:
+            case "seatable":
+                from esperoj.database.seatable import SeatableDatabase
+
+                return SeatableDatabase(config)
+        raise ValueError(f"Unknown storage type: {database_type}")
