@@ -27,10 +27,6 @@ class Record(ABC):
         """Set the value of the field with the given key."""
         self.update({key: value}).fields[key] = value
 
-    def __iter__(self) -> Iterator[tuple[FieldKey, FieldValue]]:
-        """Iterate over the fields of the record."""
-        return iter(self.fields)
-
     def delete(self) -> RecordId:
         """Delete the record from the database."""
         return self.table.delete(self.record_id)
@@ -44,32 +40,20 @@ class Record(ABC):
 class Table(ABC):
     """Base class for all tables."""
 
-    def __init__(self, name: str, database: "Database"):
-        """Initialize the table with the given name."""
-        self.name = name
-        self.database = database
-        self.client = database.client
-
-    def __iter__(self) -> Iterator[Record]:
-        """Iterate over the records in the table."""
-        return iter(self.query(query=f"SELECT * FROM {self.name}"))
-
     def add_link(
         self,
         field_key: FieldKey,
-        other_table_name: str,
         record_id: RecordId,
         other_record_id: RecordId,
-    ):
+    ) -> bool:
         """Add a link between the record with the given record_id and the record with the given other_record_id in the other table."""
-        return self.batch_add_link(field_key, other_table_name, {record_id: [other_record_id]})
+        return self.batch_add_link(field_key, {record_id: [other_record_id]})
 
     def batch_add_link(
         self,
         field_key: FieldKey,
-        other_table_name: str,
         record_ids_map: dict[RecordId, list[RecordId]],
-    ):
+    ) -> bool :
         """Add links between the records with the given record_ids and the records with the given other_record_ids in the other table."""
         record_ids = list(record_ids_map.keys())
         current_other_record_ids_map = self.get_linked_records(field_key, record_ids)
@@ -77,7 +61,7 @@ class Table(ABC):
         for record_id, other_record_ids in record_ids_map.items():
             current_other_record_ids = current_other_record_ids_map[record_id]
             updated_record_ids_map[record_id] = current_other_record_ids + other_record_ids
-        self.batch_update_links(field_key, other_table_name, updated_record_ids_map)
+        return self.batch_update_links(field_key, updated_record_ids_map)
 
     def create(self, fields: Fields) -> Record:
         """Create a new record with the given fields."""
@@ -135,7 +119,7 @@ class Table(ABC):
         field_key: FieldKey,
         other_table_name: str,
         record_ids_map: dict[RecordId, list[RecordId]],
-    ):
+    ) -> bool:
         """Update the links between the records with the given record_ids and the records with the given other_record_ids in the other table."""
 
     @abstractmethod
@@ -159,11 +143,6 @@ class Database(ABC):
     def __exit__(self, exc_type, exc_value, traceback):
         """Exit the database context."""
         self.close()
-
-    def __init__(self, config: dict[Any, Any]):
-        """Initialize the database with the given name and config."""
-        self.name = config["name"]
-        self.config = config
 
     @abstractmethod
     def close(self) -> bool:

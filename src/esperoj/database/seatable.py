@@ -27,9 +27,9 @@ class SeatableTable(Table):
         self.database = database
         self.client = database.client
         self.metadata = next((table for table in database.metadata["tables"] if table["name"] == self.name), {})
-        self.links = next(({link["name"]: link["data"]} for link in self.metadata["columns"] if link["type"] == "link"), {})
+        self.links = next(({link["name"]: link["data"] | {"key": link["key"]}} for link in self.metadata["columns"] if link["type"] == "link"), {})
 
-    def _record_from_dict(self, record_dict: dict[str, Any]) -> SeatableRecord:
+    def _record_from_dict(self, record_dict: dict[FieldKey, FieldValue]) -> SeatableRecord:
         record_id = record_dict["_id"]
         fields = {}
         for key, value in record_dict.items():
@@ -47,7 +47,7 @@ class SeatableTable(Table):
                     links[key][record.record_id] = value
         return all(self.batch_update_links(key, value) for key, value in links.items() if value != {})
 
-    def batch_create(self, fields_list: list[Fields]) -> list[Record]:
+    def batch_create(self, fields_list: list[Fields]) -> list[SeatableRecord]:
         # BUG: The batch_delete yield error for different id format.
         fields_list = [{"_id": str(uuid.uuid4())[:22]} | fields for fields in fields_list]
         records =  [self._record_from_dict(fields) for fields in fields_list]
@@ -64,7 +64,7 @@ class SeatableTable(Table):
         return True
 
 
-    def batch_get(self, record_ids: list[RecordId]) -> list[Record]:
+    def batch_get(self, record_ids: list[RecordId]) -> list[SeatableRecord]:
         """Get the records with the given record_ids."""
         query = f"""SELECT * from `{self.name}` WHERE `_id` IN ({','.join([f"'{record_id}'" for record_id in record_ids])})"""
         return [self._record_from_dict(record) for record in self.client.query(query)]
@@ -93,9 +93,9 @@ class SeatableTable(Table):
         self, field_key: FieldKey, record_ids: list[RecordId]
     ) -> dict[RecordId, list[RecordId]]:
         """Get the linked records for the given record_ids."""
-        return {record_id: [item["row_id"] for item in record_ids ] for record_id, record_ids in self.client.get_linked_records(self.name, field_key, [{"row_id": item} for item in record_ids]).items()}
+        return {record_id: [item["row_id"] for item in record_ids ] for record_id, record_ids in self.client.get_linked_records(self.links[field_key]["table_id"], self.links[field_key]["key"], [{"row_id": item} for item in record_ids]).items()}
 
-    def query(self, query: str) -> list[Record]:
+    def query(self, query: str) -> list[SeatableRecord]:
         """Query the table with the given query.
         Example:
         table.query("$[\@.name][?name='Esperoj']")
