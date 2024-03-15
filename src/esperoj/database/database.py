@@ -6,7 +6,7 @@ from typing import Any, Self
 
 RecordId = str | int
 FieldValue = Any
-FieldKey = str | int
+FieldKey = str
 Fields = dict[FieldKey, FieldValue]
 
 
@@ -66,7 +66,7 @@ class Table(ABC):
         """Create a new record with the given fields."""
         return self.batch_create([fields])[0]
 
-    def delete(self, record_id: RecordId) -> RecordId:
+    def delete(self, record_id: RecordId) -> bool:
         """Delete the record with the given record_id."""
         return self.batch_delete([record_id])[0]
 
@@ -78,7 +78,7 @@ class Table(ABC):
         """Get the link id for the given field key."""
         return self.batch_get_link_id([field_key])[field_key]
 
-    def update(self, record_id: RecordId, fields: Fields) -> Record:
+    def update(self, record_id: RecordId, fields: Fields) -> bool:
         """Update the record with the given record_id with the given fields."""
         return self.batch_update([(record_id, fields)])[record_id]
 
@@ -97,11 +97,11 @@ class Table(ABC):
         """Create new records with the given fields."""
 
     @abstractmethod
-    def batch_delete(self, record_ids: list[RecordId]) -> list[RecordId]:
+    def batch_delete(self, record_ids: list[RecordId]) -> bool:
         """Delete the records with the given record_ids."""
 
     @abstractmethod
-    def batch_get(self, record_ids: list[RecordId]) -> dict[RecordId, Record]:
+    def batch_get(self, record_ids: list[RecordId]) -> list[Record]:
         """Get the records with the given record_ids."""
 
     @abstractmethod
@@ -109,7 +109,7 @@ class Table(ABC):
         """Get the link ids for the given field keys."""
 
     @abstractmethod
-    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> dict[RecordId, Record]:
+    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> bool:
         """Update the records with the given record_ids with the given fields."""
 
     @abstractmethod

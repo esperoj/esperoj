@@ -19,7 +19,7 @@ from esperoj.database.database import (
 
 
 class SeatableRecord(Record):
-    table: "SeatableTable"
+    pass
 
 
 class SeatableTable(Table):
@@ -39,7 +39,7 @@ class SeatableTable(Table):
             {},
         )
 
-    def _record_from_dict(self, record_dict: dict[FieldKey, FieldValue]) -> SeatableRecord:
+    def _record_from_dict(self, record_dict: dict[FieldKey, FieldValue]) -> Record:
         record_id = record_dict["_id"]
         fields = {}
         for key, value in record_dict.items():
@@ -51,7 +51,7 @@ class SeatableTable(Table):
                 ]
         return SeatableRecord(record_id=record_id, fields=fields, table=self)
 
-    def _update_links(self, records: list[SeatableRecord]) -> bool:
+    def _update_links(self, records: list[Record]) -> bool:
         links = {key: {} for key in self.links}
         for record in records:
             for key, value in record.fields.items():
@@ -61,7 +61,7 @@ class SeatableTable(Table):
             self.batch_update_links(key, value) for key, value in links.items() if value != {}
         )
 
-    def batch_create(self, fields_list: list[Fields]) -> list[SeatableRecord]:
+    def batch_create(self, fields_list: list[Fields]) -> list[Record]:
         # BUG: The batch_delete yield error for different id format.
         fields_list = [{"_id": str(uuid.uuid4())[:22]} | fields for fields in fields_list]
         records = [self._record_from_dict(fields) for fields in fields_list]
@@ -81,7 +81,7 @@ class SeatableTable(Table):
             raise RuntimeError("Failed to delete all records")
         return True
 
-    def batch_get(self, record_ids: list[RecordId]) -> list[SeatableRecord]:
+    def batch_get(self, record_ids: list[RecordId]) -> list[Record]:
         """Get the records with the given record_ids."""
         query = f"""SELECT * from `{self.name}` WHERE `_id` IN ({','.join([f"'{record_id}'" for record_id in record_ids])})"""
         return [self._record_from_dict(record) for record in self.client.query(query)]
@@ -125,7 +125,7 @@ class SeatableTable(Table):
             ).items()
         }
 
-    def query(self, query: str) -> list[SeatableRecord]:
+    def query(self, query: str) -> list[Record]:
         r"""Query the table with the given query.
 
         Example:
