@@ -78,9 +78,8 @@ markers = [
 fix = true
 ignore-init-module-imports = true
 line-length = 100
-select = ["A", "ASYNC", "B", "C4", "C90", "D", "DTZ", "E", "F", "FLY", "I", "N", "NPY", "PERF", "PGH", "PIE", "PLC", "PLE", "PLR", "PLW", "PT", "RET", "RUF", "RSE", "SIM", "TID", "UP", "W", "YTT"]
-ignore = ["PLR0913", "PLR2004", "E501", "PGH001", "PGH002", "PGH003", "RET504", "S101"]
-unfixable = ["F401", "F841"]
+select = ["E4", "E7", "E9", "F"]
+ignore = []
 src = ["src", "tests"]
 target-version = "py311"
 

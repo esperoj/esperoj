@@ -1,6 +1,5 @@
 """Esperoj CLI."""
 
-
 from pathlib import Path
 
 import typer

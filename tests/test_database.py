@@ -1,4 +1,5 @@
 """Test memory database."""
+
 from uuid import UUID
 
 import pytest

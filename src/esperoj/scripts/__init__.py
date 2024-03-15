@@ -1,4 +1,5 @@
 """Module to run scripts."""
+
 import typer
 
 from esperoj.scripts.archive import archive

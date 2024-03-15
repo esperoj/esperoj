@@ -1,4 +1,5 @@
 """Test for the utils module."""
+
 import pytest
 
 from esperoj.utils import archive, calculate_hash, calculate_hash_from_url

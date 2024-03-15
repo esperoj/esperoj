@@ -1,7 +1,6 @@
 """Database module contain abstractions and types."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Self
 
@@ -53,7 +52,7 @@ class Table(ABC):
         self,
         field_key: FieldKey,
         record_ids_map: dict[RecordId, list[RecordId]],
-    ) -> bool :
+    ) -> bool:
         """Add links between the records with the given record_ids and the records with the given other_record_ids in the other table."""
         record_ids = list(record_ids_map.keys())
         current_other_record_ids_map = self.get_linked_records(field_key, record_ids)
@@ -91,7 +90,7 @@ class Table(ABC):
         other_record_ids: list[RecordId],
     ):
         """Update the link between the record with the given record_id and the records with the given other_record_ids in the other table."""
-        return self.batch_update_links(field_key, other_table_name, {record_id: other_record_ids})
+        return self.batch_update_links(field_key, {record_id: other_record_ids})
 
     @abstractmethod
     def batch_create(self, fields_list: list[Fields]) -> list[Record]:
@@ -117,7 +116,6 @@ class Table(ABC):
     def batch_update_links(
         self,
         field_key: FieldKey,
-        other_table_name: str,
         record_ids_map: dict[RecordId, list[RecordId]],
     ) -> bool:
         """Update the links between the records with the given record_ids and the records with the given other_record_ids in the other table."""
@@ -129,7 +127,7 @@ class Table(ABC):
         """Get the linked records for the given record_ids."""
 
     @abstractmethod
-    def query(self, query: str, params: tuple = ()) -> list[Record]:
+    def query(self, query: str) -> list[Record]:
         """Query the table with the given query."""
 
 

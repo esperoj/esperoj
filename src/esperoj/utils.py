@@ -1,4 +1,5 @@
 """Module contain utils."""
+
 import hashlib
 import os
 import time

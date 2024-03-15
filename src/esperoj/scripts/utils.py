@@ -1,4 +1,5 @@
 """Utils module to be used in scripts."""
+
 import typer
 
 from esperoj.esperoj import Esperoj
