@@ -5,7 +5,7 @@ import uuid
 from typing import Any
 
 from jsonpath_ng.ext import parse
-from seatable_api import Base, context
+from seatable_api import Base
 
 from esperoj.database.database import (
     Database,
@@ -141,12 +141,8 @@ class SeatableDatabase(Database):
     def __init__(self, config: dict[Any, Any]):
         self.name = config["name"]
         self.config = config
-        self.server_url = (
-            config.get("server_url", "") or context.server_url or "https://cloud.seatable.io"
-        )
-        self.api_token = (
-            config.get("api_token", "") or context.api_token or os.getenv("SEATABLE_API_TOKEN")
-        )
+        self.server_url = config.get("server_url", "") or "https://cloud.seatable.io"
+        self.api_token = config.get("api_token", "") or os.getenv("SEATABLE_API_TOKEN")
         self.client = Base(self.api_token, self.server_url)
         self.client.auth()
         self.metadata = self.client.get_metadata()
