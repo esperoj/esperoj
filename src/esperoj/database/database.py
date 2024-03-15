@@ -89,7 +89,7 @@ class Table(ABC):
 
     def get(self, record_id: RecordId) -> Record:
         """Get the record with the given record_id."""
-        return self.batch_get([record_id])[record_id]
+        return self.batch_get([record_id])[0]
 
     def get_link_id(self, field_key: FieldKey) -> str:
         """Get the link id for the given field key."""

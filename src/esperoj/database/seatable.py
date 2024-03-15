@@ -1,11 +1,22 @@
 """Module contains Seatable class."""
-import uuid
 import os
+import uuid
 from collections.abc import Iterator
 from typing import Any, Self
+
 from seatable_api import Base, context
-from esperoj.database.database import Database, Record, RecordId, FieldKey, FieldValue, Fields, Table
+
+from esperoj.database.database import (
+    Database,
+    FieldKey,
+    Fields,
+    FieldValue,
+    Record,
+    RecordId,
+    Table,
+)
 from esperoj.exceptions import InvalidRecordError, RecordDeletionError, RecordNotFoundError
+
 
 class SeatableRecord(Record):
     table: "SeatableTable"
@@ -15,12 +26,16 @@ class SeatableTable(Table):
         self.name = name
         self.database = database
         self.client = database.client
+        self.metadata = next((table for table in database.metadata["tables"] if table["name"] == self.name), {})
+        self.links = next(({link["name"]: link["data"]} for link in self.metadata["columns"] if link["type"] == "link"), {})
 
     def _record_from_dict(self, record_dict: dict[str, Any]) -> SeatableRecord:
         record_id = record_dict.pop("_id")
         for key in list(record_dict.keys()):
             if key.startswith("_"):
                 record_dict.pop(key)
+            if key in self.links:
+                record_dict[key] = [item["row_id"] for item in record_dict[key]]
         return SeatableRecord(record_id=record_id, fields=record_dict, table=self)
 
     def batch_create(self, fields_list: list[Fields]) -> list[Record]:
@@ -37,10 +52,10 @@ class SeatableTable(Table):
         return record_ids
 
 
-    def batch_get(self, record_ids: list[RecordId]) -> dict[RecordId, Record]:
+    def batch_get(self, record_ids: list[RecordId]) -> list[Record]:
         """Get the records with the given record_ids."""
         query = f"""SELECT * from `{self.name}` WHERE `_id` IN ({','.join([f"'{record_id}'" for record_id in record_ids])})"""
-        return {record["_id"]: self._record_from_dict(record) for record in self.client.query(query)}
+        return [self._record_from_dict(record) for record in self.client.query(query)]
 
     def batch_get_link_id(self, field_keys: list[FieldKey]) -> dict[FieldKey, str]:
         """Get the link ids for the given field keys."""
@@ -63,7 +78,7 @@ class SeatableTable(Table):
 
     def query(self, query: str, params: tuple = ()) -> list[Record]:
         """Query the table with the given query."""
-        return self.client.query("select * from demo")
+        return [self._record_from_dict(record) for record in self.client.query("select * from demo")]
 
 class SeatableDatabase(Database):
 
@@ -74,6 +89,7 @@ class SeatableDatabase(Database):
         self.api_token = config.get("api_token", "") or context.api_token or os.getenv("SEATABLE_API_TOKEN")
         self.client = Base(self.api_token, self.server_url)
         self.client.auth()
+        self.metadata = self.client.get_metadata()
 
     def create_table(self, name: str) -> SeatableTable:
         return SeatableTable(name, self)
