@@ -6,8 +6,6 @@ from pathlib import Path
 import pytest
 from moto import mock_aws
 
-from esperoj.database.memory import MemoryDatabase
-from esperoj.esperoj import Esperoj
 from esperoj.storage.storage import StorageFactory
 
 
@@ -40,29 +38,9 @@ def tmp_file(tmp_path):
 
 
 @pytest.fixture()
-def memory_db():
-    """Return a test memory database."""
-    db = MemoryDatabase("test_db")
-    yield db
-    db.close()
-
-
-@pytest.fixture()
 def s3_storage(config):
     """Return a mocked instance of S3Storage."""
     with mock_aws():
         s3 = StorageFactory.create(config["storages"][0])
         s3.client.create_bucket(Bucket=config["storages"][0]["bucket_name"])
         yield s3
-
-
-@pytest.fixture()
-def esperoj(memory_db, s3_storage):
-    """Return an Esperoj object."""
-    return Esperoj(db=memory_db, storage=s3_storage)
-
-
-@pytest.fixture()
-def memory_table(memory_db):
-    """Return a test memory table."""
-    return memory_db.table("Files")
