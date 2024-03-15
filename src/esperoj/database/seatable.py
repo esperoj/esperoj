@@ -3,8 +3,8 @@ import os
 import uuid
 from collections.abc import Iterator
 from typing import Any, Self
-from operator import itemgetter
 from seatable_api import Base, context
+from jsonpath_ng.ext import parse
 
 from esperoj.database.database import (
     Database,
@@ -57,11 +57,11 @@ class SeatableTable(Table):
             raise RuntimeError("Failed to link all records")
         return records
 
-    def batch_delete(self, record_ids: list[RecordId]) -> list[RecordId]:
+    def batch_delete(self, record_ids: list[RecordId]) -> bool:
         """Delete the records with the given record_ids."""
         if self.client.batch_delete_rows(self.name, record_ids)["deleted_rows"] is not len(record_ids):
             raise RuntimeError("Failed to delete all records")
-        return record_ids
+        return True
 
 
     def batch_get(self, record_ids: list[RecordId]) -> list[Record]:
@@ -95,9 +95,15 @@ class SeatableTable(Table):
         """Get the linked records for the given record_ids."""
         return {record_id: [item["row_id"] for item in record_ids ] for record_id, record_ids in self.client.get_linked_records(self.name, field_key, [{"row_id": item} for item in record_ids]).items()}
 
-    def query(self, query: str, params: tuple = ()) -> list[Record]:
-        """Query the table with the given query."""
-        return [self._record_from_dict(record) for record in self.client.query("select * from demo")]
+    def query(self, query: str) -> list[Record]:
+        """Query the table with the given query.
+        Example:
+        table.query("$[\@.name][?name='Esperoj']")
+        table.query("$[\@._id][*]")
+        """
+        data = self.client.query(f"select * from `{self.name}`")
+        jsonpath_expr = parse(query)
+        return [self._record_from_dict(matched.value) for matched in jsonpath_expr.find(data)]
 
 class SeatableDatabase(Database):
 
