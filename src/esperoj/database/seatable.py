@@ -24,6 +24,7 @@ class SeatableTable(Table):
         return SeatableRecord(record_id=record_id, fields=record_dict, table=self)
 
     def batch_create(self, fields_list: list[Fields]) -> list[Record]:
+        # BUG: The batch_delete yield error for different id format.
         fields_list = [{"_id": str(uuid.uuid4())[:22]} | fields for fields in fields_list]
         if self.client.batch_append_rows(self.name, fields_list)["inserted_row_count"] is not len(fields_list):
             raise RuntimeError("Failed to create all rows")
@@ -35,8 +36,11 @@ class SeatableTable(Table):
             raise RuntimeError("Failed to delete all records")
         return record_ids
 
+
     def batch_get(self, record_ids: list[RecordId]) -> dict[RecordId, Record]:
         """Get the records with the given record_ids."""
+        query = f"""SELECT * from `{self.name}` WHERE `_id` IN ({','.join([f"'{record_id}'" for record_id in record_ids])})"""
+        return {record["_id"]: self._record_from_dict(record) for record in self.client.query(query)}
 
     def batch_get_link_id(self, field_keys: list[FieldKey]) -> dict[FieldKey, str]:
         """Get the link ids for the given field keys."""
