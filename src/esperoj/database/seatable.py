@@ -132,7 +132,7 @@ class SeatableTable(Table):
         table.query("$[\@.name][?name='Esperoj']")
         table.query("$[\@._id][*]")
         """
-        data = self.client.query(f"select * from `{self.name}`")
+        data = self.client.query(f"SELECT * FROM `{self.name}` LIMIT 10000")
         jsonpath_expr = parse(query)
         return [self._record_from_dict(matched.value) for matched in jsonpath_expr.find(data)]
 

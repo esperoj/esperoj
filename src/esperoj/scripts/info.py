@@ -35,4 +35,3 @@ esperoj_method = info
 @click.pass_obj
 def click_command(esperoj):
     info(esperoj)
-    print(esperoj.databases["Primary"].get_table("Files").query(""))

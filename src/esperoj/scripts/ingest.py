@@ -16,17 +16,25 @@ def ingest(esperoj, path: Path) -> Record:
     f.close()
     files = esperoj.databases["Primary"].get_table("Files")
 
-    def add(storage):
+    def add(storage_name):
+        storage = esperoj.storages[storage_name]
         if storage.file_exists(name) or files.query('$[?Name = "{name}"]') != []:
             raise FileExistsError
         storage.upload_file(str(path), name)
         return files.create(
-            {"Name": name, "Size": size, "SHA256": sha256sum, "Created": str(datetime.now())}
+            {
+                "Name": name,
+                "Size": size,
+                "SHA256": sha256sum,
+                "Created": str(datetime.now()),
+                "Internet Archive": "https://example.com/",
+                "Storage": storage_name,
+            }
         )
 
     match path.suffix:
         case ".flac" | ".mp3" | ".m4a":
-            return add(esperoj.storages["Audio Storage"])
+            return add("Audio Storage")
         case _:
             raise RuntimeError("File type is not supported.")
 
