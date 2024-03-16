@@ -30,6 +30,9 @@ class Record(ABC):
         """Delete the record from the database."""
         return self.table.delete(self.record_id)
 
+    def to_dict(self) -> dict:
+        return {"_id": self.record_id} | self.fields
+
     def update(self, fields: Fields) -> Self:
         if self.table.update(self.record_id, fields):
             self.fields.update(fields)
