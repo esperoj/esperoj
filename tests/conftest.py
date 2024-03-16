@@ -25,8 +25,7 @@ def _mock_env(mocker):
 def config():
     """Return a config."""
     p = Path(__file__).with_name("esperoj.toml")
-    with p.open("rb") as f:
-        yield tomllib.load(f)
+    return tomllib.loads(p.read_text())
 
 
 @pytest.fixture()

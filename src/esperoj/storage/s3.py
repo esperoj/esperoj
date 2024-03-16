@@ -41,7 +41,11 @@ class S3Storage(Storage):
         self.config["transfer_config"] = TransferConfig(
             **(self.__DEFAULT_CONFIG["transfer_config"] | config.get("transfer_config", {}))
         )
-        self.client = boto3.client("s3", **self.config["client_config"])
+        self.client = boto3.client(
+            "s3",
+            **self.config["client_config"],
+            config=boto3.session.Config(signature_version="s3v4"),
+        )
 
     def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
         """Delete files from the S3 bucket.

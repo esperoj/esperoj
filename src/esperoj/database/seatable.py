@@ -139,8 +139,9 @@ class SeatableTable(Table):
 
 class SeatableDatabase(Database):
     def __init__(self, config: dict[Any, Any]):
-        self.name = config["name"]
         self.config = config
+        self.name = config["name"]
+        self.aliases = config["aliases"] or []
         self.server_url = config.get("server_url", "") or "https://cloud.seatable.io"
         self.api_token = config.get("api_token", "") or os.getenv("SEATABLE_API_TOKEN")
         self.client = Base(self.api_token, self.server_url)

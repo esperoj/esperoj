@@ -1,42 +1,35 @@
 """Esperoj CLI."""
 
 from pathlib import Path
+import click
+import tomllib
 
-import typer
-
-from esperoj.esperoj import Esperoj
-from esperoj.scripts import app as run
-
-esperoj = Esperoj()
-app = typer.Typer()
-app.add_typer(run, name="run", context_settings={"obj": esperoj})
+esperoj_config_file = Path.home() / ".config" / "esperoj" / "esperoj.toml"
+config = tomllib.loads(esperoj_config_file.read_text())
+scripts_folder = Path(__file__).parent / "scripts"
 
 
-@app.command()
-def ingest(path: Path) -> None:
-    """Ingest a file.
+class EsperojCLI(click.Group):
+    def list_commands(self, ctx):
+        rv = [file.stem for file in scripts_folder.glob("*.py") if file.name != "__init__.py"]
+        rv.sort()
+        return rv
 
-    Args:
-        path (Path): The path of the file to ingest.
-    """
-    esperoj.ingest(path)
-
-
-@app.command()
-def archive(record_id: str) -> None:
-    """Archive a file in repository.
-
-    Args:
-        record_id (str): The id of the file.
-    """
-    esperoj.archive(record_id)
+    def get_command(self, ctx, name):
+        mod = __import__(f"esperoj.scripts.{name}", None, None, ["click_command"])
+        return mod.click_command
 
 
-@app.command()
-def verify(record_id: str) -> None:
-    """Verify a file in repository.
+@click.command(cls=EsperojCLI)
+@click.option("--config-file", envvar="ESPEROJ_CONFIG_FILE", default=esperoj_config_file)
+@click.option("--debug/--no-debug", default=False, envvar="ESPEROJ_DEBUG")
+@click.pass_context
+def cli(ctx, config_file, debug):
+    from esperoj.esperoj import EsperojFactory
 
-    Args:
-        record_id (str): The id of the file.
-    """
-    esperoj.verify(record_id)
+    esperoj = EsperojFactory.create(config)
+    ctx.obj = esperoj
+
+
+if __name__ == "__main__":
+    cli()

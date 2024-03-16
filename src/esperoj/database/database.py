@@ -167,4 +167,4 @@ class DatabaseFactory:
                 from esperoj.database.seatable import SeatableDatabase
 
                 return SeatableDatabase(config)
-        raise ValueError(f"Unknown storage type: {database_type}")
+        raise ValueError(f"Unknown database type: {database_type}")
