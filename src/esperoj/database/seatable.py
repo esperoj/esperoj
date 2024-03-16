@@ -65,9 +65,9 @@ class SeatableTable(Table):
         # BUG: The batch_delete yield error for different id format.
         fields_list = [{"_id": str(uuid.uuid4())[:22]} | fields for fields in fields_list]
         records = [self._record_from_dict(fields) for fields in fields_list]
-        if self.client.batch_append_rows(self.name, fields_list)["inserted_row_count"] is not len(
-            fields_list
-        ):
+        if self.client.batch_append_rows(self.name, fields_list)[
+            "inserted_row_count"
+        ] != len(fields_list):
             raise RuntimeError("Failed to create all rows")
         if not self._update_links(records):
             raise RuntimeError("Failed to link all records")
