@@ -31,8 +31,8 @@ class Record(ABC):
         return self.table.delete(self.record_id)
 
     def update(self, fields: Fields) -> Self:
-        """Update the record with the given fields."""
-        self.table.update(self.record_id, fields)
+        if self.table.update(self.record_id, fields):
+            self.fields.update(fields)
         return self
 
 
