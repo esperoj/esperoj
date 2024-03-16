@@ -2,7 +2,7 @@ import click
 import subprocess
 
 
-def info():
+def info(esperoj):
     """Execute commands "free -h, uname -a, lsb_release -a, lscpu, df -hT, curl https://ipwho.de" and show info"""
 
     free = subprocess.check_output("free -h", shell=True).decode("utf-8")
@@ -32,5 +32,7 @@ esperoj_method = info
 
 
 @click.command()
-def click_command():
-    info()
+@click.pass_obj
+def click_command(esperoj):
+    info(esperoj)
+    print(esperoj.databases["Primary"].get_table("Files").query(""))

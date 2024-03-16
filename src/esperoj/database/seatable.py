@@ -151,6 +151,9 @@ class SeatableDatabase(Database):
     def create_table(self, name: str) -> SeatableTable:
         return SeatableTable(name, self)
 
+    def get_table(self, name: str) -> SeatableTable:
+        return SeatableTable(name, self)
+
     def close(self) -> bool:
         """Close the database."""
         return True

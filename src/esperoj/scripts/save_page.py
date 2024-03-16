@@ -5,7 +5,7 @@ from requests.adapters import HTTPAdapter, Retry
 import os
 
 
-def save_page(url: str) -> str:
+def save_page(esperoj, url: str) -> str:
     """Archive a URL using the Save Page Now 2 (SPN2) API.
 
     Args:
@@ -83,5 +83,6 @@ esperoj_method = save_page
 
 @click.command()
 @click.argument("url", type=click.STRING, required=True)
-def click_command(url):
-    print(save_page(url))
+@click.pass_obj
+def click_command(esperoj, url):
+    print(save_page(esperoj, url))

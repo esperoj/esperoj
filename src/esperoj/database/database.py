@@ -150,6 +150,10 @@ class Database(ABC):
     def create_table(self, name: str) -> Table:
         """Create a new table with the given name."""
 
+    @abstractmethod
+    def get_table(self, name: str) -> Table:
+        """Get a table with the given name."""
+
 
 class DatabaseFactory:
     """DatabaseFactory class."""
