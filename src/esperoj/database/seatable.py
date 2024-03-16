@@ -1,250 +1,159 @@
 """Module contains Seatable class."""
 
 import os
-from collections.abc import Iterable, Iterator
-from dataclasses import dataclass
+import uuid
 from typing import Any
 
-from seatable_api import Base, context
+from jsonpath_ng.ext import parse
+from seatable_api import Base
 
-from esperoj.database import Database, Record, Table
-from esperoj.exceptions import InvalidRecordError, RecordDeletionError, RecordNotFoundError
+from esperoj.database.database import (
+    Database,
+    FieldKey,
+    Fields,
+    FieldValue,
+    Record,
+    RecordId,
+    Table,
+)
 
 
-@dataclass
 class SeatableRecord(Record):
-    """A class representing a record in an Seatable table.
-
-    Attributes:
-        table (SeatableTable): The table this record belongs to.
-    """
-
-    table: "SeatableTable"
-
-    def update(self, fields: dict[str, Any]) -> "SeatableRecord":
-        """Updates the record with the given fields.
-
-        Args:
-            fields (dict[str, Any]): The fields to update.
-
-        Returns:
-            Self: The updated record.
-        """
-        self.fields.update(fields)
-        return self.table.update(self.record_id, fields)
+    pass
 
 
 class SeatableTable(Table):
-    """A class representing a table in Seatable.
-
-    Attributes:
-        name (str): The name of the table.
-        client: The Seatable API client.
-    """
-
-    def __init__(self, name: str, client):
-        """Initializes an SeatableTable instance.
-
-        Args:
-            name (str): The name of the table.
-            client: The Seatable API client.
-        """
+    def __init__(self, name: str, database: "SeatableDatabase"):
         self.name = name
-        self.client = client
+        self.database = database
+        self.client = database.client
+        self.metadata = next(
+            (table for table in database.metadata["tables"] if table["name"] == self.name), {}
+        )
+        self.links = next(
+            (
+                {link["name"]: link["data"] | {"key": link["key"]}}
+                for link in self.metadata["columns"]
+                if link["type"] == "link"
+            ),
+            {},
+        )
 
-    def _record_from_dict(self, record_dict: dict[str, Any]) -> SeatableRecord:
-        """Creates an SeatableRecord from a dictionary.
-
-        Args:
-            record_dict (dict[str, Any]): The dictionary to create the record from.
-
-        Returns:
-            SeatableRecord: The created record.
-        """
+    def _record_from_dict(self, record_dict: dict[FieldKey, FieldValue]) -> Record:
         record_id = record_dict["_id"]
-        record_dict.pop("_id", None)
-        record_dict.pop("_ctime", None)
-        record_dict.pop("_mtime", None)
-        return SeatableRecord(record_id, record_dict, self)
+        fields = {}
+        for key, value in record_dict.items():
+            if not key.startswith("_"):
+                fields[key] = value
+            if key in self.links:
+                fields[key] = [
+                    item["row_id"] if isinstance(item, dict) else item for item in record_dict[key]
+                ]
+        return SeatableRecord(record_id=record_id, fields=fields, table=self)
 
-    def create(self, fields: dict[str, Any]) -> SeatableRecord:
-        """Creates a new record in the table.
+    def _update_links(self, records: list[Record]) -> bool:
+        links = {key: {} for key in self.links}
+        for record in records:
+            for key, value in record.fields.items():
+                if key in links:
+                    links[key][record.record_id] = value
+        return all(
+            self.batch_update_links(key, value) for key, value in links.items() if value != {}
+        )
 
-        Args:
-            fields (dict[str, Any]): The fields of the new record.
+    def batch_create(self, fields_list: list[Fields]) -> list[Record]:
+        # BUG: The batch_delete yield error for different id format.
+        fields_list = [{"_id": str(uuid.uuid4())[:22]} | fields for fields in fields_list]
+        records = [self._record_from_dict(fields) for fields in fields_list]
+        if self.client.batch_append_rows(self.name, fields_list)[
+            "inserted_row_count"
+        ] != len(fields_list):
+            raise RuntimeError("Failed to create all rows")
+        if not self._update_links(records):
+            raise RuntimeError("Failed to link all records")
+        return records
 
-        Returns:
-            dict[str, Any]: The created record.
+    def batch_delete(self, record_ids: list[RecordId]) -> bool:
+        """Delete the records with the given record_ids."""
+        if self.client.batch_delete_rows(self.name, record_ids)[
+            "deleted_rows"
+        ] != len(record_ids):
+            raise RuntimeError("Failed to delete all records")
+        return True
+
+    def batch_get(self, record_ids: list[RecordId]) -> list[Record]:
+        """Get the records with the given record_ids."""
+        query = f"""SELECT * from `{self.name}` WHERE `_id` IN ({','.join([f"'{record_id}'" for record_id in record_ids])})"""
+        return [self._record_from_dict(record) for record in self.client.query(query)]
+
+    def batch_get_link_id(self, field_keys: list[FieldKey]) -> dict[FieldKey, str]:
+        """Get the link ids for the given field keys."""
+        return {key: self.links[key]["link_id"] for key in field_keys}
+
+    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> bool:
+        """Update the records with the given record_ids with the given fields."""
+        if not self._update_links(
+            [self._record_from_dict({"_id": record_id, **fields}) for record_id, fields in records]
+        ):
+            raise RuntimeError("Failed to link all records")
+        return self.client.batch_update_rows(
+            self.name, [{"row_id": record_id, "row": fields} for record_id, fields in records]
+        )["success"]
+
+    def batch_update_links(
+        self,
+        field_key: FieldKey,
+        record_ids_map: dict[RecordId, list[RecordId]],
+    ) -> bool:
+        """Update the links between the records with the given record_ids and the records with the given other_record_ids in the other table."""
+        link_id = self.get_link_id(field_key)
+        other_table_id = self.links[field_key]["other_table_id"]
+        return self.client.batch_update_links(
+            link_id, self.name, other_table_id, list(record_ids_map.keys()), record_ids_map
+        )["success"]
+
+    def get_linked_records(
+        self, field_key: FieldKey, record_ids: list[RecordId]
+    ) -> dict[RecordId, list[RecordId]]:
+        """Get the linked records for the given record_ids."""
+        return {
+            record_id: [item["row_id"] for item in record_ids]
+            for record_id, record_ids in self.client.get_linked_records(
+                self.links[field_key]["table_id"],
+                self.links[field_key]["key"],
+                [{"row_id": item} for item in record_ids],
+            ).items()
+        }
+
+    def query(self, query: str) -> list[Record]:
+        r"""Query the table with the given query.
+
+        Example:
+        table.query("$[\@.name][?name='Esperoj']")
+        table.query("$[\@._id][*]")
         """
-        if not isinstance(fields, dict):
-            raise InvalidRecordError("fields must be a dictionary.")
-        return self.get(self.client.append_row(self.name, fields)["_id"])
-
-    def create_many(self, fields_list: Iterator[dict[str, Any]]) -> Iterable[SeatableRecord]:
-        """Creates multiple new records in the table.
-
-        Args:
-            fields_list (Iterator[dict[str, Any]]): The records to create.
-
-        Returns:
-            Iterable[SeatableRecord]: The created records.
-        """
-        return self.client.batch_append_rows(self.name, fields_list)
-        # return [self._record_from_dict(record) for record in self.client.batch_append_rows(self.name, fields_list)]
-
-    def delete(self, record_id: str) -> str:
-        """Deletes a record from the table.
-
-        Args:
-            record_id (str): The ID of the record to delete.
-
-        Returns:
-            str: The ID of the deleted record.
-        """
-        if not isinstance(record_id, str):
-            raise InvalidRecordError("record_id must be a string.")
-
-        record = self.get(record_id)
-        result = self.client.delete(record.record_id)
-        if result["deleted"] is True:
-            return record_id
-        raise RecordDeletionError(f"Deletion failed for id: {result['id']}")
-
-    def delete_many(self, record_ids: Iterator[str]) -> Iterable[str]:
-        """Deletes multiple records from the table.
-
-        Args:
-            record_ids (Iterator[str]): The IDs of the records to delete.
-
-        Returns:
-            Iterable[str]: The IDs of the deleted records.
-        """
-        results = self.client.batch_delete(record_ids)
-        for result in results:
-            if result["deleted"] is False:
-                raise ValueError(f"Deletion failed for id: {result['id']}")
-        return record_ids
-
-    def get(self, record_id: str) -> SeatableRecord:
-        """Gets a record from the table.
-
-        Args:
-            record_id (str): The ID of the record to get.
-
-        Returns:
-            SeatableRecord: The retrieved record.
-        """
-        if not isinstance(record_id, str):
-            raise InvalidRecordError("record_id must be a string.")
-
-        record = self.client.get_row(self.name, record_id)
-        if not record:
-            raise RecordNotFoundError(f"Record with id '{record_id}' not found.")
-
-        return self._record_from_dict(record)
-
-    def get_all(
-        self, formulas: dict[str, Any] | None = None, sort: Iterable[str] | None = None
-    ) -> Iterator[SeatableRecord]:
-        """Gets all records from the table.
-
-        Args:
-            formulas (dict[str, Any] | None, optional): The formulas to filter the records. Defaults to None.
-            sort (Iterable[str], optional): A list of field names to sort by, with a minus sign prefix for descending order. Defaults to [].
-
-        Returns:
-            Iterator[SeatableRecord]: The retrieved records.
-        """
-        print(self.name)
-        if sort is None:
-            sort = []
-        i = 0
-        records = []
-        while True:
-            new_records = self.client.list_rows(self.name, start=i, limit=1000)
-            records.extend(new_records)
-            if new_records == []:
-                return (self._record_from_dict(record) for record in records)
-            i += 1000
-
-    def get_many(self, record_ids: Iterator[str]) -> Iterator[SeatableRecord]:
-        """Gets multiple records from the table.
-
-        Args:
-            record_ids (Iterator[str]): The IDs of the records to get.
-
-        Returns:
-            Iterator[SeatableRecord]: The retrieved records.
-        """
-        return (self.get(record_id) for record_id in record_ids)
-
-    def update(self, record_id: str, fields: dict[str, Any]) -> SeatableRecord:
-        """Updates a record in the table.
-
-        Args:
-            record_id (str): The ID of the record to update.
-            fields (dict[str, Any]): The fields to update.
-
-        Returns:
-            SeatableRecord: The updated record.
-        """
-        return self._record_from_dict(self.client.update(record_id, fields))
-
-    def update_many(self, records: Iterator[dict[str, Any]]) -> Iterable[SeatableRecord]:
-        """Updates multiple records in the table.
-
-        Args:
-            records (Iterator[dict[str, Any]]): The records to update.
-
-        Returns:
-            Iterable[SeatableRecord]: The updated records.
-        """
-        return [
-            self._record_from_dict(record)
-            for record in self.client.batch_update(
-                {"id": r["record_id"], "fields": r["fields"]} for r in records
-            )
-        ]
+        data = self.client.query(f"SELECT * FROM `{self.name}` LIMIT 10000")
+        jsonpath_expr = parse(query)
+        return [self._record_from_dict(matched.value) for matched in jsonpath_expr.find(data)]
 
 
-class Seatable(Database):
-    """A class representing an Seatable database.
-
-    Attributes:
-        name (str): The name of the database.
-        api_token (str): The API key for the Airtable API.
-        client (Api): The Seatable API client.
-        server_url (str): The url of the server.
-    """
-
-    def __init__(self, name: str, api_token: str = ""):
-        """Initializes an Seatable instance.
-
-        Args:
-            name (str): The name of the database.
-            api_token (str, optional): The API key for the Seatable API. Defaults to "".
-        """
-        self.name = name
-        self.server_url = context.server_url or "https://cloud.seatable.io"
-        self.api_token = api_token or context.api_token or os.getenv("SEATABLE_API_TOKEN")
+class SeatableDatabase(Database):
+    def __init__(self, config: dict[Any, Any]):
+        self.config = config
+        self.name = config["name"]
+        self.aliases = config["aliases"] or []
+        self.server_url = config.get("server_url", "") or "https://cloud.seatable.io"
+        self.api_token = config.get("api_token", "") or os.getenv("SEATABLE_API_TOKEN")
         self.client = Base(self.api_token, self.server_url)
         self.client.auth()
+        self.metadata = self.client.get_metadata()
 
-    def table(self, name: str) -> SeatableTable:
-        """Gets a table from the Seatable database.
+    def create_table(self, name: str) -> SeatableTable:
+        return SeatableTable(name, self)
 
-        Args:
-            name (str): The name of the table.
-
-        Returns:
-            SeatableTable: The retrieved table.
-        """
-        return SeatableTable(name, self.client)
+    def get_table(self, name: str) -> SeatableTable:
+        return SeatableTable(name, self)
 
     def close(self) -> bool:
-        """Closes the Airtable database connection.
-
-        Returns:
-            bool: True if the connection is closed successfully, False otherwise.
-        """
+        """Close the database."""
         return True

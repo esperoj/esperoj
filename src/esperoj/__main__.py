@@ -1,4 +1,6 @@
-"""Support python -m esperoj."""
-from esperoj.cli import app
+"""Esperoj CLI."""
 
-app(prog_name="Esperoj CLI")
+from esperoj.cli import cli
+
+if __name__ == "__main__":
+    cli()

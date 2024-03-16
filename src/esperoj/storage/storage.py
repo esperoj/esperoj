@@ -1,28 +1,42 @@
-"""Storage class."""
+"""Storage module."""
 
 from abc import ABC, abstractmethod
+from typing import TypedDict
+
+
+class DeleteFileError(TypedDict):
+    """DeleteFileError type."""
+
+    path: str
+    message: str
+
+
+class DeleteFilesResponse(TypedDict):
+    """DeleteFilesResponse type."""
+
+    errors: list[DeleteFileError]
 
 
 class Storage(ABC):
     """Abstract base class for storage."""
 
-    def __init__(self, name) -> None:
+    @abstractmethod
+    def __init__(self, config: dict) -> None:
         """Initalize the Storage.
 
         Args:
-            name (str): The name of the storage.
+            config (dict): Config for the storage.
         """
-        self.name = name
 
     @abstractmethod
-    def delete_file(self, path: str) -> bool:
-        """Deletes a file at the specified path.
+    def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
+        """Deletes files at the paths.
 
         Args:
-            path (str): The path of the file to delete.
+            paths (list[str]): The paths of the files to delete.
 
         Returns:
-            bool: True if the file was deleted successfully, False otherwise.
+            response (DeleteFilesResponse): Response includes list of errors.
         """
 
     @abstractmethod
@@ -42,7 +56,7 @@ class Storage(ABC):
             path (str): The path of the file to check.
 
         Returns:
-            bool: True if the file exists, False otherwise.
+            status (bool): True if the file exists, False otherwise.
         """
 
     @abstractmethod
@@ -75,3 +89,22 @@ class Storage(ABC):
             src (str): The source path of the file to upload.
             dst (str): The destination path where the file will be saved.
         """
+
+
+class StorageFactory:
+    """StorageFactory class."""
+
+    @staticmethod
+    def create(config: dict):
+        """Method to create storage.
+
+        Args:
+            config (dict): The configs of the storage.
+        """
+        storage_type = config["type"]
+        match storage_type:
+            case "s3":
+                from esperoj.storage.s3 import S3Storage
+
+                return S3Storage(config)
+        raise ValueError(f"Unknown storage type: {storage_type}")
