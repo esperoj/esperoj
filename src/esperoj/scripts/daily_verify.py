@@ -14,7 +14,7 @@ class VerificationError(Exception):
 
 def daily_verify(esperoj) -> None:
     logger = esperoj.loggers["Primary"]
-    files = esperoj.databases["Primary"].get_table("Files").query("$[\Created][*]")
+    files = esperoj.databases["Primary"].get_table("Files").query("$[\\Created][*]")
     num_shards = 28
     shard_size, extra = divmod(len(files), num_shards)
     today = datetime.datetime.now(datetime.UTC).day % num_shards
