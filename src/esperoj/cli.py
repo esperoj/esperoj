@@ -4,13 +4,10 @@ from pathlib import Path
 import click
 import tomllib
 
-esperoj_config_file = Path.home() / ".config" / "esperoj" / "esperoj.toml"
-config = tomllib.loads(esperoj_config_file.read_text())
-scripts_folder = Path(__file__).parent / "scripts"
-
 
 class EsperojCLI(click.Group):
     def list_commands(self, ctx):
+        scripts_folder = Path(__file__).parent / "scripts"
         rv = [file.stem for file in scripts_folder.glob("*.py") if file.name != "__init__.py"]
         rv.sort()
         return rv
@@ -21,12 +18,15 @@ class EsperojCLI(click.Group):
 
 
 @click.command(cls=EsperojCLI)
-@click.option("--config-file", envvar="ESPEROJ_CONFIG_FILE", default=esperoj_config_file)
+@click.option("--config-file", envvar="ESPEROJ_CONFIG_FILE")
 @click.option("--debug/--no-debug", default=False, envvar="ESPEROJ_DEBUG")
 @click.pass_context
 def cli(ctx, config_file, debug):
     from esperoj.esperoj import EsperojFactory
 
+    if not config_file:
+        config_file = Path.home() / ".config" / "esperoj" / "esperoj.toml"
+    config = tomllib.loads(config_file.read_text())
     esperoj = EsperojFactory.create(config)
     ctx.obj = esperoj
 
