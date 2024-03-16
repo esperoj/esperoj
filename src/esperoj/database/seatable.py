@@ -75,9 +75,9 @@ class SeatableTable(Table):
 
     def batch_delete(self, record_ids: list[RecordId]) -> bool:
         """Delete the records with the given record_ids."""
-        if self.client.batch_delete_rows(self.name, record_ids)["deleted_rows"] is not len(
-            record_ids
-        ):
+        if self.client.batch_delete_rows(self.name, record_ids)[
+            "deleted_rows"
+        ] != len(record_ids):
             raise RuntimeError("Failed to delete all records")
         return True
 
