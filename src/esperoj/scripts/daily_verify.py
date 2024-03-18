@@ -3,9 +3,9 @@
 import concurrent.futures
 import datetime
 import time
+from functools import partial
 from esperoj.utils import calculate_hash
 import requests
-import click
 
 
 class VerificationError(Exception):
@@ -62,10 +62,16 @@ def daily_verify(esperoj) -> None:
         raise VerificationError("Verification failed for one or more files.")
 
 
-esperoj_method = daily_verify
+def get_esperoj_method(esperoj):
+    return partial(daily_verify, esperoj)
 
 
-@click.command()
-@click.pass_obj
-def click_command(esperoj):
-    daily_verify(esperoj)
+def get_click_command():
+    import click
+
+    @click.command()
+    @click.pass_obj
+    def click_command(esperoj):
+        daily_verify(esperoj)
+
+    return click_command

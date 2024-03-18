@@ -21,18 +21,10 @@ class Esperoj:
 
     def __getattr__(self, name):
         try:
-            mod = __import__(f"esperoj.scripts.{name}", None, None, ["esperoj_method"])
+            mod = __import__(f"esperoj.scripts.{name}", None, None, ["get_esperoj_method"])
         except ImportError:
             return
-
-        def add_esperoj(func):
-            def wrapper(*args, **kwargs):
-                args = (self,) + args
-                return func(*args, **kwargs)
-
-            return wrapper
-
-        return add_esperoj(mod.esperoj_method)
+        return mod.get_esperoj_method(self)
 
 
 class EsperojFactory:

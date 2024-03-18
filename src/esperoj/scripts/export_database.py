@@ -1,5 +1,5 @@
-import click
 import json
+from functools import partial
 
 
 def export_database(esperoj, name):
@@ -11,11 +11,17 @@ def export_database(esperoj, name):
             json.dump(data, f)
 
 
-esperoj_method = export_database
+def get_esperoj_method(esperoj):
+    return partial(export_database, esperoj)
 
 
-@click.command()
-@click.argument("name", type=click.STRING, required=True)
-@click.pass_obj
-def click_command(esperoj, name):
-    export_database(esperoj, name)
+def get_click_command():
+    import click
+
+    @click.command()
+    @click.argument("name", type=click.STRING, required=True)
+    @click.pass_obj
+    def click_command(esperoj, name):
+        export_database(esperoj, name)
+
+    return click_command

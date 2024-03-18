@@ -1,5 +1,5 @@
-import click
 import subprocess
+from functools import partial
 
 
 def info(esperoj):
@@ -28,10 +28,16 @@ def info(esperoj):
     print(ipwho)
 
 
-esperoj_method = info
+def get_esperoj_method(esperoj):
+    return partial(info, esperoj)
 
 
-@click.command()
-@click.pass_obj
-def click_command(esperoj):
-    info(esperoj)
+def get_click_command():
+    import click
+
+    @click.command()
+    @click.pass_obj
+    def click_command(esperoj):
+        info(esperoj)
+
+    return click_command

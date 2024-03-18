@@ -1,7 +1,7 @@
 """Script to archive."""
 
-import click
 import time
+from functools import partial
 
 
 def daily_archive(esperoj) -> None:
@@ -25,10 +25,16 @@ def daily_archive(esperoj) -> None:
         logger.info(f"Finish file `{name}` in {time.time() - start} second")
 
 
-esperoj_method = daily_archive
+def get_esperoj_method(esperoj):
+    return partial(daily_archive, esperoj)
 
 
-@click.command()
-@click.pass_obj
-def click_command(esperoj):
-    daily_archive(esperoj)
+def get_click_command():
+    import click
+
+    @click.command()
+    @click.pass_obj
+    def click_command(esperoj):
+        daily_archive(esperoj)
+
+    return click_command
