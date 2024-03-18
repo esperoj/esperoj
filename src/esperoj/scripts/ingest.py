@@ -2,7 +2,6 @@ from esperoj.database.database import Record
 from esperoj.utils import calculate_hash
 import click
 from pathlib import Path
-from datetime import datetime
 
 
 def ingest(esperoj, path: Path) -> Record:
@@ -26,7 +25,6 @@ def ingest(esperoj, path: Path) -> Record:
                 "Name": name,
                 "Size": size,
                 "SHA256": sha256sum,
-                "Created": str(datetime.now()),
                 "Internet Archive": "https://example.com/",
                 "Storage": storage_name,
             }

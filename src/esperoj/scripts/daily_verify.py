@@ -14,7 +14,11 @@ class VerificationError(Exception):
 
 def daily_verify(esperoj) -> None:
     logger = esperoj.loggers["Primary"]
-    files = esperoj.databases["Primary"].get_table("Files").query("$[\\Created][*]")
+    files = (
+        esperoj.databases["Primary"]
+        .get_table("Files")
+        .query("$[\\Created][?@['Internet Archive'] != 'https://example.com/']")
+    )
     num_shards = 28
     shard_size, extra = divmod(len(files), num_shards)
     today = datetime.datetime.now(datetime.UTC).day % num_shards
@@ -27,17 +31,19 @@ def daily_verify(esperoj) -> None:
             start_time = time.time()
             logger.info(f"Start verifying file `{name}`")
 
-            archive_url = file["Internet Archive"]
-            if archive_url == "https://example.com/":
-                return True
             storage_hash = calculate_hash(
-                requests.get(esperoj.storages[file["Storage"]].get_link(name), stream=True).raw
+                requests.get(
+                    esperoj.storages[file["Storage"]].get_link(name), stream=True, timeout=30
+                ).raw
             )
-            archive_hash = calculate_hash(requests.get(archive_url, stream=True).raw)
-            if (storage_hash == archive_hash == file["SHA256"]) is not True:
-                raise VerificationError(f"Verification failed for {name}")
-            logger.info(f"Verified file `{name}` in {time.time() - start_time} seconds")
-            return True
+            archive_hash = calculate_hash(
+                requests.get(file["Internet Archive"], stream=True, timeout=30).raw
+            )
+
+            if storage_hash == archive_hash == file["SHA256"]:
+                logger.info(f"Verified file `{name}` in {time.time() - start_time} seconds")
+                return True
+            raise VerificationError(f"Verification failed for {name}")
         except VerificationError as e:
             logger.error(f"VerificationError: {e}")
             failed_files.append(name)
