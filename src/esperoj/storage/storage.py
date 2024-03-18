@@ -1,7 +1,7 @@
 """Storage module."""
 
 from abc import ABC, abstractmethod
-from typing import TypedDict
+from typing import TypedDict, Iterator
 
 
 class DeleteFileError(TypedDict):
@@ -67,7 +67,18 @@ class Storage(ABC):
             path (str): The path to the file.
 
         Returns:
-            utl (str): Url to download file.
+            url (str): Url to download file.
+        """
+
+    @abstractmethod
+    def get_file(self, src: str) -> Iterator:
+        """Get a file from the source and return Iterator.
+
+        Args:
+            src (str): The source path of the file to download.
+
+        Returns:
+            Iterator: Iterator of the file content.
         """
 
     @abstractmethod

@@ -1,8 +1,7 @@
 from esperoj.database.database import Record
 from esperoj.utils import calculate_hash
-import click
 from pathlib import Path
-from datetime import datetime
+from functools import partial
 
 
 def ingest(esperoj, path: Path) -> Record:
@@ -26,7 +25,6 @@ def ingest(esperoj, path: Path) -> Record:
                 "Name": name,
                 "Size": size,
                 "SHA256": sha256sum,
-                "Created": str(datetime.now()),
                 "Internet Archive": "https://example.com/",
                 "Storage": storage_name,
             }
@@ -39,13 +37,19 @@ def ingest(esperoj, path: Path) -> Record:
             raise RuntimeError("File type is not supported.")
 
 
-esperoj_method = ingest
+def get_esperoj_method(esperoj):
+    return partial(ingest, esperoj)
 
 
-@click.command()
-@click.argument(
-    "file_path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True
-)
-@click.pass_obj
-def click_command(esperoj, file_path: Path):
-    print(ingest(esperoj, file_path))
+def get_click_command():
+    import click
+
+    @click.command()
+    @click.argument(
+        "file_path", type=click.Path(exists=True, dir_okay=False, path_type=Path), required=True
+    )
+    @click.pass_obj
+    def click_command(esperoj, file_path: Path):
+        print(ingest(esperoj, file_path))
+
+    return click_command

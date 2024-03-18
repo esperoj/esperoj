@@ -54,13 +54,6 @@ def test_download_file(s3_storage, tmp_path):
     assert tmp_file.read_text() == "test content"
 
 
-def test_download_file_not_found(s3_storage, tmp_path):
-    """Test downloading a non-existent file from S3 storage raises FileNotFoundError."""
-    tmp_file = tmp_path / "nonexistent.txt"
-    with pytest.raises(FileNotFoundError):
-        s3_storage.download_file("nonexistent.txt", str(tmp_file))
-
-
 def test_file_exists(s3_storage, tmp_path):
     """Test file existence check in S3 storage."""
     upload_test_file(s3_storage, tmp_path)
@@ -120,6 +113,16 @@ def test_get_link_nonexistent_file(s3_storage):
     """Test get_link method for a non-existent file."""
     with pytest.raises(FileNotFoundError):
         s3_storage.get_link("nonexistent.txt")
+
+
+def test_get_file(s3_storage, tmp_path):
+    """Test get_file method for downloading a file from S3 storage."""
+    upload_test_file(s3_storage, tmp_path)
+    downloaded_file = tmp_path / "downloaded.txt"
+    with downloaded_file.open("wb") as f:
+        for chunk in s3_storage.get_file("test.txt"):
+            f.write(chunk)
+    assert downloaded_file.read_text() == "test content"
 
 
 def test_list_files(s3_storage, tmp_path):

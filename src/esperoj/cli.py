@@ -13,8 +13,8 @@ class EsperojCLI(click.Group):
         return rv
 
     def get_command(self, ctx, cmd_name):
-        mod = __import__(f"esperoj.scripts.{cmd_name}", None, None, ["click_command"])
-        return mod.click_command
+        mod = __import__(f"esperoj.scripts.{cmd_name}", None, None, ["get_click_command"])
+        return mod.get_click_command()
 
 
 @click.command(cls=EsperojCLI)

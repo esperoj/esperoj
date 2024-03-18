@@ -5,6 +5,7 @@ from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
 from esperoj.storage.storage import DeleteFilesResponse, Storage
+from typing import Iterator
 
 
 class S3Storage(Storage):
@@ -61,22 +62,9 @@ class S3Storage(Storage):
         return {"errors": [{"path": e["Key"], "message": e["Message"]} for e in response["Errors"]]}
 
     def download_file(self, src: str, dst: str) -> None:
-        """Download a file from the S3 bucket.
-
-        Args:
-            src (str): The source path of the file in the S3 bucket.
-            dst (str): The destination path to save the downloaded file.
-
-        Raises:
-        ------
-            FileNotFoundError: If the source file does not exist.
-        """
-        try:
-            self.client.download_file(
-                self.config["bucket_name"], src, dst, Config=self.config["transfer_config"]
-            )
-        except ClientError as e:
-            raise FileNotFoundError(f"No such file: '{src}'") from e
+        self.client.download_file(
+            self.config["bucket_name"], src, dst, Config=self.config["transfer_config"]
+        )
 
     def file_exists(self, path: str) -> bool:
         """Check if a file exists in the S3 bucket.
@@ -115,6 +103,11 @@ class S3Storage(Storage):
             Params={"Bucket": self.config["bucket_name"], "Key": path},
             ExpiresIn=3600 * 24 * 7,
         )
+
+    def get_file(self, src: str) -> Iterator:
+        return self.client.get_object(Bucket=self.config["bucket_name"], Key=src)[
+            "Body"
+        ].iter_chunks(2**20)
 
     def list_files(self, path: str) -> list:
         """List all files in the specified path of the S3 bucket.
