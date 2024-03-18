@@ -32,11 +32,14 @@ def daily_verify(esperoj) -> None:
             logger.info(f"Start verifying file `{name}`")
 
             storage_hash = calculate_hash(esperoj.storages[file["Storage"]].get_file(name))
+            backup_storage_hash = calculate_hash(
+                esperoj.storages[f"Backup {file['Storage']}"].get_file(name)
+            )
             archive_hash = calculate_hash(
                 requests.get(file["Internet Archive"], stream=True, timeout=30).iter_content(2**20)
             )
 
-            if storage_hash == archive_hash == file["SHA256"]:
+            if storage_hash == backup_storage_hash == archive_hash == file["SHA256"]:
                 logger.info(f"Verified file `{name}` in {time.time() - start_time} seconds")
                 return True
             raise VerificationError(f"Verification failed for {name}")
