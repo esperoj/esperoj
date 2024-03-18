@@ -34,12 +34,10 @@ def daily_verify(esperoj) -> None:
             storage_hash = calculate_hash(
                 requests.get(
                     esperoj.storages[file["Storage"]].get_link(name), stream=True, timeout=30
-                ).iter_content(chunk_size=2**20)
+                ).iter_content(2**20)
             )
             archive_hash = calculate_hash(
-                requests.get(file["Internet Archive"], stream=True, timeout=30).iter_content(
-                    chunk_size=2**20
-                )
+                requests.get(file["Internet Archive"], stream=True, timeout=30).iter_content(2**20)
             )
 
             if storage_hash == archive_hash == file["SHA256"]:
