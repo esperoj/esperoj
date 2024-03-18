@@ -31,11 +31,7 @@ def daily_verify(esperoj) -> None:
             start_time = time.time()
             logger.info(f"Start verifying file `{name}`")
 
-            storage_hash = calculate_hash(
-                requests.get(
-                    esperoj.storages[file["Storage"]].get_link(name), stream=True, timeout=30
-                ).iter_content(2**20)
-            )
+            storage_hash = calculate_hash(esperoj.storages[file["Storage"]].get_file(name))
             archive_hash = calculate_hash(
                 requests.get(file["Internet Archive"], stream=True, timeout=30).iter_content(2**20)
             )
