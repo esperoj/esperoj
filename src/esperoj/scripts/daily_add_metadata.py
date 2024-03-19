@@ -1,10 +1,26 @@
 """Script to add metadata daily."""
 
 from functools import partial
-import tempfile
 from pathlib import Path
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
+def process_file(esperoj, file):
+    name = file["Name"]
+    path = Path("/tmp") / Path(name)
+    logger = esperoj.loggers["Primary"]
+    logger.info(f"Start to process `{name}`")
+    with path.open("wb") as fp:
+        for chunk in esperoj.storages[file["Storage"]].get_file(name):
+            fp.write(chunk)
+        output = subprocess.check_output(["exiftool", "-j", fp.name])
+        metadata = json.loads(output)
+        path.unlink()
+        if not file.update({"Metadata": json.dumps(metadata)}):
+            raise RuntimeError(f"Failed to add metadata to file `{name}`")
+    logger.info(f"Finished processing file `{name}`")
 
 
 def daily_add_metadata(esperoj, number: int = 8):
@@ -14,18 +30,13 @@ def daily_add_metadata(esperoj, number: int = 8):
         .get_table("Files")
         .query("$[\\Created][?@['Metadata'] = 'To be added']")
     )[:number]
-    for file in files:
-        name = file["Name"]
-        path = Path(name)
-        logger.info(f"Start to process `{name}`")
-        with tempfile.NamedTemporaryFile(prefix=path.stem, suffix=path.suffix) as fp:
-            for chunk in esperoj.storages[file["Storage"]].get_file(name):
-                fp.write(chunk)
-            output = subprocess.check_output(["exiftool", "-j", fp.name])
-            metadata = json.loads(output)
-            if not file.update({"Metadata": json.dumps(metadata)}):
-                raise RuntimeError(f"Failed to add metadata to file `{name}`")
-        logger.info(f"Finished processing file `{name}`")
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(process_file, esperoj, file) for file in files]
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                logger.error(str(e))
 
 
 def get_esperoj_method(esperoj):
