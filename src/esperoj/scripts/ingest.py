@@ -27,6 +27,7 @@ def ingest(esperoj, path: Path) -> Record:
                 "SHA256": sha256sum,
                 "Internet Archive": "https://example.com/",
                 "Storage": storage_name,
+                "Metadata": "To be added",
             }
         )
 

@@ -63,20 +63,24 @@ class SeatableTable(Table):
 
     def batch_create(self, fields_list: list[Fields]) -> list[Record]:
         # BUG: The batch_delete yield error for different id format.
-        fields_list = [{"_id": str(uuid.uuid4())[:22]} | fields for fields in fields_list]
-        records = [self._record_from_dict(fields) for fields in fields_list]
-        if self.client.batch_append_rows(self.name, fields_list)["inserted_row_count"] != len(
-            fields_list
-        ):
-            raise RuntimeError("Failed to create all rows")
-        if not self._update_links(records):
-            raise RuntimeError("Failed to link all records")
+        records = []
+        for chunk in [fields_list[i : i + 1000] for i in range(0, len(fields_list), 1000)]:
+            chunk_fields = [{**{"_id": str(uuid.uuid4())[:22]}, **fields} for fields in chunk]
+            chunk_records = [self._record_from_dict(fields) for fields in chunk_fields]
+            if self.client.batch_append_rows(self.name, chunk_fields)["inserted_row_count"] != len(
+                chunk_fields
+            ):
+                raise RuntimeError("Failed to create all rows")
+            if not self._update_links(chunk_records):
+                raise RuntimeError("Failed to link all records")
+            records.extend(chunk_records)
         return records
 
     def batch_delete(self, record_ids: list[RecordId]) -> bool:
         """Delete the records with the given record_ids."""
-        if self.client.batch_delete_rows(self.name, record_ids)["deleted_rows"] != len(record_ids):
-            raise RuntimeError("Failed to delete all records")
+        for chunk in [record_ids[i : i + 1000] for i in range(0, len(record_ids), 1000)]:
+            if self.client.batch_delete_rows(self.name, chunk)["deleted_rows"] != len(chunk):
+                raise RuntimeError("Failed to delete all records")
         return True
 
     def batch_get(self, record_ids: list[RecordId]) -> list[Record]:
@@ -90,13 +94,17 @@ class SeatableTable(Table):
 
     def batch_update(self, records: list[tuple[RecordId, Fields]]) -> bool:
         """Update the records with the given record_ids with the given fields."""
-        if not self._update_links(
-            [self._record_from_dict({"_id": record_id, **fields}) for record_id, fields in records]
-        ):
-            raise RuntimeError("Failed to link all records")
-        return self.client.batch_update_rows(
-            self.name, [{"row_id": record_id, "row": fields} for record_id, fields in records]
-        )["success"]
+        for chunk in [records[i : i + 1000] for i in range(0, len(records), 1000)]:
+            chunk_records = [
+                self._record_from_dict({"_id": record_id, **fields}) for record_id, fields in chunk
+            ]
+            if not self._update_links(chunk_records):
+                raise RuntimeError("Failed to link all records")
+            if not self.client.batch_update_rows(
+                self.name, [{"row_id": record_id, "row": fields} for record_id, fields in chunk]
+            )["success"]:
+                raise RuntimeError("Failed to update all records")
+        return True
 
     def batch_update_links(
         self,

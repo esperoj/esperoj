@@ -1,4 +1,4 @@
-"""Script to verify."""
+"""Script to verify daily."""
 
 import concurrent.futures
 import datetime
