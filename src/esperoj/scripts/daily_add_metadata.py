@@ -14,7 +14,7 @@ def process_file(esperoj, file):
     logger.info(f"Start to process `{name}`")
     esperoj.storages[file["Storage"]].download_file(name, str(path))
     output = subprocess.check_output(["exiftool", "-j", str(path)])
-    metadata = json.loads(output)
+    metadata = json.loads(output)[0]
     path.unlink()
     if not file.update({"Metadata": json.dumps(metadata)}):
         raise RuntimeError(f"Failed to add metadata to file `{name}`")
