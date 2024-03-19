@@ -9,17 +9,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def process_file(esperoj, file):
     name = file["Name"]
-    path = Path("/tmp") / Path(name)
+    path = Path("/tmp", name)
     logger = esperoj.loggers["Primary"]
     logger.info(f"Start to process `{name}`")
-    with path.open("wb") as fp:
-        for chunk in esperoj.storages[file["Storage"]].get_file(name):
-            fp.write(chunk)
-        output = subprocess.check_output(["exiftool", "-j", fp.name])
-        metadata = json.loads(output)
-        path.unlink()
-        if not file.update({"Metadata": json.dumps(metadata)}):
-            raise RuntimeError(f"Failed to add metadata to file `{name}`")
+    esperoj.storages[file["Storage"]].download_file(name, str(path))
+    output = subprocess.check_output(["exiftool", "-j", str(path)])
+    metadata = json.loads(output)
+    path.unlink()
+    if not file.update({"Metadata": json.dumps(metadata)}):
+        raise RuntimeError(f"Failed to add metadata to file `{name}`")
     logger.info(f"Finished processing file `{name}`")
 
 
