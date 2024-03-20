@@ -18,8 +18,7 @@ from esperoj.database.database import (
 )
 
 
-class SeatableRecord(Record):
-    pass
+SeatableRecord = Record
 
 
 class SeatableTable(Table):
@@ -92,8 +91,9 @@ class SeatableTable(Table):
         """Get the link ids for the given field keys."""
         return {key: self.links[key]["link_id"] for key in field_keys}
 
-    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> bool:
+    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> list[Record]:
         """Update the records with the given record_ids with the given fields."""
+        results = []
         for chunk in [records[i : i + 1000] for i in range(0, len(records), 1000)]:
             chunk_records = [
                 self._record_from_dict({"_id": record_id, **fields}) for record_id, fields in chunk
@@ -104,7 +104,8 @@ class SeatableTable(Table):
                 self.name, [{"row_id": record_id, "row": fields} for record_id, fields in chunk]
             )["success"]:
                 raise RuntimeError("Failed to update all records")
-        return True
+            results += chunk_records
+        return results
 
     def batch_update_links(
         self,
@@ -159,7 +160,3 @@ class SeatableDatabase(Database):
 
     def get_table(self, name: str) -> SeatableTable:
         return SeatableTable(name, self)
-
-    def close(self) -> bool:
-        """Close the database."""
-        return True

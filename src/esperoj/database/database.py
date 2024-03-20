@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Self
 
-RecordId = str | int
+RecordId = str
 FieldValue = Any
 FieldKey = str
 Fields = dict[FieldKey, FieldValue]
@@ -26,7 +26,7 @@ class Record(ABC):
         """Set the value of the field with the given key."""
         self.update({key: value}).fields[key] = value
 
-    def delete(self) -> RecordId:
+    def delete(self) -> bool:
         """Delete the record from the database."""
         return self.table.delete(self.record_id)
 
@@ -81,9 +81,9 @@ class Table(ABC):
         """Get the link id for the given field key."""
         return self.batch_get_link_id([field_key])[field_key]
 
-    def update(self, record_id: RecordId, fields: Fields) -> bool:
+    def update(self, record_id: RecordId, fields: Fields) -> Record:
         """Update the record with the given record_id with the given fields."""
-        return self.batch_update([(record_id, fields)])
+        return self.batch_update([(record_id, fields)])[0]
 
     def update_link(
         self,
@@ -91,7 +91,7 @@ class Table(ABC):
         other_table_name: str,
         record_id: RecordId,
         other_record_ids: list[RecordId],
-    ):
+    ) -> bool:
         """Update the link between the record with the given record_id and the records with the given other_record_ids in the other table."""
         return self.batch_update_links(field_key, {record_id: other_record_ids})
 
@@ -112,7 +112,7 @@ class Table(ABC):
         """Get the link ids for the given field keys."""
 
     @abstractmethod
-    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> bool:
+    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> list[Record]:
         """Update the records with the given record_ids with the given fields."""
 
     @abstractmethod
@@ -137,6 +137,8 @@ class Table(ABC):
 class Database(ABC):
     """Base class for all databases."""
 
+    config: dict[Any, Any]
+
     def __enter__(self):
         """Enter the database context."""
         return self
@@ -145,9 +147,9 @@ class Database(ABC):
         """Exit the database context."""
         self.close()
 
-    @abstractmethod
     def close(self) -> bool:
         """Close the database."""
+        return True
 
     @abstractmethod
     def create_table(self, name: str) -> Table:
@@ -162,7 +164,7 @@ class DatabaseFactory:
     """DatabaseFactory class."""
 
     @staticmethod
-    def create(config: dict):
+    def create(config: dict) -> Database:
         """Method to create database.
 
         Args:
