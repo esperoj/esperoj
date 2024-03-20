@@ -5,43 +5,59 @@ from typing import TypedDict, Iterator
 
 
 class DeleteFileError(TypedDict):
-    """DeleteFileError type."""
+    """DeleteFileError type.
+
+    TypedDict for errors encountered while deleting files.
+
+    Attributes:
+        path (str): The path of the file that failed to be deleted.
+        message (str): The error message related to the failure.
+    """
 
     path: str
     message: str
 
 
 class DeleteFilesResponse(TypedDict):
-    """DeleteFilesResponse type."""
+    """DeleteFilesResponse type.
+
+    TypedDict for the response of the delete_files method.
+
+    Attributes:
+        errors (list[DeleteFileError]): A list of DeleteFileError objects representing errors encountered while deleting files.
+    """
 
     errors: list[DeleteFileError]
 
 
 class Storage(ABC):
-    """Abstract base class for storage."""
+    """Abstract base class for storage.
+
+    This class defines the interface for storage implementations.
+    """
 
     @abstractmethod
     def __init__(self, config: dict) -> None:
-        """Initalize the Storage.
+        """Initialize the Storage.
 
         Args:
-            config (dict): Config for the storage.
+            config (dict): Configuration for the storage.
         """
 
     @abstractmethod
     def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
-        """Deletes files at the paths.
+        """Delete files at the specified paths.
 
         Args:
-            paths (list[str]): The paths of the files to delete.
+            paths (list[str]): A list of paths to the files to be deleted.
 
         Returns:
-            response (DeleteFilesResponse): Response includes list of errors.
+            DeleteFilesResponse: A response containing a list of errors encountered while deleting files.
         """
 
     @abstractmethod
     def download_file(self, src: str, dst: str) -> None:
-        """Downloads a file from the source to the destination.
+        """Download a file from the source to the destination.
 
         Args:
             src (str): The source path of the file to download.
@@ -50,40 +66,40 @@ class Storage(ABC):
 
     @abstractmethod
     def file_exists(self, path: str) -> bool:
-        """Checks if a file exists at the specified path.
+        """Check if a file exists at the specified path.
 
         Args:
             path (str): The path of the file to check.
 
         Returns:
-            status (bool): True if the file exists, False otherwise.
+            bool: True if the file exists, False otherwise.
         """
 
     @abstractmethod
     def get_link(self, path: str) -> str:
-        """Get a download link from storage.
+        """Get a download link for a file in the storage.
 
         Args:
             path (str): The path to the file.
 
         Returns:
-            url (str): Url to download file.
+            str: The URL to download the file.
         """
 
     @abstractmethod
     def get_file(self, src: str) -> Iterator:
-        """Get a file from the source and return Iterator.
+        """Get a file from the source and return an Iterator.
 
         Args:
             src (str): The source path of the file to download.
 
         Returns:
-            Iterator: Iterator of the file content.
+            Iterator: An Iterator of the file content.
         """
 
     @abstractmethod
     def list_files(self, path: str) -> list[str]:
-        """Lists all files at the specified path.
+        """List all files at the specified path.
 
         Args:
             path (str): The path to list files from.
@@ -94,7 +110,7 @@ class Storage(ABC):
 
     @abstractmethod
     def upload_file(self, src: str, dst: str) -> None:
-        """Uploads a file from the source to the destination.
+        """Upload a file from the source to the destination.
 
         Args:
             src (str): The source path of the file to upload.
@@ -103,14 +119,23 @@ class Storage(ABC):
 
 
 class StorageFactory:
-    """StorageFactory class."""
+    """StorageFactory class.
+
+    A factory class for creating storage instances based on the provided configuration.
+    """
 
     @staticmethod
     def create(config: dict):
-        """Method to create storage.
+        """Create a storage instance.
 
         Args:
-            config (dict): The configs of the storage.
+            config (dict): The configuration for the storage.
+
+        Returns:
+            Storage: An instance of the appropriate Storage implementation.
+
+        Raises:
+            ValueError: If the storage type in the configuration is unknown.
         """
         storage_type = config["type"]
         match storage_type:

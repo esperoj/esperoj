@@ -11,8 +11,10 @@ from typing import Iterator
 class S3Storage(Storage):
     """S3Storage class for handling S3 storage operations.
 
+    This class provides methods for interacting with an S3 bucket, including
+    uploading, downloading, deleting, and listing files.
+
     Attributes:
-    ----------
         config (dict): Configuration for S3Storage.
         client (boto3.client): The S3 client instance.
     """
@@ -51,8 +53,7 @@ class S3Storage(Storage):
             paths (list[str]): The paths of the files to delete.
 
         Returns:
-        -------
-            response (DeleteFilesResponse): Response includes list of errors.
+            DeleteFilesResponse: A response containing a list of errors encountered while deleting files.
         """
         response = self.client.delete_objects(
             Bucket=self.config["bucket_name"], Delete={"Objects": [{"Key": path} for path in paths]}
@@ -62,6 +63,15 @@ class S3Storage(Storage):
         return {"errors": [{"path": e["Key"], "message": e["Message"]} for e in response["Errors"]]}
 
     def download_file(self, src: str, dst: str) -> None:
+        """Download a file from the S3 bucket.
+
+        Args:
+            src (str): The path of the file to download.
+            dst (str): The destination path where the file will be saved.
+
+        Raises:
+            ClientError: If an error occurs while downloading the file.
+        """
         self.client.download_file(
             self.config["bucket_name"], src, dst, Config=self.config["transfer_config"]
         )
@@ -73,8 +83,10 @@ class S3Storage(Storage):
             path (str): The path of the file to check.
 
         Returns:
-        -------
             bool: True if the file exists, False otherwise.
+
+        Raises:
+            ClientError: If an error occurs while checking for the file's existence.
         """
         try:
             self.client.head_object(Bucket=self.config["bucket_name"], Key=path)
@@ -105,6 +117,17 @@ class S3Storage(Storage):
         )
 
     def get_file(self, src: str) -> Iterator:
+        """Get a file from the S3 bucket and return an Iterator.
+
+        Args:
+            src (str): The path of the file to download.
+
+        Returns:
+            Iterator: An Iterator of the file content.
+
+        Raises:
+            ClientError: If an error occurs while downloading the file.
+        """
         return self.client.get_object(Bucket=self.config["bucket_name"], Key=src)[
             "Body"
         ].iter_chunks(2**20)
@@ -116,11 +139,9 @@ class S3Storage(Storage):
             path (str): The path to list files from.
 
         Returns:
-        -------
-            files (list[str]): A list of file paths.
+            list[str]: A list of file paths.
 
         Raises:
-        ------
             FileNotFoundError: If the specified path does not exist.
         """
         paginator = self.client.get_paginator("list_objects_v2")
@@ -139,7 +160,7 @@ class S3Storage(Storage):
             dst (str): The destination path in the S3 bucket.
 
         Raises:
-        ------
+            ClientError: If an error occurs while uploading the file.
             FileNotFoundError: If the source file does not exist.
         """
         try:
