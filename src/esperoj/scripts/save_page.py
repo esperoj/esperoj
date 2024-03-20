@@ -11,7 +11,7 @@ def save_page(url: str) -> str:
         url (str): The URL to archive.
 
     Returns:
-        url (str): The archived URL.
+        str: The archived URL.
 
     Raises:
         RuntimeError: If the URL cannot be archived or if a timeout occurs.
@@ -78,15 +78,33 @@ def save_page(url: str) -> str:
 
 
 def get_esperoj_method(esperoj):
+    """Get the method to archive URLs using the Save Page Now 2 (SPN2) API.
+
+    Args:
+        esperoj (object): An object representing the esperoj archive.
+
+    Returns:
+        function: The method to archive URLs using the SPN2 API.
+    """
     return save_page
 
 
 def get_click_command():
+    """Get the Click command to archive a URL using the Save Page Now 2 (SPN2) API.
+
+    Returns:
+        click.Command: The Click command to archive a URL using the SPN2 API.
+    """
     import click
 
     @click.command()
     @click.argument("url", type=click.STRING, required=True)
     def click_command(url):
+        """Archive a URL using the Save Page Now 2 (SPN2) API.
+
+        Args:
+            url (str): The URL to archive.
+        """
         print(save_page(url))
 
     return click_command

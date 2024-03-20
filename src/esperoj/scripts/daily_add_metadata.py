@@ -8,6 +8,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def process_file(esperoj, file):
+    """Processes a single file by downloading, extracting metadata, updating database, and deleting.
+
+    Args:
+        esperoj: An EsperOJ instance.
+        file (dict): A dictionary representing a file in the database.
+
+    Raises:
+        RuntimeError: If failed to update metadata for the file.
+    """
     name = file["Name"]
     path = Path("/tmp", name)
     logger = esperoj.loggers["Primary"]
@@ -22,6 +31,24 @@ def process_file(esperoj, file):
 
 
 def daily_add_metadata(esperoj, number: int = 8):
+    """Script to add metadata to files daily.
+
+    This script retrieves a list of files from the 'Files' table in the 'Primary' database
+    that have the 'Metadata' field set to 'To be added' and a creation date. It then processes a specified number of these files concurrently
+    using a thread pool. For each file, it:
+
+      1. Downloads the file from EsperOJ storage.
+      2. Uses `exiftool` to extract metadata in JSON format.
+      3. Updates the 'Metadata' field in the database with the extracted metadata.
+      4. Deletes the downloaded file.
+
+    Args:
+        esperoj: An EsperOJ instance.
+        number (int, optional): The number of files to process concurrently. Defaults to 8.
+
+    Returns:
+        None
+    """
     logger = esperoj.loggers["Primary"]
     files = (
         esperoj.databases["Primary"]
@@ -38,10 +65,25 @@ def daily_add_metadata(esperoj, number: int = 8):
 
 
 def get_esperoj_method(esperoj):
+    """Returns a partial function that adds metadata to files daily.
+
+    Args:
+        esperoj: An EsperOJ instance.
+
+    Returns:
+        A callable that takes an EsperOJ instance and an optional number of files to process,
+        and adds metadata to the files daily.
+    """
     return partial(daily_add_metadata, esperoj)
 
 
 def get_click_command():
+    """Returns a Click command that adds metadata to files daily.
+
+    Returns:
+        A Click command that executes the daily_add_metadata function.
+    """
+
     import click
 
     @click.command()

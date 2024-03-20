@@ -5,6 +5,20 @@ from functools import partial
 
 
 def ingest(esperoj, path: Path) -> Record:
+    """Ingest a file into the Esperoj system.
+
+    Args:
+        esperoj (object): The Esperoj object representing the system.
+        path (Path): The path to the file to be ingested.
+
+    Returns:
+        Record: The database record representing the ingested file.
+
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+        FileExistsError: If the file already exists in the system.
+        RuntimeError: If the file type is not supported.
+    """
     if not path.is_file():
         raise FileNotFoundError
 
@@ -16,6 +30,17 @@ def ingest(esperoj, path: Path) -> Record:
     files = esperoj.databases["Primary"].get_table("Files")
 
     def add(storage_name):
+        """Add the file to the specified storage and create a database record for it.
+
+        Args:
+            storage_name (str): The name of the storage where the file should be stored.
+
+        Returns:
+            Record: The database record representing the ingested file.
+
+        Raises:
+            FileExistsError: If the file already exists in the storage or database.
+        """
         storage = esperoj.storages[storage_name]
         if storage.file_exists(name) or files.query('$[?Name = "{name}"]') != []:
             raise FileExistsError
@@ -39,10 +64,23 @@ def ingest(esperoj, path: Path) -> Record:
 
 
 def get_esperoj_method(esperoj):
+    """Get the method to ingest files into the Esperoj system.
+
+    Args:
+        esperoj (object): The Esperoj object representing the system.
+
+    Returns:
+        function: A partial function that takes a file path as an argument and ingests the file.
+    """
     return partial(ingest, esperoj)
 
 
 def get_click_command():
+    """Get the Click command to ingest a file into the Esperoj system.
+
+    Returns:
+        click.Command: The Click command to ingest a file.
+    """
     import click
 
     @click.command()
@@ -51,6 +89,12 @@ def get_click_command():
     )
     @click.pass_obj
     def click_command(esperoj, file_path: Path):
+        """Ingest a file into the Esperoj system.
+
+        Args:
+            esperoj (object): The Esperoj object representing the system.
+            file_path (Path): The path to the file to be ingested.
+        """
         print(ingest(esperoj, file_path))
 
     return click_command
