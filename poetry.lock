@@ -1045,13 +1045,13 @@ crt = ["botocore[crt] (>=1.33.2,<2.0a.0)"]
 
 [[package]]
 name = "seatable-api"
-version = "2.6.11"
+version = "2.7.2"
 description = "Python client for SeaTable web api"
 optional = false
 python-versions = "*"
 files = [
-    {file = "seatable-api-2.6.11.tar.gz", hash = "sha256:82b0254300798dff32c5d9f2e16aaeac78b0371cb03cb0a90ff9274789752154"},
-    {file = "seatable_api-2.6.11-py3-none-any.whl", hash = "sha256:1749f9246221e897fb90500cffe4beb3a918f3bd6ea65a985869be7933894ef0"},
+    {file = "seatable-api-2.7.2.tar.gz", hash = "sha256:b72c2c0178456c4967e4b5e10e92fa378148bc7f9362b21f90a903101bcaac33"},
+    {file = "seatable_api-2.7.2-py3-none-any.whl", hash = "sha256:555b73894cb488966ff10a99672d0946ff1dfb6d71472e4b608533d3324c1e6a"},
 ]
 
 [package.dependencies]
