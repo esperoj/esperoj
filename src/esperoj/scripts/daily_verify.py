@@ -77,7 +77,7 @@ def daily_verify(esperoj) -> None:
             failed_files.append(name)
             return False
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         begin = (shard_size + 1) * today if today < extra else shard_size * today
         end = begin + shard_size + (1 if today < extra else 0)
         executor.map(verify_file, files[begin:end])

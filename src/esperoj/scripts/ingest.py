@@ -2,7 +2,7 @@ from esperoj.database.database import Record
 from esperoj.utils import calculate_hash
 from pathlib import Path
 from functools import partial
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import subprocess
 
@@ -23,6 +23,15 @@ def ingest(esperoj, path: Path) -> list[Record]:
         RuntimeError: If the file type is not supported.
     """
     logger = esperoj.loggers["Primary"]
+
+    file_paths = []
+
+    if path.is_dir():
+        file_paths = [file_path for file_path in path.iterdir() if file_path.is_file()]
+    else:
+        if not path.is_file():
+            raise FileNotFoundError
+        file_paths = [path]
 
     def ingest_file(file_path: Path) -> Record:
         logger.info(f"Start to ingest file `{str(file_path)}`")
@@ -67,7 +76,7 @@ def ingest(esperoj, path: Path) -> list[Record]:
                 }
             )
 
-        match path.suffix:
+        match file_path.suffix:
             case ".flac" | ".mp3" | ".m4a":
                 file_id = upload(["Audio Storage", "Backup Audio Storage"]).record_id
                 return musics.create(
@@ -76,16 +85,7 @@ def ingest(esperoj, path: Path) -> list[Record]:
             case _:
                 raise RuntimeError("File type is not supported.")
 
-    file_paths = []
-
-    if path.is_dir():
-        file_paths = [file_path for file_path in path.iterdir() if file_path.is_file()]
-    else:
-        if not path.is_file():
-            raise FileNotFoundError
-        file_paths = [path]
-
-    with ProcessPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         results = []
         future_to_file_path = {
             executor.submit(ingest_file, file_path): file_path for file_path in file_paths
