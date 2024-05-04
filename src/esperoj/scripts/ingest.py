@@ -121,7 +121,7 @@ def get_click_command():
 
     @click.command()
     @click.argument(
-        "file_path", type=click.Path(exists=True, dir_okay=True, path_type=Path), required=True
+        "path", type=click.Path(exists=True, dir_okay=True, path_type=Path), required=True
     )
     @click.pass_obj
     def click_command(esperoj, path: Path):
