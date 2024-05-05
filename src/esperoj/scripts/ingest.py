@@ -71,7 +71,7 @@ def ingest(esperoj, path: Path) -> list[Record]:
                     "Size": size,
                     "SHA256": sha256sum,
                     "Internet Archive": "https://example.com/",
-                    "Storages": json.dumps(storage_names),
+                    "Storages": storage_names,
                     "Metadata": json.dumps(metadata),
                 }
             )
@@ -80,7 +80,13 @@ def ingest(esperoj, path: Path) -> list[Record]:
             case ".flac" | ".mp3" | ".m4a":
                 file_id = upload(["Audio Storage", "Backup Audio Storage"]).record_id
                 return musics.create(
-                    {"Title": metadata["Title"], "Artist": metadata["Artist"], "Files": [file_id]}
+                    {
+                        "Title": metadata["Title"],
+                        "Artist": [metadata["Artist"]]
+                        if isinstance(metadata.get("Artist", ""), str)
+                        else metadata["Artist"],
+                        "Files": [file_id],
+                    }
                 )
             case _:
                 raise RuntimeError("File type is not supported.")
