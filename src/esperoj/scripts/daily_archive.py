@@ -31,7 +31,7 @@ def daily_archive(esperoj) -> None:
         archive_url = esperoj.save_page(url)
         file.update({"Internet Archive": archive_url})
 
-    for file in files[:1]:
+    for file in files:
         start = time.time()
         name = file["Name"]
         logger.info(f"Start to archive file `{name}`")
