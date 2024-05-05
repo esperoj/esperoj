@@ -59,11 +59,10 @@ def ingest(esperoj, path: Path) -> list[Record]:
             """
             if files.query('$[?Name = "{name}"]') != []:
                 raise FileExistsError
-            for storage_name in storage_names:
-                storage = esperoj.storages[storage_name]
-                if storage.file_exists(name):
-                    raise FileExistsError
-                storage.upload_file(str(file_path), name)
+            storage = esperoj.storages[storage_names[0]]
+            if storage.file_exists(name):
+                raise FileExistsError
+            storage.upload_file(str(file_path), name)
 
             return files.create(
                 {
