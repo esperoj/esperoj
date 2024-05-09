@@ -1,7 +1,8 @@
 #!/bin/bash
+set -Exeo pipefail
 apt update -qy
 apt install -qy jq
-pip install poetry
+pip3 install poetry
 poetry install --with test,dev
 poetry run poe docs
 wget --no-verbose "https://public.esperoj.eu.org/backup.7z"
