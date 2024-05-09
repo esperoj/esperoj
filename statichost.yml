@@ -1,6 +1,5 @@
-FILENAME: statichost.yml
-image: ghcr.io/esperoj/dotfiles:latest
-command: ${HOME}/bin/entrypoint.sh "./scripts/build.sh"
+image: public.ecr.aws/docker/library/buildpack-deps:stable 
+command: ./scripts/build.sh
 public: public
 domains:
   - www.esperoj.eu.org
