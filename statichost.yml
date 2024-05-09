@@ -1,9 +1,7 @@
 FILENAME: statichost.yml
-# Docker image to use for building
-image: python:3.11
-# Build command
-command: ./scripts/build.sh
-# Public directory
-public: docs
+image: ghcr.io/esperoj/dotfiles:latest
+command: entrypoint.sh "./scripts/build.sh"
+public: public
 domains:
   - www.esperoj.eu.org
+  - esperoj.eu.org
