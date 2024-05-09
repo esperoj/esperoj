@@ -1,7 +1,7 @@
 #!/bin/bash
 set -Exeo pipefail
 apt update -qy
-apt install -qy jq
+apt install -qy jq python3-full python3-pip
 pip3 install poetry
 poetry install --with test,dev
 poetry run poe docs
