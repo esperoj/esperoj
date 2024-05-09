@@ -1,6 +1,6 @@
 FILENAME: statichost.yml
 image: ghcr.io/esperoj/dotfiles:latest
-command: entrypoint.sh "./scripts/build.sh"
+command: ${HOME}/bin/entrypoint.sh "./scripts/build.sh"
 public: public
 domains:
   - www.esperoj.eu.org
