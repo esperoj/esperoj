@@ -70,6 +70,7 @@ def ingest(esperoj, path: Path) -> list[Record]:
                     "Size": size,
                     "SHA256": sha256sum,
                     "Internet Archive": "https://example.com/",
+                    "Archive Verified": False,
                     "Storages": storage_names,
                     "Metadata": json.dumps(metadata),
                 }
