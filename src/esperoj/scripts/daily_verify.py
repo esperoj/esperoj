@@ -78,7 +78,7 @@ def daily_verify(esperoj) -> None:
             hash_list = [file["SHA256"]]
 
             with concurrent.futures.ThreadPoolExecutor(
-                max_workers=max(os.cpu_count(), 8)
+                max_workers=min(os.cpu_count(), 4)
             ) as executor:
                 futures = [
                     executor.submit(calculate_hash_from_storage_name, storage_name)

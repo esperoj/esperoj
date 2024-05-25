@@ -10,10 +10,9 @@ def info(esperoj):
     Returns:
         None
     """
-    files = esperoj.databases["Primary"].get_table("Files")
-    records = files.query("$[*]")
-    r = files.batch_update([(file.record_id, {"Archive Verified": True}) for file in records])
+    r = esperoj.storages["Backup Audio Storage"].get_link("remember.flac")
     print(r)
+
 
 
 def get_esperoj_method(esperoj):
