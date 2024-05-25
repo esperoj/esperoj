@@ -193,9 +193,10 @@ class SeatableTable(Table):
         """
         link_id = self.get_link_id(field_key)
         other_table_id = self.links[field_key]["other_table_id"]
-        return self.client.batch_update_links(
+        self.client.batch_update_links(
             link_id, self.name, other_table_id, list(record_ids_map.keys()), record_ids_map
-        )["success"]
+        )
+        return True
 
     def get_linked_records(
         self, field_key: FieldKey, record_ids: list[RecordId]

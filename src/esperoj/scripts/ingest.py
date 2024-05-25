@@ -43,7 +43,7 @@ def ingest(esperoj, path: Path) -> list[Record]:
         f.close()
         metadata = json.loads(subprocess.check_output(["exiftool", "-j", str(file_path)]))[0]
         files = esperoj.databases["Primary"].get_table("Files")
-        musics = esperoj.databases["Primary"].get_table("Musics")
+        audio = esperoj.databases["Primary"].get_table("Audio")
 
         def upload(storage_names: list[str]) -> Record:
             """Upload the file to the specified storages and create a database record for it.
@@ -78,16 +78,19 @@ def ingest(esperoj, path: Path) -> list[Record]:
 
         match file_path.suffix:
             case ".flac" | ".mp3" | ".m4a":
-                file_id = upload(["Audio Storage", "Backup Audio Storage"]).record_id
-                return musics.create(
+                file = upload(["Audio Storage", "Backup Audio Storage"])
+                audio_record = audio.create(
                     {
                         "Title": metadata["Title"],
                         "Artist": [metadata["Artist"]]
                         if isinstance(metadata.get("Artist", ""), str)
                         else metadata["Artist"],
-                        "Files": [file_id],
+                        "Comment": metadata.get("Comment", ""),
+                        "Files": [file.record_id],
                     }
                 )
+                files.update_link("Audio", "Audio", file.record_id, [audio_record.record_id])
+                return audio_record
             case _:
                 raise RuntimeError("File type is not supported.")
 

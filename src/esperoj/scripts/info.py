@@ -10,13 +10,10 @@ def info(esperoj):
     Returns:
         None
     """
-    files = (
-        esperoj.databases["Primary"]
-        .get_table("Files")
-        .query("$[\\Created][?@['Internet Archive'] != 'https://example.com/']")
-    )
-    file = files[0]
-    print(file)
+    files = esperoj.databases["Primary"].get_table("Files")
+    records = files.query("$[*]")
+    r = files.batch_update([(file.record_id, {"Archive Verified": True}) for file in records])
+    print(r)
 
 
 def get_esperoj_method(esperoj):
