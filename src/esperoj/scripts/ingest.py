@@ -59,6 +59,7 @@ def ingest(esperoj, path: Path) -> list[Record]:
             """
             if files.query('$[?Name = "{name}"]') != []:
                 raise FileExistsError
+            # TODO: Loop through all storages
             storage = esperoj.storages[storage_names[0]]
             if storage.file_exists(name):
                 raise FileExistsError
