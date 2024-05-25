@@ -1,4 +1,4 @@
-image: codeberg.org/esperoj/dotfiles
+image: esperoj/dotfiles
 command: ~/bin/run-command.sh -h local -c "./scripts/build.sh"
 public: public
 domains:
