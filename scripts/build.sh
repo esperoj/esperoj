@@ -1,7 +1,8 @@
 #!/bin/bash
 
 set -Exeo pipefail
-
+chezmoi update --force --no-tty
+. ~/.profile
 python -m venv .venv
 . ./.venv/bin/activate
 poetry install --with test,dev
