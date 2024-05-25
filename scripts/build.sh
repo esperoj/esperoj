@@ -1,14 +1,10 @@
 #!/bin/bash
+info.sh
 set -Exeo pipefail
-apt update -qy
-apt install -qy jq python3-full python3-pip
-python3 -m venv .venv
+python -m venv .venv
 . ./.venv/bin/activate
-pip3 install poetry
 poetry install --with test,dev
 poetry run poe docs
-wget --no-verbose "https://public.esperoj.eu.org/backup.7z"
+rclone sync workspace:backup ./backup
+7zz a "-p${ENCRYPTION_PASSPHRASE}" backup.7z ./backup
 mv backup.7z docs public
-cd public
-url="$(curl -sL https://raw.githubusercontent.com/esperoj/dotfiles/main/bin/pomfload | sh -s -- backup.7z)"
-echo "/backup ${url}" > _redirects

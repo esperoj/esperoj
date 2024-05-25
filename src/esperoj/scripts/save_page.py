@@ -30,11 +30,11 @@ def save_page(url: str) -> str:
         "capture_outlinks": 0,
         "capture_screenshot": 0,
         "delay_wb_availability": 0,
-        "force_get": 1,
+        "force_get": 0,
         "skip_first_archive": 1,
         "outlinks_availability": 0,
         "email_result": 1,
-        "js_behavior_timeout": 0,
+        "js_behavior_timeout": 30,
     }
 
     session = requests.Session()

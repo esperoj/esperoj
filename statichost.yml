@@ -1,4 +1,4 @@
-image: public.ecr.aws/docker/library/buildpack-deps:stable 
+image: ghcr.io/esperoj/dotfiles
 command: ./scripts/build.sh
 public: public
 domains:
