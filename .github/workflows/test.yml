@@ -39,5 +39,5 @@ jobs:
         run: poetry install --with test
 
       - name: Test package
-        run: task test
+        run: poetry run task test
 
