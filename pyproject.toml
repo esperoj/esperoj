@@ -14,18 +14,18 @@ repository = "https://github.com/esperoj/esperoj"
 esperoj = "esperoj.cli:cli"
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = "<4.0,>=3.11"
 boto3 = ">=1.34.2"
 requests = ">=2.31.0"
 seatable-api = ">=2.6.11"
 jsonpath-ng = ">=1.6.1"
 click = ">=8.1.7"
+litestar = {"version"="^2.8.3", "extras"=["standard"]}
 
 [tool.poetry.group.test]
 optional = true
 
 [tool.poetry.group.test.dependencies]
-poethepoet = ">=0.20.0"
 pytest = ">=7.3.1"
 pytest-cov = ">=4.1.0"
 pytest-mock = ">=3.12.0"
@@ -87,42 +87,3 @@ ban-relative-imports = "all"
 
 [tool.ruff.pydocstyle]
 convention = "google"
-
-[tool.poe.tasks]
-
-  [tool.poe.tasks.docs]
-  help = "Generate this package's docs"
-  cmd = """
-    pdoc
-      --docformat $docformat
-      --output-directory $outputdirectory
-      esperoj
-    """
-
-    [[tool.poe.tasks.docs.args]]
-    help = "The docstring style (default: numpy)"
-    name = "docformat"
-    options = ["--docformat"]
-    default = "google"
-
-    [[tool.poe.tasks.docs.args]]
-    help = "The output directory (default: docs)"
-    name = "outputdirectory"
-    options = ["--output-directory"]
-    default = "docs"
-
-  [tool.poe.tasks.lint]
-  help = "Lint this package"
-
-    [[tool.poe.tasks.lint.sequence]]
-    cmd = """
-      pre-commit run
-        --all-files
-        --color always
-      """
-
-  [tool.poe.tasks.test]
-  help = "Test this package"
-
-    [[tool.poe.tasks.test.sequence]]
-    cmd = "pytest"

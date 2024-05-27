@@ -1,0 +1,46 @@
+version: '3'
+dotenv: ['{{.HOMR}}/{{.MACHINE_NAME}}/.env', '{{.HOME}}/.env', '.env']
+run: when_changed
+
+tasks:
+  setup:
+    status:
+      - test -d .venv
+    cmds:
+      - python -m venv .venv
+      - source .venv/bin/activate && poetry install --with test,dev
+  build:
+    cmds:
+      - |
+        pdoc \
+          --docformat google \
+          --output-directory public/docs \
+          esperoj
+      - rclone sync workspace:backup ./backup
+      - defer: rm -rf backup/
+      - 7z a "-p${ENCRYPTION_PASSPHRASE}" backup.7z ./backup
+      - mv backup.7z public
+  lint:
+    cmds:
+      - |
+        pre-commit run \
+            --all-files \
+            --color always
+  test:
+    cmds:
+      - pytest
+
+  dev-server:
+    cmds:
+      - |
+        litestar --app esperoj.server:app \
+            run \
+                --unix-domain-socket "${HOME}/.sockets/dev.sock" \
+                --reload \
+                --reload-dir="./src" \
+                --reload-exclude="__pycache__"
+  start:
+    cmds:
+      - |
+        litestar --app esperoj.server:app \
+            run --port ${PORT:-20711}

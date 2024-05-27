@@ -1,3 +1,6 @@
+public/docs
+public/backup.7z
+
 # Coverage.py
 htmlcov/
 reports/

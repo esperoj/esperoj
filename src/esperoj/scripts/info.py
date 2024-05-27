@@ -14,7 +14,6 @@ def info(esperoj):
     print(r)
 
 
-
 def get_esperoj_method(esperoj):
     """Create a partial function with esperoj object.
 
