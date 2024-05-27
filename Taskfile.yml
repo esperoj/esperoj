@@ -28,7 +28,7 @@ tasks:
             --color always
   test:
     cmds:
-      - pytest
+      - pytest -n $(nproc)
 
   dev-server:
     cmds:
