@@ -13,7 +13,6 @@ tasks:
 
 ports:
     - port: 20711
-      onOpen: caddy
       name: Caddy
       description: Caddy
       visibility: private
