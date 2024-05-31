@@ -5,7 +5,11 @@ tasks:
       before: |
         chezmoi init --apply --force
       init: |
-        echo $(date --utc) > ~/init.txt
+        source ~/.profile
+        rm -rf .venv
+        python -m venv .venv
+        source .venv/bin/activate
+        poetry install --with build,cli,test,dev
       command: |
         source ~/.profile
         source .venv/bin/activate
