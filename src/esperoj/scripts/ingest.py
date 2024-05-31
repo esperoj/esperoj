@@ -91,6 +91,9 @@ def ingest(esperoj, path: Path) -> list[Record]:
                     }
                 )
                 files.update_link("Audio", "Audio", file.record_id, [audio_record.record_id])
+                url = esperoj.storages[file["Storages"][0]].get_link(file["Name"])
+                archive_url = esperoj.save_page(url)
+                file.update({"Internet Archive": archive_url})
                 return audio_record
             case _:
                 raise RuntimeError("File type is not supported.")
