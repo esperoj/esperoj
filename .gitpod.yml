@@ -4,10 +4,8 @@ tasks:
     - name: Setup
       before: |
         chezmoi init --apply --force
-        chezmoi update --force
       init: |
-        rm -rf .venv
-        task setup
+        echo $(date --utc) > ~/init.txt
       command: |
         source ~/.profile
         source .venv/bin/activate
