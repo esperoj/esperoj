@@ -3,6 +3,7 @@ image: ghcr.io/esperoj/esperoj-dev
 tasks:
     - name: Setup
       before: |
+        chezmoi init --apply --force
         chezmoi update --force
         source ~/.profile
         start.sh pcloud caddy
