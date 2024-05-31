@@ -57,7 +57,7 @@ def ingest(esperoj, path: Path) -> list[Record]:
             Raises:
                 FileExistsError: If the file already exists in any of the storages or database.
             """
-            if files.query('$[?Name = "{name}"]') != []:
+            if list(filter(lambda file: file["Name"] == name, files.query())) != []:
                 raise FileExistsError
             # TODO: Loop through all storages
             storage = esperoj.storages[storage_names[0]]
@@ -71,7 +71,7 @@ def ingest(esperoj, path: Path) -> list[Record]:
                     "Size": size,
                     "SHA256": sha256sum,
                     "Internet Archive": "https://example.com/",
-                    "Archive Verified": False,
+                    "Verified": False,
                     "Storages": storage_names,
                     "Metadata": json.dumps(metadata),
                 }

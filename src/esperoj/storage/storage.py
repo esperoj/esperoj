@@ -117,6 +117,17 @@ class Storage(ABC):
             dst (str): The destination path where the file will be saved.
         """
 
+    @abstractmethod
+    def size(self, src: str) -> int:
+        """Check file size
+
+        Args:
+            src (str): The path of the file.
+
+        Returns:
+            size (int): Size of the object.
+        """
+
 
 class StorageFactory:
     """StorageFactory class.

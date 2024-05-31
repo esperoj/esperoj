@@ -32,10 +32,10 @@ def daily_verify(esperoj) -> None:
         VerificationError: If the verification of one or more files fails.
     """
     logger = esperoj.loggers["Primary"]
-    files = (
-        esperoj.databases["Primary"]
-        .get_table("Files")
-        .query("$[\\Created][?@['Internet Archive'] != 'https://example.com/']")
+    files = sorted(
+        esperoj.databases["Primary"].get_table("Files").query(),
+        key=lambda file: file["Created"],
+        reverse=True,
     )
     num_shards = 28
     shard_size, extra = divmod(len(files), num_shards)
@@ -58,44 +58,45 @@ def daily_verify(esperoj) -> None:
             return calculate_hash(esperoj.storages[storage_name].get_file(name))
 
         def calculate_hash_from_archive():
-            if file["Archive Verified"]:
-                request = requests.head(file["Internet Archive"])
-                if int(request.headers["content-length"]) != file["Size"]:
-                    return f"""
-                    HEADERS: {request.headers}
-                    TEXT: {request.text}
-                    """
-                return file["SHA256"]
-            else:
-                return calculate_hash(
-                    requests.get(file["Internet Archive"], stream=True, timeout=30).iter_content(
-                        2**20
-                    )
-                )
+            return calculate_hash(
+                requests.get(file["Internet Archive"], stream=True, timeout=30).iter_content(2**20)
+            )
+
+        def get_size_from_archive():
+            return int(requests.head(file["Internet Archive"]).headers["content-length"])
 
         try:
             start_time = time.time()
             logger.info(f"Start verifying file `{name}`")
-            hash_list = [file["SHA256"]]
-
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=min(os.cpu_count(), 4)
-            ) as executor:
-                futures = [
-                    executor.submit(calculate_hash_from_storage_name, storage_name)
-                    for storage_name in file["Storages"]
+            if file["Verified"]:
+                size_list = [
+                    esperoj.storages[storage_name].size(name) for storage_name in file["Storages"]
                 ]
-                futures.append(executor.submit(calculate_hash_from_archive))
-                for future in concurrent.futures.as_completed(futures):
-                    hash_list.append(future.result())
-                if len(set(hash_list)) == 1:
-                    logger.info(f"Verified file `{name}` in {time.time() - start_time} seconds")
-                    if not file["Archive Verified"]:
-                        file.update({"Archive Verified": True})
-                    return True
-                raise VerificationError(
-                    f"Verification failed for '{name}' with hash list {hash_list}"
-                )
+                size_list.append(file["Size"])
+                size_list.append(get_size_from_archive())
+                if len(set(size_list)) != 1:
+                    raise VerificationError(
+                        f"Verification failed for '{name}' with size list {size_list}"
+                    )
+            else:
+                with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=min(os.cpu_count(), 3)
+                ) as executor:
+                    hash_list = [file["SHA256"]]
+                    futures = [
+                        executor.submit(calculate_hash_from_storage_name, storage_name)
+                        for storage_name in file["Storages"]
+                    ]
+                    futures.append(executor.submit(calculate_hash_from_archive))
+                    for future in concurrent.futures.as_completed(futures):
+                        hash_list.append(future.result())
+                    if len(set(hash_list)) != 1:
+                        raise VerificationError(
+                            f"Verification failed for '{name}' with hash list {hash_list}"
+                        )
+                    file.update({"Verified": True})
+            logger.info(f"Verified file `{name}` in {time.time() - start_time} seconds")
+            return True
         except VerificationError as e:
             logger.error(f"VerificationError: {e}")
             failed_files.append(name)

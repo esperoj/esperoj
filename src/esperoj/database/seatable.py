@@ -4,7 +4,6 @@ import os
 import uuid
 from typing import Any
 
-from jsonpath_ng.ext import parse
 from seatable_api import Base
 
 from esperoj.database.database import (
@@ -16,6 +15,8 @@ from esperoj.database.database import (
     RecordId,
     Table,
 )
+
+from esperoj.database.query import Query
 
 
 class SeatableRecord(Record):
@@ -219,22 +220,17 @@ class SeatableTable(Table):
             ).items()
         }
 
-    def query(self, query: str) -> list[Record]:
+    def query(self, query: Query | None = None) -> list[Record]:
         """Executes a query on the table and returns the resulting records.
 
         Args:
-            query (str): The query string.
+            query (Query): The query.
 
         Returns:
             list[Record]: A list of SeatableRecord instances representing the resulting records.
-
-        Example:
-            table.query("$[/@.name][?name='Esperoj']")
-            table.query("$[/@._id][*]")
         """
         data = self.client.query(f"SELECT * FROM `{self.name}` LIMIT 10000")
-        jsonpath_expr = parse(query)
-        return [self._record_from_dict(matched.value) for matched in jsonpath_expr.find(data)]
+        return [self._record_from_dict(row) for row in data]
 
 
 class SeatableDatabase(Database):

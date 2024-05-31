@@ -171,3 +171,14 @@ class S3Storage(Storage):
             raise e
         except FileNotFoundError as e:
             raise FileNotFoundError(f"No such file: '{src}'") from e
+
+    def size(self, src: str) -> int:
+        """Check file size
+
+        Args:
+            src (str): The path of the file.
+
+        Returns:
+            size (int): Size of the object.
+        """
+        return self.client.head_object(Bucket=self.config["bucket_name"], Key=src)["ContentLength"]

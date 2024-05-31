@@ -16,7 +16,7 @@ def export_database(esperoj, name):
     metadata = db.metadata
     for table in metadata["tables"]:
         table_name = table["name"]
-        data = [record.to_dict() for record in db.get_table(table_name).query("$[*]")]
+        data = [record.to_dict() for record in db.get_table(table_name).query()]
         with open(f"{table_name}.json", "w") as f:
             json.dump(data, f)
     with open("Metadata.json", "w") as f:

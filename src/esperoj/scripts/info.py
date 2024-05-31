@@ -10,8 +10,8 @@ def info(esperoj):
     Returns:
         None
     """
-    r = esperoj.storages["Backup Audio Storage"].get_link("remember.flac")
-    print(r)
+
+    print(esperoj.storages["Backup Audio Storage"].upload_file("esperoj.py", "esperoj.py"))
 
 
 def get_esperoj_method(esperoj):
