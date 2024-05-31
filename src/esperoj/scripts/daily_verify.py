@@ -59,11 +59,12 @@ def daily_verify(esperoj) -> None:
 
         def calculate_hash_from_archive():
             if file["Archive Verified"]:
-                if (
-                    int(requests.head(file["Internet Archive"]).headers["content-length"])
-                    != file["Size"]
-                ):
-                    return "wrong hash"
+                request = requests.head(file["Internet Archive"])
+                if int(request.headers["content-length"]) != file["Size"]:
+                    return f"""
+                    HEADERS: {request.headers}
+                    TEXT: {request.text}
+                    """
                 return file["SHA256"]
             else:
                 return calculate_hash(
@@ -92,7 +93,9 @@ def daily_verify(esperoj) -> None:
                     if not file["Archive Verified"]:
                         file.update({"Archive Verified": True})
                     return True
-                raise VerificationError(f"Verification failed for {name}")
+                raise VerificationError(
+                    f"Verification failed for '{name}' with hash list {hash_list}"
+                )
         except VerificationError as e:
             logger.error(f"VerificationError: {e}")
             failed_files.append(name)

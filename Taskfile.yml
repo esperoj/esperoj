@@ -8,7 +8,7 @@ tasks:
       - test -d .venv
     cmds:
       - python -m venv .venv
-      - source .venv/bin/activate && poetry install --with build,test,dev
+      - source .venv/bin/activate && poetry install --with build,cli,test,dev
   build:
     cmds:
       - |
