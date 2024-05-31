@@ -1,0 +1,79 @@
+name: Build
+run-name: Build
+on:
+  workflow_dispatch:
+  push:
+    branches:
+    - 'main'
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: esperoj/esperoj-dev
+
+jobs:
+  Build:
+    concurrency:
+      group: ${{ github.workflow }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    -
+      name: Checkout
+      uses: actions/checkout@v3
+    -
+      name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      with:
+        platforms: linux/amd64
+    -
+      name: Login
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    -
+        name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+    -
+      name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        file: .gitpod.Dockerfile
+        no-cache: false
+    - uses: actions/delete-package-versions@v5
+      with:
+        package-name: 'esperoj-dev'
+        package-type: 'container'
+        min-versions-to-keep: 10
+        delete-only-untagged-versions: 'false'
+    -
+      name: Send notification
+      env:
+        NTFY_URL: ${{ secrets.NTFY_URL }}
+        MY_UUID: ${{ secrets.MY_UUID }}
+      if: ${{ always() }}
+      run: |
+        ./bin/notify.sh "" \
+        "Title: Workflow ${{ github.workflow }} of ${{ github.repository }} completed" \
+        "Actions: view, View log, ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+        | jq
