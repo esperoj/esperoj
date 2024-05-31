@@ -5,12 +5,13 @@ tasks:
       before: |
         chezmoi init --apply --force
         chezmoi update --force
-        source ~/.profile
-        start.sh pcloud caddy
-      init: task setup
+      init: |
+        rm -rf .venv
+        task setup
       command: |
         source ~/.profile
         source .venv/bin/activate
+        start.sh pcloud caddy
         task dev-server
 
 ports:
