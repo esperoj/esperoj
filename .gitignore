@@ -1,7 +1,6 @@
-public/docs
-public/backup.7z
 *.bin
 build/
+.ruff_cache/
 
 # Coverage.py
 htmlcov/

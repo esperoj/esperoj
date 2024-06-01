@@ -1,5 +1,8 @@
 {
-  "buildCommand": "pip install poetry && poetry install --with build,cli,server && poetry run pdoc --docformat google --output-directory public/docs esperoj",
+  "buildCommand": "echo done",
   "outputDirectory": "public",
-  "regions": ["fra1"]
+  "regions": ["fra1"],
+  "rewrites": [
+      { "source": "/api/(.*)", "destination": "/api/" }
+  ]
 }

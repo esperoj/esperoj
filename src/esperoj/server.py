@@ -1,5 +1,6 @@
-import sys
-from os import getenv
+"""Server module."""
+
+# import sys
 from pathlib import Path
 
 import requests
@@ -7,6 +8,7 @@ from litestar import Litestar, get
 from litestar.response import File
 from litestar.static_files import create_static_files_router
 
+add_later = """
 from esperoj.esperoj import EsperojFactory
 
 scripts_folder = Path.home() / "esperoj-scripts"
@@ -14,10 +16,10 @@ if getenv("ESPEROJ_SCRIPTS_FOLDER"):
     scripts_folder = Path(getenv("ESPEROJ_SCRIPTS_FOLDER"))
 sys.path.append(str(scripts_folder))
 
-PUBLIC_DIR = Path("public")
-
 config_file = getenv("ESPEROJ_CONFIG_FILE", "")
 esperoj = EsperojFactory.create(config_file)
+"""
+PUBLIC_DIR = Path("public")
 
 
 @get("/backup.7z", media_type="application/x-7z-compressed")

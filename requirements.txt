@@ -1,1 +1,1 @@
--e .[server]
+git+https://github.com/esperoj/esperoj.git
