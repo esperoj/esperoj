@@ -2517,7 +2517,10 @@ cffi = {version = ">=1.11", markers = "platform_python_implementation == \"PyPy\
 [package.extras]
 cffi = ["cffi (>=1.11)"]
 
+[extras]
+server = []
+
 [metadata]
 lock-version = "2.0"
 python-versions = "<4.0,>=3.11"
-content-hash = "dc2fce7da0a2b528ac79074621a1bd1a7a95845cfa20e628a42bee42d53c4b33"
+content-hash = "a83cee00ef51c4cc706f3cb111ee65bde92f3074329709213d0c8cc32f30d6e7"
