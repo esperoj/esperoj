@@ -17,9 +17,18 @@ jobs:
 
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          create-symlink: true
+
+      - name: Cache Nuitka
+        id: cache-nuitka
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Nuitka
+          key: ${{ runner.os }}-nuitka
 
       - name: Install task
-        run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
+        run: echo $HOME && sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
 
       - name: Install poetry
         run: pipx install poetry
@@ -35,7 +44,7 @@ jobs:
       - name: Build
         run: |
           poetry run task nuitka
-          mv src/__main__.onefile-build ./esperoj_linux_x86_64
+          mv src/__main__.bin ./esperoj_linux_x86_64
           tar -czf esperoj_linux_x86_64.tar.gz -C src/__main__.dist .
 
       - name: Release
