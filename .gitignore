@@ -68,3 +68,4 @@ __pycache__/
 
 # VS Code
 .vscode/1
+.vercel

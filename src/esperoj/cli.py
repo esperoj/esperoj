@@ -2,7 +2,13 @@
 
 from pathlib import Path
 import click
-import tomllib
+from os import getenv
+import sys
+
+scripts_folder = Path.home() / "esperoj-scripts"
+if getenv("ESPEROJ_SCRIPTS_FOLDER"):
+    scripts_folder = Path(getenv("ESPEROJ_SCRIPTS_FOLDER"))
+sys.path.append(str(scripts_folder))
 
 
 class EsperojCLI(click.Group):
@@ -20,7 +26,6 @@ class EsperojCLI(click.Group):
         Returns:
             list: A list of command names.
         """
-        scripts_folder = Path(__file__).parent / "scripts"
         rv = [file.stem for file in scripts_folder.glob("*.py") if file.name != "__init__.py"]
         rv.sort()
         return rv
@@ -36,7 +41,7 @@ class EsperojCLI(click.Group):
         Returns:
             callable: The loaded command function.
         """
-        mod = __import__(f"esperoj.scripts.{cmd_name}", None, None, ["get_click_command"])
+        mod = __import__(f"{cmd_name}", None, None, ["get_click_command"])
         return mod.get_click_command()
 
 
@@ -55,10 +60,7 @@ def cli(ctx, config_file, debug):
     """
     from esperoj.esperoj import EsperojFactory
 
-    if not config_file:
-        config_file = Path.home() / ".config" / "esperoj" / "esperoj.toml"
-    config = tomllib.loads(config_file.read_text())
-    esperoj = EsperojFactory.create(config)
+    esperoj = EsperojFactory.create(config_file)
     ctx.obj = esperoj
 
 

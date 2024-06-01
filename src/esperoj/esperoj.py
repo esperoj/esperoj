@@ -4,6 +4,10 @@ import logging
 
 from esperoj.database.database import DatabaseFactory
 from esperoj.storage.storage import StorageFactory
+import tomllib
+from py7zr import SevenZipFile
+from os import getenv
+from pathlib import Path
 
 
 class Esperoj:
@@ -40,7 +44,7 @@ class Esperoj:
             callable: The imported method, or None if the import fails.
         """
         try:
-            mod = __import__(f"esperoj.scripts.{name}", None, None, ["get_esperoj_method"])
+            mod = __import__(f"{name}", None, None, ["get_esperoj_method"])
         except ImportError:
             return
         return mod.get_esperoj_method(self)
@@ -50,12 +54,12 @@ class EsperojFactory:
     """EsperojFactory class for creating Esperoj instances."""
 
     @staticmethod
-    def create(config: dict):
+    def create(config_file: str = ""):
         """
         Create and return an Esperoj instance with the specified configuration.
 
         Args:
-            config (dict): The configuration dictionary for the Esperoj instance.
+            config_file (str): The configuration file path.
 
         Returns:
             Esperoj: The created Esperoj instance.
@@ -69,8 +73,17 @@ class EsperojFactory:
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-
         loggers["Primary"] = logger
+        config_text = ""
+        if not config_file:
+            config_file = Path.home() / ".config" / "esperoj" / "esperoj.toml"
+        if Path(config_file).suffix == ".7z":
+            with SevenZipFile(str(config_file), password=getenv("ENCRYPTION_PASSPHRASE")) as zip:
+                for name, bio in zip.readall().items():
+                    config_text = bio.read().decode("utf-8")
+        else:
+            config_text = config_file.read_text()
+        config = tomllib.loads(config_text)
         for storage_config in config["storages"]:
             storage = StorageFactory.create(storage_config)
             for name in [storage.config["name"]] + storage.config["aliases"]:
