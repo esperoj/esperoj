@@ -18,10 +18,6 @@ tasks:
           --docformat google \
           --output-directory public/docs \
           esperoj
-      #- rclone sync workspace:backup ./backup
-      #- defer: rm -rf backup/
-      #- 7z a "-p${ENCRYPTION_PASSPHRASE}" backup.7z ./backup
-      #- mv backup.7z public
   nuitka: |
     cd src/
     cp esperoj/__main__.py .
@@ -32,9 +28,16 @@ tasks:
         pre-commit run \
             --all-files \
             --color always
+
   test:
     cmds:
       - pytest -n $(nproc)
+
+  deploy:
+    deps: [build]
+    cmds:
+      - npx vercel deploy
+      - rm -rf public/docs
 
   dev-server:
     cmds:
