@@ -7,8 +7,10 @@ tasks:
     status:
       - test -d .venv
     cmds:
-      - python -m venv .venv
-      - source .venv/bin/activate && poetry install --with build,cli,test,dev
+      - |
+        python -m venv .venv
+        source .venv/bin/activate
+        poetry install --with build,cli,dev,server,test
   build:
     cmds:
       - |
@@ -20,6 +22,11 @@ tasks:
       - defer: rm -rf backup/
       - 7z a "-p${ENCRYPTION_PASSPHRASE}" backup.7z ./backup
       - mv backup.7z public
+  nuitka: |
+    cd src/
+    cp esperoj/__main__.py .
+    python -m nuitka --follow-imports --static-libpython=yes __main__.py
+    rm __main__.py
   lint:
     cmds:
       - |

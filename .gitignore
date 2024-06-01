@@ -1,5 +1,7 @@
 public/docs
 public/backup.7z
+*.bin
+build/
 
 # Coverage.py
 htmlcov/
