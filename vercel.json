@@ -4,6 +4,6 @@
   "regions": ["fra1"],
   "rewrites": [
       { "source": "/api/(.*)", "destination": "/api/" },
-      { "source": "/backup.7z", "destination": "/api/" },
+      { "source": "/backup.7z", "destination": "/api/" }
   ]
 }
