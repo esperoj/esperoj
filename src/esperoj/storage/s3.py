@@ -1,11 +1,12 @@
 """Module contains S3Storage class."""
 
+from typing import Iterator
+
 import boto3
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
 from esperoj.storage.storage import DeleteFilesResponse, Storage
-from typing import Iterator
 
 
 class S3Storage(Storage):

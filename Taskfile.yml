@@ -18,10 +18,10 @@ tasks:
           --docformat google \
           --output-directory public/docs \
           esperoj
-      - rclone sync workspace:backup ./backup
-      - defer: rm -rf backup/
-      - 7z a "-p${ENCRYPTION_PASSPHRASE}" backup.7z ./backup
-      - mv backup.7z public
+      #- rclone sync workspace:backup ./backup
+      #- defer: rm -rf backup/
+      #- 7z a "-p${ENCRYPTION_PASSPHRASE}" backup.7z ./backup
+      #- mv backup.7z public
   nuitka: |
     cd src/
     cp esperoj/__main__.py .

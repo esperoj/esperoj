@@ -1,9 +1,10 @@
 """Esperoj CLI."""
 
-from pathlib import Path
-import click
-from os import getenv
 import sys
+from os import getenv
+from pathlib import Path
+
+import click
 
 scripts_folder = Path.home() / "esperoj-scripts"
 if getenv("ESPEROJ_SCRIPTS_FOLDER"):

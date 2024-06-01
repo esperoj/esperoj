@@ -1,13 +1,14 @@
 """Module that contains the Esperoj class, which can ingest and archive files."""
 
 import logging
+import tomllib
+from os import getenv
+from pathlib import Path
+
+from py7zr import SevenZipFile
 
 from esperoj.database.database import DatabaseFactory
 from esperoj.storage.storage import StorageFactory
-import tomllib
-from py7zr import SevenZipFile
-from os import getenv
-from pathlib import Path
 
 
 class Esperoj:

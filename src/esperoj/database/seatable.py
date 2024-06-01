@@ -15,7 +15,6 @@ from esperoj.database.database import (
     RecordId,
     Table,
 )
-
 from esperoj.database.query import Query
 
 

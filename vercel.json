@@ -1,0 +1,5 @@
+{
+  "buildCommand": "poetry install --with build,cli,server && poetry run pdoc --docformat google --output-directory public/docs esperoj"
+  "outputDirectory": "public"
+  "regions": ["fra1"]
+}
