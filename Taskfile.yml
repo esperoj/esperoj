@@ -51,3 +51,10 @@ tasks:
       - |
         litestar --app esperoj.server:app \
             run --port ${PORT:-20711}
+
+  release:
+    cmds:
+      - |
+        export VERSION="$(python scripts/get_version.py)"
+        git tag -a "v$VERSION" -m "Release version $VERSION"
+        git push origin "v$VERSION"
