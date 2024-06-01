@@ -19,6 +19,7 @@ boto3 = ">=1.34.2"
 seatable-api = ">=2.6.11"
 requests = ">=2.32.3"
 py7zr = ">=0.21.0"
+litestar = {"version" = ">=2.8.3", extras = ["standard"]}
 
 [tool.poetry.group.server]
 optional = true
