@@ -26,7 +26,6 @@ tasks:
     cd src/
     cp esperoj/__main__.py .
     python -m nuitka --static-libpython=yes --onefile __main__.py
-    ls
   lint:
     cmds:
       - |

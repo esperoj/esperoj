@@ -35,7 +35,8 @@ jobs:
       - name: Build
         run: |
           poetry run task nuitka
-          mv src/__main__.bin ./esperoj_linux_x86_64
+          mv src/__main__.onefile-build ./esperoj_linux_x86_64
+          tar -czf esperoj_linux_x86_64.tar.gz -C src/__main__.dist .
 
       - name: Release
         uses: softprops/action-gh-release@v2
@@ -43,3 +44,4 @@ jobs:
         with:
           files: |
             esperoj_linux_x86_64
+            esperoj_linux_x86_64.tar.gz
