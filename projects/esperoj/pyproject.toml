@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "esperoj"
-version = "0.13.2"
+version = "0.13.3"
 description = "Esperoj package with cli."
 authors = ["Esperoj <esperoj@esperoj.eu.org>"]
 readme = "README.md"
@@ -61,6 +61,7 @@ pre-commit = ">=3.3.1"
 
 [tool.poetry.extras]
 server = ["litestar"]
+cli = ["click"]
 
 [tool.coverage.report]
 precision = 1

@@ -1,13 +1,8 @@
 -r requirements.txt
+-e .[server,cli]
 
 nuitka
 patchelf
 zstandard
 ordered-set
 wheel
-
-# cli
-click
-
-# server
-litestar

@@ -32,18 +32,17 @@ jobs:
         run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
 
       - name: Setup
-        run: |
-          ENV=nuitka task setup
-          cp esperoj/__main__.py .
+        run: ENV=nuitka task setup
 
       - uses: Nuitka/Nuitka-Action@main
         with:
-          working-directory: "projects/esperoj"
+          working-directory: "projects/esperoj/esperoj"
           nuitka-version: main
           script-name: __main__.py
+          include-package: esperoj
           standalone: true
           onefile: true
-          output-dir: "build"
+          output-dir: "../build"
 
       - name: Change name
         run: |
