@@ -53,6 +53,6 @@ tasks:
   release:
     cmds:
       - |
-        export VERSION="$(python scripts/get_version.py)"
+        export VERSION="$(python ../../scripts/get_version.py)"
         git tag -a "v$VERSION" -m "Release version $VERSION"
         git push origin "v$VERSION"
