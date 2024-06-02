@@ -36,7 +36,7 @@ jobs:
 
       - uses: Nuitka/Nuitka-Action@main
         with:
-          working-directory: "./esperoj"
+          working-directory: "esperoj"
           nuitka-version: main
           script-name: __main__.py
           standalone: true
