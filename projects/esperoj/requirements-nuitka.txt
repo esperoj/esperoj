@@ -1,0 +1,11 @@
+-r requirements.txt
+
+nuitka = ">=2.2.3"
+patchelf = ">=0.17.2.1"
+zstandard = ">=0.22.0"
+
+# cli
+click
+
+# server
+litestar

@@ -1,0 +1,14 @@
+-r requirements.txt
+
+# Test
+pytest
+pytest-cov
+pytest-mock
+pytest-xdist
+moto
+
+# cli
+click
+
+# server
+litestar

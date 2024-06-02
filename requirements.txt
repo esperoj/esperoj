@@ -1,6 +1,0 @@
-git+https://github.com/esperoj/esperoj.git
-boto3
-seatable-api
-requests
-py7zr
-litestar[standard]

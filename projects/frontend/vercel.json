@@ -2,6 +2,11 @@
   "buildCommand": "echo done",
   "outputDirectory": "public",
   "regions": ["fra1"],
+  "functions": {
+  "api/index.py": {
+    "maxDuration": 60
+    }
+  },
   "rewrites": [
       { "source": "/api/(.*)", "destination": "/api/" },
       { "source": "/backup.7z", "destination": "/api/" }
