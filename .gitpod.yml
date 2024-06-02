@@ -9,7 +9,7 @@ tasks:
         rm -rf .venv
         python -m venv .venv
         source .venv/bin/activate
-        poetry install --with build,cli,dev,server,test
+        ENV=dev task setup
       command: |
         source ~/.profile
         source .venv/bin/activate

@@ -6,6 +6,11 @@ on:
       - main
   pull_request:
 
+defaults:
+  run:
+    shell: bash
+    working-directory: ./projects/esperoj
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
 
       - name: Install exiftool
         run: sudo apt-get install -qy exiftool
@@ -27,17 +32,17 @@ jobs:
       - name: Install task
         run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
 
-      - name: Install poetry
-        run: pipx install poetry
-
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@main
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
+          cache: 'pip'
+          cache-dependency-path: |
+            ./requirements.txt
+            ./requirements-test.txt
 
       - name: Install dependencies
-        run: poetry install --with cli,server,test
+        run: ENV=test task setup
 
       - name: Test package
-        run: poetry run task test
+        run: task test
 

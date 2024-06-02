@@ -8,49 +8,53 @@ on:
 permissions:
   contents: write
 
+defaults:
+  run:
+    shell: bash
+    working-directory: ./projects/esperoj
+
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@main
 
-      - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - uses: actions/setup-python@main
         with:
-          create-symlink: true
-
-      - name: Cache Nuitka
-        id: cache-nuitka
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/Nuitka
-          key: ${{ runner.os }}-nuitka
+          python-version: "3.11"
+          cache: 'pip'
+          cache-dependency-path: |
+            ./requirements.txt
+            ./requirements-nuitka.txt
 
       - name: Install task
         run: echo $HOME && sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
 
-      - name: Install poetry
-        run: pipx install poetry
+      - name: Setup
+        run: ENV=nuitka task setup
 
-      - uses: actions/setup-python@v5
+      - uses: Nuitka/Nuitka-Action@main
         with:
-          python-version: "3.11"
-          cache: 'poetry'
+          working-directory: "./esperoj"
+          nuitka-version: main
+          script-name: __main__.py
+          standalone: true
+          onefile: true
+          include-package: "esperoj"
+          output-dir: "build"
 
-      - name: Install dependencies
-        run: poetry install --with build,cli,server
-
-      - name: Build
+      - name: Change name
         run: |
-          poetry run task nuitka
-          mv src/__main__.bin ./esperoj_linux_x86_64
-          tar -czf esperoj_linux_x86_64.tar.gz -C src/__main__.dist .
+          ls -a
+          ls -a esperoj
+          mv esperoj/build/__main__.bin ./esperoj_linux_x86_64
+          tar -czf esperoj_linux_x86_64.tar.gz -C esperoj/build/__main__.dist .
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@master
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            esperoj_linux_x86_64
-            esperoj_linux_x86_64.tar.gz
+            ./esperoj_linux_x86_64
+            ./esperoj_linux_x86_64.tar.gz
