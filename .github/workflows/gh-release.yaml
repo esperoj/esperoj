@@ -32,24 +32,23 @@ jobs:
         run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
 
       - name: Setup
-        run: ENV=nuitka task setup
+        run: |
+          ENV=nuitka task setup
+          cp esperoj/__main__.py .
 
       - uses: Nuitka/Nuitka-Action@main
         with:
-          working-directory: "projects/esperoj/esperoj"
+          working-directory: "projects/esperoj"
           nuitka-version: main
           script-name: __main__.py
           standalone: true
           onefile: true
-          include-package: "esperoj"
           output-dir: "build"
 
       - name: Change name
-        # Remove ls later
         run: |
-          ls esperoj/build
-          mv esperoj/build/__main__.bin ./esperoj_linux_x86_64
-          tar -czf esperoj_linux_x86_64.tar.gz -C esperoj/build/__main__.dist .
+          mv build/__main__.bin ./esperoj_linux_x86_64
+          tar -czf esperoj_linux_x86_64.tar.gz -C build/__main__.dist .
 
       - name: Release
         uses: softprops/action-gh-release@master

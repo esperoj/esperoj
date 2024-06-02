@@ -14,14 +14,14 @@ tasks:
           --output-directory public/docs \
           esperoj
   nuitka: |
-    cd esperoj
+    cp esperoj/__main__.py .
     python -m nuitka \
-      --include-package="esperoj" \
       --static-libpython=yes \
       --standalone \
       --onefile \
       --output-dir build \
       __main__.py
+    rm __main__.py
   lint:
     cmds:
       - |
