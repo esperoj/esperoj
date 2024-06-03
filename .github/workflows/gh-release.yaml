@@ -25,8 +25,8 @@ jobs:
           python-version: "3.12"
           cache: 'pip'
           cache-dependency-path: |
-            ./pyproject.toml
-            ./requirements-nuitka.txt
+            pyproject.toml
+            requirements-nuitka.txt
 
       - name: Setup
         run: pip install -r requirements-nuitka.txt

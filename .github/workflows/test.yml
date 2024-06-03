@@ -36,8 +36,8 @@ jobs:
         env:
           cache-name: cache-venv
         with:
-          path: ./.venv
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./requirements-test.txt', './pyproject.toml') }}
+          path: .venv
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('requirements-test.txt', 'pyproject.toml') }}
       - uses: yezz123/setup-uv@main
       - name: Setup
         run: ENV=test task setup
