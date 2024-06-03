@@ -1,37 +1,20 @@
 """Server module."""
 
-# import sys
 from pathlib import Path
 
 import requests
 from litestar import Litestar, get
-from litestar.response import File
+from litestar.response import Stream
 from litestar.static_files import create_static_files_router
 
-add_later = """
-from esperoj.esperoj import EsperojFactory
-
-scripts_folder = Path.home() / "esperoj-scripts"
-if getenv("ESPEROJ_SCRIPTS_FOLDER"):
-    scripts_folder = Path(getenv("ESPEROJ_SCRIPTS_FOLDER"))
-sys.path.append(str(scripts_folder))
-
-config_file = getenv("ESPEROJ_CONFIG_FILE", "")
-esperoj = EsperojFactory.create(config_file)
-"""
 PUBLIC_DIR = Path("public")
 
 
 @get("/backup.7z", media_type="application/x-7z-compressed")
-async def get_backup() -> File:
-    file_path = "/tmp/backup.7z"
+async def get_backup() -> Stream:
     url = "https://public.esperoj.eu.org/backup.7z"
-    response = requests.get(url)
-    Path(file_path).write_bytes(response.content)
-    return File(
-        path=file_path,
-        filename="backup.7z",
-    )
+    response = requests.get(url, stream=True, timeout=30)
+    return Stream(response.iter_content(2**20))
 
 
 def on_startup():

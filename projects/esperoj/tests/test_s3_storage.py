@@ -46,9 +46,7 @@ def test_delete_files_errors():
 
 def test_download_file(s3_storage, tmp_path):
     """Test file download from S3 storage."""
-    s3_storage.client.put_object(
-        Bucket=s3_storage.config["bucket_name"], Key="test.txt", Body="test content"
-    )
+    s3_storage.client.put_object(Bucket=s3_storage.config["bucket_name"], Key="test.txt", Body="test content")
     tmp_file = tmp_path / "downloaded.txt"
     s3_storage.download_file("test.txt", str(tmp_file))
     assert tmp_file.read_text() == "test content"

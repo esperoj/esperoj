@@ -271,9 +271,7 @@ class Table(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_linked_records(
-        self, field_key: FieldKey, record_ids: list[RecordId]
-    ) -> dict[RecordId, list[RecordId]]:
+    def get_linked_records(self, field_key: FieldKey, record_ids: list[RecordId]) -> dict[RecordId, list[RecordId]]:
         """Get the linked records for the given record_ids.
 
         Args:

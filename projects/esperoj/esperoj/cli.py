@@ -13,13 +13,10 @@ sys.path.append(str(scripts_folder))
 
 
 class EsperojCLI(click.Group):
-    """
-    The EsperojCLI class is a Click command group that lists and loads Esperoj commands.
-    """
+    """The EsperojCLI class is a Click command group that lists and loads Esperoj commands."""
 
     def list_commands(self, ctx):
-        """
-        List the available Esperoj commands by scanning the scripts folder.
+        """List the available Esperoj commands by scanning the scripts folder.
 
         Args:
             ctx (click.Context): The Click context object.
@@ -32,8 +29,7 @@ class EsperojCLI(click.Group):
         return rv
 
     def get_command(self, ctx, cmd_name):
-        """
-        Load and return an Esperoj command by name.
+        """Load and return an Esperoj command by name.
 
         Args:
             ctx (click.Context): The Click context object.
@@ -51,8 +47,7 @@ class EsperojCLI(click.Group):
 @click.option("--debug/--no-debug", default=False, envvar="ESPEROJ_DEBUG")
 @click.pass_context
 def cli(ctx, config_file, debug):
-    """
-    The main entry point for the Esperoj CLI.
+    """The main entry point for the Esperoj CLI.
 
     Args:
         ctx (click.Context): The Click context object.

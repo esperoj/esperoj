@@ -45,9 +45,7 @@ class SeatableTable(Table):
         self.name = name
         self.database = database
         self.client = database.client
-        self.metadata = next(
-            (table for table in database.metadata["tables"] if table["name"] == self.name), {}
-        )
+        self.metadata = next((table for table in database.metadata["tables"] if table["name"] == self.name), {})
         self.links = next(
             (
                 {link["name"]: link["data"] | {"key": link["key"]}}
@@ -72,9 +70,7 @@ class SeatableTable(Table):
             if not key.startswith("_"):
                 fields[key] = value
             if key in self.links:
-                fields[key] = [
-                    item["row_id"] if isinstance(item, dict) else item for item in record_dict[key]
-                ]
+                fields[key] = [item["row_id"] if isinstance(item, dict) else item for item in record_dict[key]]
         return SeatableRecord(record_id=record_id, fields=fields, table=self)
 
     def _update_links(self, records: list[Record]) -> bool:
@@ -91,9 +87,7 @@ class SeatableTable(Table):
             for key, value in record.fields.items():
                 if key in links:
                     links[key][record.record_id] = value
-        return all(
-            self.batch_update_links(key, value) for key, value in links.items() if value != {}
-        )
+        return all(self.batch_update_links(key, value) for key, value in links.items() if value != {})
 
     def batch_create(self, fields_list: list[Fields]) -> list[Record]:
         """Creates multiple records in the table.
@@ -106,11 +100,9 @@ class SeatableTable(Table):
         """
         records = []
         for chunk in [fields_list[i : i + 1000] for i in range(0, len(fields_list), 1000)]:
-            chunk_fields = [{**{"_id": str(uuid.uuid4())[:22]}, **fields} for fields in chunk]
+            chunk_fields = [{"_id": str(uuid.uuid4())[:22], **fields} for fields in chunk]
             chunk_records = [self._record_from_dict(fields) for fields in chunk_fields]
-            if self.client.batch_append_rows(self.name, chunk_fields)["inserted_row_count"] != len(
-                chunk_fields
-            ):
+            if self.client.batch_append_rows(self.name, chunk_fields)["inserted_row_count"] != len(chunk_fields):
                 raise RuntimeError("Failed to create all rows")
             if not self._update_links(chunk_records):
                 raise RuntimeError("Failed to link all records")
@@ -165,9 +157,7 @@ class SeatableTable(Table):
         """
         results = []
         for chunk in [records[i : i + 1000] for i in range(0, len(records), 1000)]:
-            chunk_records = [
-                self._record_from_dict({"_id": record_id, **fields}) for record_id, fields in chunk
-            ]
+            chunk_records = [self._record_from_dict({"_id": record_id, **fields}) for record_id, fields in chunk]
             if not self._update_links(chunk_records):
                 raise RuntimeError("Failed to link all records")
             if not self.client.batch_update_rows(
@@ -193,14 +183,10 @@ class SeatableTable(Table):
         """
         link_id = self.get_link_id(field_key)
         other_table_id = self.links[field_key]["other_table_id"]
-        self.client.batch_update_links(
-            link_id, self.name, other_table_id, list(record_ids_map.keys()), record_ids_map
-        )
+        self.client.batch_update_links(link_id, self.name, other_table_id, list(record_ids_map.keys()), record_ids_map)
         return True
 
-    def get_linked_records(
-        self, field_key: FieldKey, record_ids: list[RecordId]
-    ) -> dict[RecordId, list[RecordId]]:
+    def get_linked_records(self, field_key: FieldKey, record_ids: list[RecordId]) -> dict[RecordId, list[RecordId]]:
         """Retrieves the records linked to the given records through the specified field.
 
         Args:

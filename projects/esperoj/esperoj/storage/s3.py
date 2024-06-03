@@ -1,6 +1,6 @@
 """Module contains S3Storage class."""
 
-from typing import Iterator
+from collections.abc import Iterator
 
 import boto3
 from boto3.s3.transfer import TransferConfig
@@ -39,9 +39,7 @@ class S3Storage(Storage):
         }
         self.config = self.__DEFAULT_CONFIG | config
         self.config["aliases"] = [*self.__DEFAULT_CONFIG["aliases"], *config.get("aliases", [])]
-        self.config["client_config"] = self.__DEFAULT_CONFIG["client_config"] | config.get(
-            "client_config", {}
-        )
+        self.config["client_config"] = self.__DEFAULT_CONFIG["client_config"] | config.get("client_config", {})
         self.config["transfer_config"] = TransferConfig(
             **(self.__DEFAULT_CONFIG["transfer_config"] | config.get("transfer_config", {}))
         )
@@ -73,9 +71,7 @@ class S3Storage(Storage):
         Raises:
             ClientError: If an error occurs while downloading the file.
         """
-        self.client.download_file(
-            self.config["bucket_name"], src, dst, Config=self.config["transfer_config"]
-        )
+        self.client.download_file(self.config["bucket_name"], src, dst, Config=self.config["transfer_config"])
 
     def file_exists(self, path: str) -> bool:
         """Check if a file exists in the S3 bucket.
@@ -129,9 +125,7 @@ class S3Storage(Storage):
         Raises:
             ClientError: If an error occurs while downloading the file.
         """
-        return self.client.get_object(Bucket=self.config["bucket_name"], Key=src)[
-            "Body"
-        ].iter_chunks(2**20)
+        return self.client.get_object(Bucket=self.config["bucket_name"], Key=src)["Body"].iter_chunks(2**20)
 
     def list_files(self, path: str) -> list:
         """List all files in the specified path of the S3 bucket.
@@ -165,9 +159,7 @@ class S3Storage(Storage):
             FileNotFoundError: If the source file does not exist.
         """
         try:
-            self.client.upload_file(
-                src, self.config["bucket_name"], dst, Config=self.config["transfer_config"]
-            )
+            self.client.upload_file(src, self.config["bucket_name"], dst, Config=self.config["transfer_config"])
         except ClientError as e:
             raise e
         except FileNotFoundError as e:

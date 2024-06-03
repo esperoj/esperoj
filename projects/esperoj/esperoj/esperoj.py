@@ -12,8 +12,7 @@ from esperoj.storage.storage import StorageFactory
 
 
 class Esperoj:
-    """
-    The Esperoj class is responsible for managing databases, storages, and loggers.
+    """The Esperoj class is responsible for managing databases, storages, and loggers.
 
     Args:
         config (dict): The configuration dictionary for the Esperoj instance.
@@ -35,8 +34,7 @@ class Esperoj:
         self.storages = storages
 
     def __getattr__(self, name):
-        """
-        Dynamically import and return a method from the esperoj.scripts module.
+        """Dynamically import and return a method from the esperoj.scripts module.
 
         Args:
             name (str): The name of the method to import.
@@ -47,7 +45,7 @@ class Esperoj:
         try:
             mod = __import__(f"{name}", None, None, ["get_esperoj_method"])
         except ImportError:
-            return
+            return None
         return mod.get_esperoj_method(self)
 
 
@@ -56,8 +54,7 @@ class EsperojFactory:
 
     @staticmethod
     def create(config_file: str = ""):
-        """
-        Create and return an Esperoj instance with the specified configuration.
+        """Create and return an Esperoj instance with the specified configuration.
 
         Args:
             config_file (str): The configuration file path.
@@ -79,8 +76,8 @@ class EsperojFactory:
         if not config_file:
             config_file = Path.home() / ".config" / "esperoj" / "esperoj.toml"
         if Path(config_file).suffix == ".7z":
-            with SevenZipFile(str(config_file), password=getenv("ENCRYPTION_PASSPHRASE")) as zip:
-                for name, bio in zip.readall().items():
+            with SevenZipFile(str(config_file), password=getenv("ENCRYPTION_PASSPHRASE")) as seven_zip_file:
+                for _, bio in seven_zip_file.readall().items():
                     config_text = bio.read().decode("utf-8")
         else:
             config_text = config_file.read_text()

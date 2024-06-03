@@ -1,0 +1,26 @@
+version: '3'
+dotenv: ['{{.HOME}}/{{.MACHINE_NAME}}/.env', '{{.HOME}}/.env', '.env']
+run: when_changed
+
+tasks:
+  setup:
+    status:
+      - test -d .vercel
+    cmds:
+      - |
+        ENV=dev task -t ../esperoj/Taskfile.yml setup
+        npx --yes \
+          vercel --token "$VERCEL_TOKEN" \
+            link --yes \
+              --project esperoj
+  build:
+    deps: [setup]
+    cmds:
+      - OUTPUT_DIRECTORY="$(pwd)/public/docs" task -t ../esperoj/Taskfile.yml build
+  deploy:
+    deps: [build]
+    cmds:
+      - |
+        npx --yes \
+          vercel --token "$VERCEL_TOKEN" \
+            deploy --yes

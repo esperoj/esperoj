@@ -102,6 +102,7 @@ lint.select = [
 
 line-length = 120
 lint.ignore = [
+  "S608", # Possible SQL injection
   "A003", # flake8-builtins - class attribute {name} is shadowing a python builtin
   "B010", # flake8-bugbear - do not call setattr with a constant attribute value
   "D100", # pydocstyle - missing docstring in public module
@@ -122,6 +123,9 @@ lint.ignore = [
 ]
 src = ["esperoj", "tests"]
 target-version = "py311"
+exclude = [
+    "typings"
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -2,7 +2,6 @@
 .ruff_cache/
 .vercel
 build/
-docs/
 
 # Coverage.py
 htmlcov/

@@ -19,7 +19,7 @@ tasks:
         [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
         pdoc \
           --docformat google \
-          --output-directory public/docs \
+          --output-directory "{{or .OUTPUT_DIRECTORY "public/docs"}}" \
           esperoj
   nuitka:
     deps:
@@ -70,7 +70,7 @@ tasks:
             run \
                 --unix-domain-socket "${HOME}/.sockets/dev.sock" \
                 --reload \
-                --reload-dir="./src" \
+                --reload-dir="./esperoj" \
                 --reload-exclude="__pycache__"
   start:
     deps:

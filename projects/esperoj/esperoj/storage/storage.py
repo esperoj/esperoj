@@ -1,7 +1,8 @@
 """Storage module."""
 
 from abc import ABC, abstractmethod
-from typing import Iterator, TypedDict
+from collections.abc import Iterator
+from typing import TypedDict
 
 
 class DeleteFileError(TypedDict):
