@@ -73,14 +73,17 @@ class EsperojFactory:
         logger.addHandler(handler)
         loggers["Primary"] = logger
         config_text = ""
+        config_path = Path(config_file)
         if not config_file:
-            config_file = Path.home() / ".config" / "esperoj" / "esperoj.toml"
-        if Path(config_file).suffix == ".7z":
-            with SevenZipFile(str(config_file), password=getenv("ENCRYPTION_PASSPHRASE")) as seven_zip_file:
-                for _, bio in seven_zip_file.readall().items():
-                    config_text = bio.read().decode("utf-8")
+            config_path = Path.home() / ".config" / "esperoj" / "esperoj.toml"
+        if config_path.suffix == ".7z":
+            with SevenZipFile(str(config_path), password=getenv("ENCRYPTION_PASSPHRASE")) as seven_zip_file:
+                seven_zip_contents = seven_zip_file.readall()
+                if seven_zip_contents is not None:
+                    for _, bio in seven_zip_contents.items():
+                        config_text = bio.read().decode("utf-8")
         else:
-            config_text = config_file.read_text()
+            config_text = config_path.read_text()
         config = tomllib.loads(config_text)
         for storage_config in config["storages"]:
             storage = StorageFactory.create(storage_config)

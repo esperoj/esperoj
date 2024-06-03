@@ -8,7 +8,7 @@ import click
 
 scripts_folder = Path.home() / "esperoj-scripts"
 if getenv("ESPEROJ_SCRIPTS_FOLDER"):
-    scripts_folder = Path(getenv("ESPEROJ_SCRIPTS_FOLDER"))
+    scripts_folder = Path(getenv("ESPEROJ_SCRIPTS_FOLDER", ""))
 sys.path.append(str(scripts_folder))
 
 

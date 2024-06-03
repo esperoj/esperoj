@@ -22,17 +22,14 @@ jobs:
 
       - uses: actions/setup-python@main
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: 'pip'
           cache-dependency-path: |
-            ./requirements.txt
+            ./pyproject.toml
             ./requirements-nuitka.txt
 
-      - name: Install task
-        run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
-
       - name: Setup
-        run: ENV=nuitka task setup
+        run: pip install -r requirements-nuitka.txt
 
       - uses: Nuitka/Nuitka-Action@main
         with:

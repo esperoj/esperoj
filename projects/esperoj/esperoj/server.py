@@ -18,7 +18,7 @@ async def get_backup() -> Stream:
 
 
 @get("/api/pwd")
-async def pwd() -> dict[str, str]:
+async def pwd() -> list[str]:
     cwd = Path.cwd()
     return [item.name for item in cwd.iterdir()]
 

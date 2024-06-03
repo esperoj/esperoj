@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Self
 
+from esperoj.database.query import Query
+
 RecordId = str
 FieldValue = Any
 FieldKey = str
@@ -284,7 +286,7 @@ class Table(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def query(self, query: str) -> list[Record]:
+    def query(self, query: Query | None) -> list[Record]:
         """Query the table with the given query.
 
         Args:

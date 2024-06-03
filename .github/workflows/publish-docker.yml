@@ -1,5 +1,5 @@
-name: Build
-run-name: Build
+name: Publish Docker
+run-name: Publish Docker
 on:
   workflow_dispatch:
   push:

@@ -4,7 +4,8 @@
   "regions": ["fra1"],
   "functions": {
   "api/index.py": {
-    "maxDuration": 60
+    "maxDuration": 60,
+    "excludeFiles": "public/**/**"
     }
   },
   "rewrites": [

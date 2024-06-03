@@ -25,24 +25,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@main
-
-      - name: Install exiftool
-        run: sudo apt-get install -qy exiftool
-
       - name: Install task
         run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
-
       - uses: actions/setup-python@main
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-          cache-dependency-path: |
-            ./requirements.txt
-            ./requirements-test.txt
-
-      - name: Install dependencies
+      - name: Cache venv
+        id: cache-venv
+        uses: actions/cache@main
+        env:
+          cache-name: cache-venv
+        with:
+          path: ./.venv
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('./requirements-test.txt', './pyproject.toml') }}
+      - uses: yezz123/setup-uv@main
+      - name: Setup
         run: ENV=test task setup
-
       - name: Test package
         run: task test
-
