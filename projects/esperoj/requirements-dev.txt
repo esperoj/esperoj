@@ -4,8 +4,5 @@ ruff
 pyright
 pre-commit
 
-# Server
-litestar[standard]
-
 # Build
 pdoc

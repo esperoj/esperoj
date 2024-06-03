@@ -1,4 +1,0 @@
-boto3
-seatable-api
-requests
-py7zr

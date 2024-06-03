@@ -1,5 +1,4 @@
--r requirements.txt
--e .[server,cli]
+-e .[cli,server]
 
 nuitka
 patchelf
