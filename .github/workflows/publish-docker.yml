@@ -69,14 +69,3 @@ jobs:
         package-type: 'container'
         min-versions-to-keep: 10
         delete-only-untagged-versions: 'false'
-    -
-      name: Send notification
-      env:
-        NTFY_URL: ${{ secrets.NTFY_URL }}
-        MY_UUID: ${{ secrets.MY_UUID }}
-      if: ${{ always() }}
-      run: |
-        ./bin/notify.sh "" \
-        "Title: Workflow ${{ github.workflow }} of ${{ github.repository }} completed" \
-        "Actions: view, View log, ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-        | jq

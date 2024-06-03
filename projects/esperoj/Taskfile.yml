@@ -26,15 +26,16 @@ tasks:
       - task: setup
         vars: { ENV: 'nuitka' }
     cmds:
+      - cp esperoj/__main__.py .
+      - defer: rm __main__.py
       - |
         [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        cd esperoj
         python -m nuitka \
           --static-libpython=yes \
           --standalone \
           --onefile \
           --include-package=esperoj \
-          --output-dir="../build" \
+          --output-dir="build" \
           __main__.py
   lint:
     deps:

@@ -7,13 +7,11 @@ tasks:
       init: |
         source ~/.profile
         rm -rf .venv
-        python -m venv .venv
-        source .venv/bin/activate
         ENV=dev task setup
       command: |
         source ~/.profile
         source .venv/bin/activate
-        start.sh pcloud caddy
+        start.sh koofr caddy
         task dev-server
 
 ports:

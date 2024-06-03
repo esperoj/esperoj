@@ -22,29 +22,32 @@ jobs:
 
       - uses: actions/setup-python@main
         with:
-          python-version: "3.12"
+          python-version: "3.11"
           cache: 'pip'
           cache-dependency-path: |
             pyproject.toml
             requirements-nuitka.txt
 
       - name: Setup
-        run: pip install -r requirements-nuitka.txt
+        run: |
+          pip install -r requirements-nuitka.txt
+          cp esperoj/__main__.py .
 
       - uses: Nuitka/Nuitka-Action@main
         with:
-          working-directory: "projects/esperoj/esperoj"
+          working-directory: "projects/esperoj"
           nuitka-version: main
           script-name: __main__.py
           include-package: esperoj
           standalone: true
           onefile: true
-          output-dir: "../build"
+          output-dir: "build"
 
       - name: Change name
         run: |
           mv build/__main__.bin ./esperoj_linux_x86_64
           tar -czf esperoj_linux_x86_64.tar.gz -C build/__main__.dist .
+          rm __main__.py
 
       - name: Release
         uses: softprops/action-gh-release@master
