@@ -20,6 +20,8 @@ tasks:
   deploy:
     deps: [build]
     cmds:
+      - cp -r "${ESPEROJ_CONFIG_FILE}" "$ESPEROJ_SCRIPTS_FOLDER" .
+      - defer: rm -rf esperoj.toml.7z esperoj-scripts
       - |
         npx --yes \
           vercel --token "$VERCEL_TOKEN" \
