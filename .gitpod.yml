@@ -6,13 +6,11 @@ tasks:
         chezmoi init --apply --force
       init: |
         source ~/.profile
-        rm -rf .venv
-        ENV=dev task setup
+        ENV=dev task -t projects/esperoj/Taskfile.yml setup
       command: |
         source ~/.profile
-        source .venv/bin/activate
         start.sh koofr caddy
-        task dev-server
+        task -t projects/esperoj/Taskfile.yml dev-server
 
 ports:
     - port: 20711
