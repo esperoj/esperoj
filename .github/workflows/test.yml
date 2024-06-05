@@ -48,8 +48,7 @@ jobs:
       - name: Test package
         run: task test
 
-      -
-        name: Send notification
+      - name: Send notification
         env:
           NTFY_URL: ${{ secrets.NTFY_URL }}
           MY_UUID: ${{ secrets.MY_UUID }}

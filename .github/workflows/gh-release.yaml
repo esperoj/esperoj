@@ -58,8 +58,7 @@ jobs:
             projects/esperoj/esperoj_linux_x86_64
             projects/esperoj/esperoj_linux_x86_64.tar.gz
 
-      -
-        name: Send notification
+      - name: Send notification
         env:
           NTFY_URL: ${{ secrets.NTFY_URL }}
           MY_UUID: ${{ secrets.MY_UUID }}
