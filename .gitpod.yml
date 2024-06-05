@@ -4,13 +4,17 @@ tasks:
     - name: Setup
       before: |
         ~/.local/bin/chezmoi init --apply --force
-        git remote set-url origin git@github.com:esperoj/esperoj.git
       init: |
         source ~/.profile
         ENV=dev task -t projects/esperoj/Taskfile.yml setup
       command: |
+        (
+          cd ~
+          ln -s /workspace .
+        )
+        git remote set-url origin git@github.com:esperoj/esperoj.git
         source ~/.profile
-        start.sh koofr caddy
+        start.sh home koofr caddy
         task -t projects/esperoj/Taskfile.yml dev-server
 
 ports:

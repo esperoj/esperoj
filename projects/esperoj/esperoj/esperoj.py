@@ -87,8 +87,7 @@ class EsperojFactory:
         config = tomllib.loads(config_text)
         for storage_config in config["storages"]:
             storage = StorageFactory.create(storage_config)
-            for name in [storage.config["name"]] + storage.config["aliases"]:
-                storages[name] = storage
+            storages[storage_config["name"]] = storage
         for database_config in config["databases"]:
             database = DatabaseFactory.create(database_config)
             for name in [database.config["name"]] + database.config["aliases"]:

@@ -1,11 +1,31 @@
 """Module contains S3Storage class."""
 
 from collections.abc import Iterator
+from datetime import timedelta
 
 from minio import Minio
 from minio.error import S3Error
 
 from esperoj.storage.storage import DeleteFilesResponse, Storage
+
+
+class StreamResponse(Iterator):
+    """The stream response."""
+
+    def __init__(self, response):
+        self.response = response
+        self.stream = response.stream()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        chunk = next(self.stream)
+        if not chunk:
+            self.response.close()
+            self.response.release_conn()
+            raise StopIteration
+        return chunk
 
 
 class S3Storage(Storage):
@@ -28,29 +48,20 @@ class S3Storage(Storage):
         self.__DEFAULT_CONFIG = {
             "name": "S3 Storage",
             "bucket_name": "esperoj",
-            "aliases": [],
-            "client_config": {
-                "endpoint": "localhost:9000",
-                "access_key": "minioadmin",
-                "secret_key": "minioadmin",
-                "secure": False,
-            },
-            "transfer_config": {
-                "multipart_threshold": 8 * 2**20,
-                "max_concurrency": 10,
-                "multipart_chunksize": 8 * 2**20,
-            },
+            "endpoint": "localhost:9000",
+            "access_key": "minioadmin",
+            "secret_key": "minioadmin",
+            "secure": True,
+            "region": "eu-central-1",
+            "multipart_chunksize": 2**20 * 64,
         }
         self.config = self.__DEFAULT_CONFIG | config
-        self.config["aliases"] = [*self.__DEFAULT_CONFIG["aliases"], *config.get("aliases", [])]
-        self.config["client_config"] = self.__DEFAULT_CONFIG["client_config"] | config.get("client_config", {})
-        self.config["transfer_config"] = self.__DEFAULT_CONFIG["transfer_config"] | config.get("transfer_config", {})
-
         self.client = Minio(
-            self.config["client_config"]["endpoint"],
-            access_key=self.config["client_config"]["access_key"],
-            secret_key=self.config["client_config"]["secret_key"],
-            secure=self.config["client_config"]["secure"]
+            endpoint=self.config["endpoint"],
+            access_key=self.config["access_key"],
+            secret_key=self.config["secret_key"],
+            secure=self.config["secure"],
+            region=self.config["region"],
         )
 
     def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
@@ -116,7 +127,7 @@ class S3Storage(Storage):
         """
         if not self.file_exists(path):
             raise FileNotFoundError(f"No such file: '{path}'")
-        return self.client.presigned_get_object(self.config["bucket_name"], path, expires=3600 * 24 * 7)
+        return self.client.presigned_get_object(self.config["bucket_name"], path, expires=timedelta(days=7))
 
     def get_file(self, src: str) -> Iterator:
         """Get a file from the S3 bucket and return an Iterator.
@@ -131,11 +142,8 @@ class S3Storage(Storage):
             S3Error: If an error occurs while downloading the file.
         """
         response = self.client.get_object(self.config["bucket_name"], src)
-        try:
-            return response.stream(2**20)
-        finally:
-            response.close()
-            response.release_conn()
+        return StreamResponse(response)
+
     def list_files(self, path: str) -> list:
         """List all files in the specified path of the S3 bucket.
 
@@ -166,10 +174,7 @@ class S3Storage(Storage):
             FileNotFoundError: If the source file does not exist.
         """
         try:
-            self.client.fput_object(
-                self.config["bucket_name"], dst, src,
-                part_size=self.config["transfer_config"]["multipart_chunksize"]
-            )
+            self.client.fput_object(self.config["bucket_name"], dst, src, part_size=self.config["multipart_chunksize"])
         except S3Error as e:
             raise e
         except FileNotFoundError as e:
