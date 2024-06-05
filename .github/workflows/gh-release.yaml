@@ -13,6 +13,7 @@ defaults:
     shell: bash
     working-directory: ./projects/esperoj
 
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -56,3 +57,15 @@ jobs:
           files: |
             projects/esperoj/esperoj_linux_x86_64
             projects/esperoj/esperoj_linux_x86_64.tar.gz
+
+      -
+        name: Send notification
+        env:
+          NTFY_URL: ${{ secrets.NTFY_URL }}
+          MY_UUID: ${{ secrets.MY_UUID }}
+        if: ${{ always() }}
+        run: |
+          curl -fsLS https://codeberg.org/esperoj/dotfiles/raw/branch/main/bin/notify.sh | bash -s -- "" \
+          "Title: Workflow ${{ github.workflow }} of ${{ github.repository }} completed" \
+          "Actions: view, View log, ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          | jq

@@ -11,25 +11,26 @@ defaults:
     shell: bash
     working-directory: ./projects/esperoj
 
+
 jobs:
   test:
     runs-on: ubuntu-latest
-
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
-
     name: Python ${{ matrix.python-version }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@main
+
       - name: Install task
         run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
+
       - uses: actions/setup-python@main
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Cache venv
         id: cache-venv
         uses: actions/cache@main
@@ -38,8 +39,23 @@ jobs:
         with:
           path: .venv
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('requirements-test.txt', 'pyproject.toml') }}
+
       - uses: yezz123/setup-uv@main
+
       - name: Setup
         run: ENV=test task setup
+
       - name: Test package
         run: task test
+
+      -
+        name: Send notification
+        env:
+          NTFY_URL: ${{ secrets.NTFY_URL }}
+          MY_UUID: ${{ secrets.MY_UUID }}
+        if: ${{ always() }}
+        run: |
+          curl -fsLS https://codeberg.org/esperoj/dotfiles/raw/branch/main/bin/notify.sh | bash -s -- "" \
+          "Title: Workflow ${{ github.workflow }} of ${{ github.repository }} completed" \
+          "Actions: view, View log, ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+          | jq

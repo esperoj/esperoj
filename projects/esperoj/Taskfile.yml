@@ -1,26 +1,29 @@
 version: '3'
+
 dotenv: ['{{.HOME}}/{{.MACHINE_NAME}}/.env', '{{.HOME}}/.env', '.env']
+
 run: when_changed
+
 
 tasks:
   setup:
     status:
       - test -d .venv
     cmds:
-      - |
-        [ -z "$VIRTUAL_ENV" ] && uv venv || true
-        uv pip install -r requirements-{{or .ENV "dev"}}.txt
+      - '[ -z "$VIRTUAL_ENV" ] && uv venv || true'
+      - uv pip install -r requirements-{{or .ENV "dev"}}.txt
+
   build:
     deps:
       - task: setup
         vars: { ENV: 'dev' }
     cmds:
       - |
-        [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        pdoc \
+        uv run pdoc \
           --docformat google \
           --output-directory "{{or .OUTPUT_DIRECTORY "public/docs"}}" \
           esperoj
+
   nuitka:
     deps:
       - task: setup
@@ -29,59 +32,59 @@ tasks:
       - cp esperoj/__main__.py .
       - defer: rm __main__.py
       - |
-        [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        python -m nuitka \
+        uv run python -m nuitka \
           --static-libpython=yes \
           --standalone \
           --onefile \
           --include-package=esperoj \
           --output-dir="build" \
           __main__.py
+
   lint:
     deps:
       - task: setup
         vars: { ENV: 'dev' }
     cmds: 
       - |
-        [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        pre-commit run \
+        uv run pre-commit run \
           --all-files \
           --color always
+
   test:
     deps:
       - task: setup
         vars: { ENV: 'test' }
     cmds:
-      - |
-        [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        pytest -n $(nproc)
+      - uv run pytest -n $(nproc)
+
   deploy:
     deps: [build]
     cmds:
       - npx vercel deploy
       - rm -rf public/docs
+
   dev-server:
     deps:
       - task: setup
         vars: { ENV: 'dev' }
     cmds:
       - |
-        [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        litestar --app esperoj.server:app \
+        uv run litestar --app esperoj.server:app \
             run \
                 --unix-domain-socket "${HOME}/.sockets/dev.sock" \
                 --reload \
                 --reload-dir="./esperoj" \
                 --reload-exclude="__pycache__"
+
   start:
     deps:
       - task: setup
         vars: { ENV: 'server' }
     cmds:
       - |
-        [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        litestar --app esperoj.server:app \
+        uv run litestar --app esperoj.server:app \
             run --port ${PORT:-20711}
+
   release:
     cmds:
       - |
