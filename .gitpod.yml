@@ -3,7 +3,7 @@ image: ghcr.io/esperoj/esperoj-dev
 tasks:
     - name: Setup
       before: |
-        chezmoi init --apply --force
+        ~/.local/bin/chezmoi init --apply --force
       init: |
         source ~/.profile
         ENV=dev task -t projects/esperoj/Taskfile.yml setup

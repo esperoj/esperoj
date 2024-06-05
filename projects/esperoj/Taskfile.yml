@@ -55,7 +55,9 @@ tasks:
       - task: setup
         vars: { ENV: 'test' }
     cmds:
-      - uv run pytest -n $(nproc)
+      - |
+        [ -z "$VIRTUAL_ENV" ] && uv venv || true
+        pytest -n $(nproc)
 
   deploy:
     deps: [build]
