@@ -10,7 +10,7 @@ tasks:
     status:
       - test -d .venv
     cmds:
-      - '[ -z "$VIRTUAL_ENV" ] && uv venv || true'
+      - uv venv
       - uv pip install -r requirements-{{or .ENV "dev"}}.txt
 
   build:
@@ -56,7 +56,7 @@ tasks:
         vars: { ENV: 'test' }
     cmds:
       - |
-        [ -z "$VIRTUAL_ENV" ] && uv venv || true
+        [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
         pytest -n $(nproc)
 
   deploy:
