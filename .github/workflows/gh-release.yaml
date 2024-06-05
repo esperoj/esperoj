@@ -39,7 +39,6 @@ jobs:
           working-directory: "projects/esperoj"
           nuitka-version: main
           script-name: __main__.py
-          include-package: esperoj
           standalone: true
           onefile: true
           output-dir: "build"

@@ -36,7 +36,6 @@ tasks:
           --static-libpython=yes \
           --standalone \
           --onefile \
-          --include-package=esperoj \
           --output-dir="build" \
           __main__.py
 
