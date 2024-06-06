@@ -171,14 +171,11 @@ class S3Storage(Storage):
 
         Raises:
             S3Error: If an error occurs while uploading the file.
-            FileNotFoundError: If the source file does not exist.
         """
         try:
             self.client.fput_object(self.config["bucket_name"], dst, src, part_size=self.config["multipart_chunksize"])
         except S3Error as e:
             raise e
-        except FileNotFoundError as e:
-            raise FileNotFoundError(f"No such file: '{src}'") from e
 
     def size(self, src: str) -> int:
         """Check file size
@@ -191,6 +188,8 @@ class S3Storage(Storage):
         """
         try:
             stats = self.client.stat_object(self.config["bucket_name"], src)
-            return stats.size
+            if stats.size:
+                return stats.size
+            raise FileNotFoundError()
         except S3Error as e:
             raise e

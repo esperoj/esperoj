@@ -48,6 +48,7 @@ tasks:
         uv run pre-commit run \
           --all-files \
           --color always
+      - uv run pyright
 
   test:
     deps:
