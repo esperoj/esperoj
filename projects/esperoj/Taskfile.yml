@@ -49,6 +49,14 @@ tasks:
           --all-files \
           --color always
       - uv run pyright
+      - |
+        [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
+        if [ -d "${ESPEROJ_SCRIPTS_FOLDER}" ]; then
+            cd "${ESPEROJ_SCRIPTS_FOLDER}"
+            ruff check .
+            ruff format .
+            pyright .
+        fi
 
   test:
     deps:
