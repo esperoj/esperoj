@@ -17,6 +17,7 @@ tasks:
               --project esperoj
 
   deploy:
+    deps: [setup]
     cmds:
       - cp -r "${ESPEROJ_CONFIG_FILE}" "$ESPEROJ_SCRIPTS_FOLDER" .
       - defer: rm -rf esperoj.toml.7z esperoj-scripts
