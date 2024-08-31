@@ -20,7 +20,7 @@ tasks:
   build:
     deps: [setup]
     cmds:
-      - OUTPUT_DIRECTORY="$(pwd)/public/docs" task -t ../esperoj/Taskfile.yml build
+      - # OUTPUT_DIRECTORY="$(pwd)/public/docs" task -t ../esperoj/Taskfile.yml build
 
   deploy:
     deps: [build]

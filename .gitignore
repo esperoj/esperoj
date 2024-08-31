@@ -3,6 +3,7 @@
 .vercel
 build/
 docs/
+public/
 
 # Coverage.py
 htmlcov/
