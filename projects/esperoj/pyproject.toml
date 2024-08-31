@@ -122,6 +122,7 @@ lint.ignore = [
   "ISC001", # Ruff formatter incompatible
   "E722", # bare except
   "S110", # try except pass
+  "T201", # Can't use print
 ]
 src = ["esperoj", "tests"]
 target-version = "py311"

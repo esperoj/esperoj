@@ -80,7 +80,7 @@ def share(path: str, file_name: str | None = None, file_hosts: list[str] | None 
             try:
                 url = future.result()
                 results[host] = url
-            except UploadError:
-                pass
+            except UploadError as exc:
+                print(f"Upload error {exc}")
 
     return results
