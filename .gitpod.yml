@@ -4,6 +4,8 @@ tasks:
     - name: Setup
       before: |
         ~/.local/bin/chezmoi init --apply --force
+        source ~/.profile
+        rclone copy -v cache:.zsh_history ~
       init: |
         source ~/.profile
         ENV=dev task -t projects/esperoj/Taskfile.yml setup
