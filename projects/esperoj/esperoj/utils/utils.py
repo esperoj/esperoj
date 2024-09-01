@@ -91,6 +91,9 @@ class Utils:
         match name:
             case "calculate_hash":
                 return calculate_hash
+            case "ingest":
+                from esperoj.utils.ingest import ingest
+                return ingest
             case "share":
                 return share
             case _:
