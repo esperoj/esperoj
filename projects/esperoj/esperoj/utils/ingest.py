@@ -40,7 +40,7 @@ def ingest(
         file_paths = [path]
 
     def ingest_file(file_path: Path) -> Record:
-        logger.info(f"Start to ingest.", extra = dict(file_path=file_path))
+        logger.info(f"Start to ingest `{file_path}`")
 
         file_hosts = esperoj.config["file_hosts"]
         name = file_path.name
@@ -77,8 +77,8 @@ def ingest(
                 storage = esperoj.storages[storage_name]
                 try:
                     storage.upload_file(str(file_path), name)
-                finally:
-                    continue
+                except Exception:
+                    logger.error(f"Error when upload file `{name}` from `{storage_name}`")
             results = esperoj.utils.share(str(file_path), name, file_hosts)
             for host, result in results:
                 if not isinstance(result, Exception):
@@ -91,8 +91,9 @@ def ingest(
             if url:
                 archive_url = esperoj.save_page(url)
                 file.update({"Internet Archive": archive_url})
-        finally:
-            return file
+        except Exception as e:
+            logger.error(f"Error when archive an `{url}` with {e}, for file `{name}`")
+        return file
 
     with ThreadPoolExecutor(max_workers=4) as executor:
         results = []
@@ -102,7 +103,7 @@ def ingest(
                 file_path = futures[future]
                 file = future.result()
                 metadata = json.loads(file["Metadata"])
-                result = post_process(file_path=file_path, metadata=metadata, file=file)
+                result = post_process(file_path, metadata, file)
                 results.append(result)
                 logger.info(f"Successful ingested file `{file_path}`")
             except Exception as e:

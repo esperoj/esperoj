@@ -121,6 +121,10 @@ lint.ignore = [
   "RUF012", # Ruff-specific rule - annotated with classvar
   "ISC001", # Ruff formatter incompatible
   "S603", # Check shell input
+  "S607", # Starting a process with a partial executable path
+  "C901", # `function` is too complex
+  "BLE001", # Do not catch blind exception: `Exception`
+  "G004", # Logging statement uses f-string
 ]
 src = ["esperoj", "tests"]
 target-version = "py311"
