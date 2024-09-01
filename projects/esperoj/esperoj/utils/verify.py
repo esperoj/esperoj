@@ -1,9 +1,12 @@
 """Script to verify daily."""
 
 import concurrent.futures
-import requests
 import time
+
+import requests
+
 from esperoj.database.database import Record
+
 
 def verify(esperoj, files: list[Record]) -> list[bool]:
     """Verify the integrity of files stored in various locations.
@@ -14,7 +17,7 @@ def verify(esperoj, files: list[Record]) -> list[bool]:
     Args:
         esperoj (object): An object containing the necessary databases, storages, and loggers.
         files: list of files to verify.
-   """
+    """
     logger = esperoj.loggers["Primary"]
     file_hosts = esperoj.config["file_hosts"]
 
@@ -29,30 +32,22 @@ def verify(esperoj, files: list[Record]) -> list[bool]:
         """
         name = file["Name"]
         calculate_hash = esperoj.utils.calculate_hash
+
         def calculate_hash_from_storage_name(storage_name):
             return calculate_hash(esperoj.storages[storage_name].get_file(name))
 
         def calculate_hash_from_url(url):
-            return calculate_hash(
-                requests.get(
-                    url, stream=True, timeout=30
-                ).iter_content(2**20)
-            )
+            return calculate_hash(requests.get(url, stream=True, timeout=30).iter_content(2**20))
 
         def get_size_from_url(url):
-            return int(
-                requests.head(url).headers["content-length"]
-            )
+            return int(requests.head(url, timeout=60).headers["content-length"])
 
         try:
             start_time = time.time()
             logger.info(f"Start verifying file `{name}`")
             result = False
             if False:
-                size_list = [
-                    esperoj.storages[storage_name].size(name)
-                    for storage_name in file["Storages"]
-                ]
+                size_list = [esperoj.storages[storage_name].size(name) for storage_name in file["Storages"]]
                 size_list.append(file["Size"])
                 size_list.append(get_size_from_url(file["Internet Archive"]))
                 if len(set(size_list)) == 1:
@@ -89,7 +84,5 @@ def verify(esperoj, files: list[Record]) -> list[bool]:
                 failed_files.append(futures[future]["Name"])
             results.append(result)
         if failed_files:
-            logger.info(
-                f"Verification failed for the following files: {', '.join(failed_files)}"
-            )
+            logger.info(f"Verification failed for the following files: {', '.join(failed_files)}")
     return results
