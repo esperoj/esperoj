@@ -1,18 +1,24 @@
 """Ingest util."""
-from typing import Callable
+
 import json
 import subprocess
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from esperoj.database.database import Record
 
-def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable[[Path, dict, Record], Record]) -> list[Record]:
+
+def ingest(
+    esperoj, path: Path, storage_names: list[str], post_process: Callable[[Path, dict, Record], Record]
+) -> list[Record]:
     """Ingest a file into the Esperoj system.
 
     Args:
         esperoj (object): The Esperoj object representing the system.
         path (Path): The path to be ingested.
+        storage_names (str): The list of storages to upload.
+        post_process: The function to do post processing.
 
     Returns:
         list(Record): The database records representing the ingested files.
@@ -34,7 +40,7 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
         file_paths = [path]
 
     def ingest_file(file_path: Path) -> Record:
-        logger.info(f"Start to ingest file `{file_path!s}`")
+        logger.info(f"Start to ingest.", extra = dict(file_path=file_path))
 
         file_hosts = esperoj.config["file_hosts"]
         name = file_path.name
@@ -42,9 +48,7 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
         f = file_path.open("rb")
         sha256sum = esperoj.utils.calculate_hash(f, algorithm="sha256")
         f.close()
-        metadata = json.loads(
-            subprocess.check_output(["exiftool", "-j", str(file_path)])
-        )[0]
+        metadata = json.loads(subprocess.check_output(["exiftool", "-j", str(file_path)]))[0]
         files = esperoj.databases["Primary"].get_table("Files")
 
         def upload() -> Record:
@@ -92,10 +96,7 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
 
     with ThreadPoolExecutor(max_workers=4) as executor:
         results = []
-        futures = {
-            executor.submit(ingest_file, file_path): file_path
-            for file_path in file_paths
-        }
+        futures = {executor.submit(ingest_file, file_path): file_path for file_path in file_paths}
         for future in as_completed(futures):
             try:
                 file_path = futures[future]

@@ -11,6 +11,7 @@ from esperoj.database.database import DatabaseFactory
 from esperoj.storage.storage import StorageFactory
 from esperoj.utils.utils import Utils
 
+
 class Esperoj:
     """The Esperoj class is responsible for managing databases, storages, and loggers.
 
@@ -20,6 +21,7 @@ class Esperoj:
         storages (dict): A dictionary mapping storage names to storage instances.
         loggers (dict): A dictionary mapping logger names to logger instances.
     """
+
     utils = Utils()
 
     def __init__(

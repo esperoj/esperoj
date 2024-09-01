@@ -10,6 +10,7 @@ import requests
 
 from esperoj.exceptions import ShareUploadError
 
+
 def calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
     """Calculate the hash of a stream of data using the specified algorithm.
 
@@ -26,7 +27,9 @@ def calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
     return hasher.hexdigest()
 
 
-def share(path: str, file_name: str | None = None, file_hosts: list[str] | None = None) -> dict[str, str | ShareUploadError]:
+def share(
+    path: str, file_name: str | None = None, file_hosts: list[str] | None = None
+) -> dict[str, str | ShareUploadError]:
     """Share a file to file hosts.
 
     Args:
@@ -79,9 +82,11 @@ def share(path: str, file_name: str | None = None, file_hosts: list[str] | None 
 
     return results
 
+
 class Utils:
     def __getattr__(self, name: str):
         """Get util from this package.
+
         Args:
             name (str): The name of the util.
 
@@ -93,6 +98,7 @@ class Utils:
                 return calculate_hash
             case "ingest":
                 from esperoj.utils.ingest import ingest
+
                 return ingest
             case "share":
                 return share
