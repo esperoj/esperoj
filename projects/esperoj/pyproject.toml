@@ -120,9 +120,6 @@ lint.ignore = [
   "PLW2901", # pylint - for loop variable overwritten by assignment target
   "RUF012", # Ruff-specific rule - annotated with classvar
   "ISC001", # Ruff formatter incompatible
-  "E722", # bare except
-  "S110", # try except pass
-  "T201", # Can't use print
 ]
 src = ["esperoj", "tests"]
 target-version = "py311"

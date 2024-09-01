@@ -26,23 +26,25 @@ def calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
 
 
 class UploadError(Exception):
-    def __init__(self, host, message="Failed to upload"):
+    def __init__(self, host, status_code=None, server_message=None, message="Failed to upload"):
         self.host = host
-        self.message = message
-        super().__init__(f"{host}: {message}")
+        self.status_code = status_code
+        self.server_message = server_message
+        super().__init__(f"{message} to {host}. Status: {status_code}. Server message: {server_message}")
 
 
-def share(path: str, file_name: str | None = None, file_hosts: list[str] | None = None) -> dict[str, str]:
+def share(path: str, file_name: str | None = None, file_hosts: list[str] | None = None) -> dict[str, str | UploadError]:
     """Share a file to file hosts.
 
     Args:
-      path (str): A file path to upload.
-      file_name (str): The name of the file.
-      file_hosts (str): List of file hosts to upload.
+    path (str): A file path to upload.
+    file_name (str): The name of the file.
+    file_hosts (list[str]): List of file hosts to upload.
 
     Returns:
-      results (dict[str, str]): The results with key being file host and value being direct URL.
+    results (dict[str, str | UploadError]): The results with key being file host and value being direct URL or UploadError.
     """
+
     file_path = Path(path)
     if file_hosts is None:
         file_hosts = ["lain_la", "file_haus"]
@@ -57,30 +59,29 @@ def share(path: str, file_name: str | None = None, file_hosts: list[str] | None 
             if response.status_code == 200:
                 json_response = response.json()
                 return json_response["files"][0]["url"]
-            raise UploadError("lain_la", f"Request failed with status code {response.status_code}")
+            raise UploadError("lain_la", response.status_code, response.text)
 
     def upload_to_file_haus() -> str:
         encoded_file_name = quote(file_name)
         url = f"https://filehaus.top/api/upload/{encoded_file_name}"
-        headers = {"X-Expires-After": "3600"}
         with file_path.open("rb") as file:
-            response = requests.put(url, headers=headers, data=file, timeout=600)
+            response = requests.put(url, data=file, timeout=600)
             if response.status_code == 200:
                 return response.text
-            raise UploadError("file_haus", f"Failed to upload file. Status code: {response.status_code}")
+            raise UploadError("file_haus", response.status_code, response.text)
 
     upload_functions = {"lain_la": upload_to_lain_la, "file_haus": upload_to_file_haus}
 
     results = {}
 
-    with concurrent.futures.ThreadPoolExecutor() as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = {executor.submit(upload_functions[host]): host for host in file_hosts if host in upload_functions}
         for future in concurrent.futures.as_completed(futures):
             host = futures[future]
             try:
                 url = future.result()
                 results[host] = url
-            except UploadError as exc:
-                print(f"Upload error {exc}")
+            except UploadError as e:
+                results[host] = e
 
     return results
