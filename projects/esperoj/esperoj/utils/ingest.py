@@ -72,21 +72,20 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
             )
             for storage_name in storage_names:
                 storage = esperoj.storages[storage_name]
-                if storage.file_exists(name):
-                    raise FileExistsError
                 try:
                     storage.upload_file(str(file_path), name)
-                    uploaded_storages.append(storage_name)
             results = esperoj.utils.share(str(file_path), name, file_hosts)
             for host, result in results:
                 if not isinstance(result, Exception):
                     file[host] = result
             return file
 
-        file = upload(["Audio Storage", "Backup Audio Storage"])
-        url = file[file_hosts[0]]
-        archive_url = esperoj.save_page(url)
-        file.update({"Internet Archive": archive_url})
+        file = upload()
+        url = file.fields.get(file_hosts[0])
+        if url:
+            try:
+                archive_url = esperoj.save_page(url)
+                file.update({"Internet Archive": archive_url})
         return file
 
     with ThreadPoolExecutor(max_workers=4) as executor:
@@ -97,8 +96,12 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
         }
         for future in as_completed(futures):
             try:
-                results.append(future.result())
-                logger.info(f"Successful ingested file `{future_to_file_path[future]}`")
+                file_path = futures[future]
+                file = future.result()
+                metadata = json.loads(file["Metadata"])
+                result = post_process(file_path=file_path, metadata=metadata, file_path=file_path)
+                results.append(result)
+                logger.info(f"Successful ingested file `{file_path}`")
             except Exception as e:
                 logger.error(str(e))
         return results
