@@ -46,10 +46,12 @@ def verify(esperoj, files: list[Record]) -> list[bool]:
             start_time = time.time()
             logger.info(f"Start verifying file `{name}`")
             result = False
-            if False:
+            if file["Verified"]:
                 size_list = [esperoj.storages[storage_name].size(name) for storage_name in file["Storages"]]
                 size_list.append(file["Size"])
-                size_list.append(get_size_from_url(file["Internet Archive"]))
+                urls = [file[host] for host in file_hosts]
+                urls.append(file["Internet Archive"])
+                size_list = size_list + [get_size_from_url(url) for url in urls]
                 if len(set(size_list)) == 1:
                     result = True
             else:
