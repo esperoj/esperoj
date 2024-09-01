@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from esperoj.database.database import Record
-from esperoj.utils import calculate_hash
 
 def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable[[Path, dict, Record], Record]) -> list[Record]:
     """Ingest a file into the Esperoj system.
@@ -41,7 +40,7 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
         name = file_path.name
         size = file_path.stat().st_size
         f = file_path.open("rb")
-        sha256sum = calculate_hash(f, algorithm="sha256")
+        sha256sum = esperoj.utils.calculate_hash(f, algorithm="sha256")
         f.close()
         metadata = json.loads(
             subprocess.check_output(["exiftool", "-j", str(file_path)])
@@ -74,6 +73,8 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
                 storage = esperoj.storages[storage_name]
                 try:
                     storage.upload_file(str(file_path), name)
+                finally:
+                    continue
             results = esperoj.utils.share(str(file_path), name, file_hosts)
             for host, result in results:
                 if not isinstance(result, Exception):
@@ -82,11 +83,12 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
 
         file = upload()
         url = file.fields.get(file_hosts[0])
-        if url:
-            try:
+        try:
+            if url:
                 archive_url = esperoj.save_page(url)
                 file.update({"Internet Archive": archive_url})
-        return file
+        finally:
+            return file
 
     with ThreadPoolExecutor(max_workers=4) as executor:
         results = []
@@ -99,7 +101,7 @@ def ingest(esperoj, path: Path, storage_names: list[str], post_process: Callable
                 file_path = futures[future]
                 file = future.result()
                 metadata = json.loads(file["Metadata"])
-                result = post_process(file_path=file_path, metadata=metadata, file_path=file_path)
+                result = post_process(file_path=file_path, metadata=metadata, file=file)
                 results.append(result)
                 logger.info(f"Successful ingested file `{file_path}`")
             except Exception as e:
