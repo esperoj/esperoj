@@ -1,19 +1,29 @@
 """Module contains exceptions."""
 
 
-class InvalidRecordError(Exception):
-    """Exception raised for invalid records.
-
-    This exception should be raised when a record in the database or storage is invalid or does not meet the required criteria.
-    """
-
-
-class RecordNotFoundError(Exception):
-    """Exception raised for missing records.
-
-    This exception should be raised when a record that is expected to be in the database or storage cannot be found.
-    """
+class ShareUploadError(Exception):
+    def __init__(self, host, status_code=None, server_message=None, message="Failed to upload"):
+        self.host = host
+        self.status_code = status_code
+        self.server_message = server_message
+        super().__init__(f"{message} to {host}. Status: {status_code}. Server message: {server_message}.")
 
 
-class RecordDeletionError(Exception):
-    """Exception raised when a record can't be deleted."""
+class ReplicationError(Exception):
+    """Raised when the replication of one or more files fails."""
+
+    def __init__(self, host, status_code=None, server_message=None, message="Failed to upload"):
+        self.host = host
+        self.status_code = status_code
+        self.server_message = server_message
+        super().__init__(f"{message} to {host}. Status: {status_code}. Server message: {server_message}.")
+
+
+class VerificationError(Exception):
+    """Raised when the verification of one or more files fails."""
+
+    def __init__(self, host, status_code=None, server_message=None, message="Failed to upload"):
+        self.host = host
+        self.status_code = status_code
+        self.server_message = server_message
+        super().__init__(f"{message} to {host}. Status: {status_code}. Server message: {server_message}.")

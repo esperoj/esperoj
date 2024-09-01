@@ -1,12 +1,31 @@
 """Module contains S3Storage class."""
 
 from collections.abc import Iterator
+from datetime import timedelta
 
-import boto3
-from boto3.s3.transfer import TransferConfig
-from botocore.exceptions import ClientError
+from minio import Minio
+from minio.error import S3Error
 
 from esperoj.storage.storage import DeleteFilesResponse, Storage
+
+
+class StreamResponse(Iterator):
+    """The stream response."""
+
+    def __init__(self, response):
+        self.response = response
+        self.stream = response.stream()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        chunk = next(self.stream)
+        if not chunk:
+            self.response.close()
+            self.response.release_conn()
+            raise StopIteration
+        return chunk
 
 
 class S3Storage(Storage):
@@ -17,7 +36,7 @@ class S3Storage(Storage):
 
     Attributes:
         config (dict): Configuration for S3Storage.
-        client (boto3.client): The S3 client instance.
+        client (Minio): The MinIO client instance.
     """
 
     def __init__(self, config: dict) -> None:
@@ -29,19 +48,21 @@ class S3Storage(Storage):
         self.__DEFAULT_CONFIG = {
             "name": "S3 Storage",
             "bucket_name": "esperoj",
-            "client_config": {},
-            "transfer_config": {
-                "multipart_threshold": 8 * 2**20,
-                "max_concurrency": 10,
-                "multipart_chunksize": 8 * 2**20,
-            },
+            "endpoint": "localhost:9000",
+            "access_key": "minioadmin",
+            "secret_key": "minioadmin",
+            "secure": True,
+            "region": "eu-central-1",
+            "multipart_chunksize": 2**20 * 64,
         }
         self.config = self.__DEFAULT_CONFIG | config
-        self.config["client_config"] = self.__DEFAULT_CONFIG["client_config"] | config.get("client_config", {})
-        self.config["transfer_config"] = TransferConfig(
-            **(self.__DEFAULT_CONFIG["transfer_config"] | config.get("transfer_config", {}))
+        self.client = Minio(
+            endpoint=self.config["endpoint"],
+            access_key=self.config["access_key"],
+            secret_key=self.config["secret_key"],
+            secure=self.config["secure"],
+            region=self.config["region"],
         )
-        self.client = boto3.client("s3", **self.config["client_config"])
 
     def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
         """Delete files from the S3 bucket.
@@ -52,12 +73,13 @@ class S3Storage(Storage):
         Returns:
             DeleteFilesResponse: A response containing a list of errors encountered while deleting files.
         """
-        response = self.client.delete_objects(
-            Bucket=self.config["bucket_name"], Delete={"Objects": [{"Key": path} for path in paths]}
-        )
-        if response.get("Errors") is None:
-            return {"errors": []}
-        return {"errors": [{"path": e["Key"], "message": e["Message"]} for e in response["Errors"]]}
+        errors = []
+        for path in paths:
+            try:
+                self.client.remove_object(self.config["bucket_name"], path)
+            except S3Error as e:
+                errors.append({"path": path, "message": str(e)})
+        return {"errors": errors}
 
     def download_file(self, src: str, dst: str) -> None:
         """Download a file from the S3 bucket.
@@ -67,9 +89,9 @@ class S3Storage(Storage):
             dst (str): The destination path where the file will be saved.
 
         Raises:
-            ClientError: If an error occurs while downloading the file.
+            S3Error: If an error occurs while downloading the file.
         """
-        self.client.download_file(self.config["bucket_name"], src, dst, Config=self.config["transfer_config"])
+        self.client.fget_object(self.config["bucket_name"], src, dst)
 
     def file_exists(self, path: str) -> bool:
         """Check if a file exists in the S3 bucket.
@@ -81,13 +103,13 @@ class S3Storage(Storage):
             bool: True if the file exists, False otherwise.
 
         Raises:
-            ClientError: If an error occurs while checking for the file's existence.
+            S3Error: If an error occurs while checking for the file's existence.
         """
         try:
-            self.client.head_object(Bucket=self.config["bucket_name"], Key=path)
+            self.client.stat_object(self.config["bucket_name"], path)
             return True
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "404":
+        except S3Error as e:
+            if e.code == "NoSuchKey":
                 return False
             raise e
 
@@ -105,10 +127,8 @@ class S3Storage(Storage):
         """
         if not self.file_exists(path):
             raise FileNotFoundError(f"No such file: '{path}'")
-        return self.client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": self.config["bucket_name"], "Key": path},
-            ExpiresIn=3600 * 24 * 7,
+        return self.client.presigned_get_object(
+            self.config["bucket_name"], path, expires=timedelta(days=7)
         )
 
     def get_file(self, src: str) -> Iterator:
@@ -121,9 +141,10 @@ class S3Storage(Storage):
             Iterator: An Iterator of the file content.
 
         Raises:
-            ClientError: If an error occurs while downloading the file.
+            S3Error: If an error occurs while downloading the file.
         """
-        return self.client.get_object(Bucket=self.config["bucket_name"], Key=src)["Body"].iter_chunks(2**20)
+        response = self.client.get_object(self.config["bucket_name"], src)
+        return StreamResponse(response)
 
     def list_files(self, path: str) -> list:
         """List all files in the specified path of the S3 bucket.
@@ -137,10 +158,10 @@ class S3Storage(Storage):
         Raises:
             FileNotFoundError: If the specified path does not exist.
         """
-        paginator = self.client.get_paginator("list_objects_v2")
-        files: list[str] = []
-        for page in paginator.paginate(Bucket=self.config["bucket_name"], Prefix=path):
-            files.extend(obj["Key"] for obj in page.get("Contents", []))
+        objects = self.client.list_objects(
+            self.config["bucket_name"], prefix=path, recursive=True
+        )
+        files = [obj.object_name for obj in objects]
         if not files:
             raise FileNotFoundError(f"No such directory: '{path}'")
         return files
@@ -153,15 +174,17 @@ class S3Storage(Storage):
             dst (str): The destination path in the S3 bucket.
 
         Raises:
-            ClientError: If an error occurs while uploading the file.
-            FileNotFoundError: If the source file does not exist.
+            S3Error: If an error occurs while uploading the file.
         """
         try:
-            self.client.upload_file(src, self.config["bucket_name"], dst, Config=self.config["transfer_config"])
-        except ClientError as e:
+            self.client.fput_object(
+                self.config["bucket_name"],
+                dst,
+                src,
+                part_size=self.config["multipart_chunksize"],
+            )
+        except S3Error as e:
             raise e
-        except FileNotFoundError as e:
-            raise FileNotFoundError(f"No such file: '{src}'") from e
 
     def size(self, src: str) -> int:
         """Check file size
@@ -172,4 +195,10 @@ class S3Storage(Storage):
         Returns:
             size (int): Size of the object.
         """
-        return self.client.head_object(Bucket=self.config["bucket_name"], Key=src)["ContentLength"]
+        try:
+            stats = self.client.stat_object(self.config["bucket_name"], src)
+            if stats.size:
+                return stats.size
+            raise FileNotFoundError()
+        except S3Error as e:
+            raise e

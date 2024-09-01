@@ -13,7 +13,7 @@ version = "0.13.5"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
-  "minio>=7.2.7",
+  "boto3>=1.35.10",
   "seatable-api>=2.6.11",
   "requests>=2.32.3",
   "py7zr>=0.21.0"
@@ -120,6 +120,11 @@ lint.ignore = [
   "PLW2901", # pylint - for loop variable overwritten by assignment target
   "RUF012", # Ruff-specific rule - annotated with classvar
   "ISC001", # Ruff formatter incompatible
+  "S603", # Check shell input
+  "S607", # Starting a process with a partial executable path
+  "C901", # `function` is too complex
+  "BLE001", # Do not catch blind exception: `Exception`
+  "G004", # Logging statement uses f-string
 ]
 src = ["esperoj", "tests"]
 target-version = "py311"

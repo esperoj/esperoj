@@ -8,6 +8,8 @@ from urllib.parse import quote
 
 import requests
 
+from esperoj.exceptions import ShareUploadError
+
 
 def calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
     """Calculate the hash of a stream of data using the specified algorithm.
@@ -25,15 +27,9 @@ def calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
     return hasher.hexdigest()
 
 
-class UploadError(Exception):
-    def __init__(self, host, status_code=None, server_message=None, message="Failed to upload"):
-        self.host = host
-        self.status_code = status_code
-        self.server_message = server_message
-        super().__init__(f"{message} to {host}. Status: {status_code}. Server message: {server_message}")
-
-
-def share(path: str, file_name: str | None = None, file_hosts: list[str] | None = None) -> dict[str, str | UploadError]:
+def share(
+    path: str, file_name: str | None = None, file_hosts: list[str] | None = None
+) -> dict[str, str | ShareUploadError]:
     """Share a file to file hosts.
 
     Args:
@@ -42,7 +38,7 @@ def share(path: str, file_name: str | None = None, file_hosts: list[str] | None 
     file_hosts (list[str]): List of file hosts to upload.
 
     Returns:
-    results (dict[str, str | UploadError]): The results with key being file host and value being direct URL or UploadError.
+    results (dict[str, str | ShareUploadError]): The results with key being file host and value being direct URL or ShareUploadError.
     """
 
     file_path = Path(path)
@@ -59,7 +55,7 @@ def share(path: str, file_name: str | None = None, file_hosts: list[str] | None 
             if response.status_code == 200:
                 json_response = response.json()
                 return json_response["files"][0]["url"]
-            raise UploadError("lain_la", response.status_code, response.text)
+            raise ShareUploadError("lain_la", response.status_code, response.text)
 
     def upload_to_file_haus() -> str:
         encoded_file_name = quote(file_name)
@@ -68,7 +64,7 @@ def share(path: str, file_name: str | None = None, file_hosts: list[str] | None 
             response = requests.put(url, data=file, timeout=600)
             if response.status_code == 200:
                 return response.text
-            raise UploadError("file_haus", response.status_code, response.text)
+            raise ShareUploadError("file_haus", response.status_code, response.text)
 
     upload_functions = {"lain_la": upload_to_lain_la, "file_haus": upload_to_file_haus}
 
@@ -81,7 +77,34 @@ def share(path: str, file_name: str | None = None, file_hosts: list[str] | None 
             try:
                 url = future.result()
                 results[host] = url
-            except UploadError as e:
+            except ShareUploadError as e:
                 results[host] = e
 
     return results
+
+
+class Utils:
+    def __getattr__(self, name: str):
+        """Get util from this package.
+
+        Args:
+            name (str): The name of the util.
+
+        Returns:
+            callable: The imported method, or None if the import fails.
+        """
+        match name:
+            case "calculate_hash":
+                return calculate_hash
+            case "ingest":
+                from esperoj.utils.ingest import ingest
+
+                return ingest
+            case "share":
+                return share
+            case "verify":
+                from esperoj.utils.verify import verify
+
+                return verify
+            case _:
+                raise AttributeError(f"Util {name} does not exist.")

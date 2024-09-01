@@ -9,6 +9,7 @@ from py7zr import SevenZipFile
 
 from esperoj.database.database import DatabaseFactory
 from esperoj.storage.storage import StorageFactory
+from esperoj.utils.utils import Utils
 
 
 class Esperoj:
@@ -21,6 +22,8 @@ class Esperoj:
         loggers (dict): A dictionary mapping logger names to logger instances.
     """
 
+    utils = Utils()
+
     def __init__(
         self,
         config: dict,
@@ -32,6 +35,7 @@ class Esperoj:
         self.databases = databases
         self.loggers = loggers
         self.storages = storages
+        self.utils = Esperoj.utils
 
     def __getattr__(self, name):
         """Dynamically import and return a method from the esperoj.scripts module.
