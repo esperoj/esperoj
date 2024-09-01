@@ -127,7 +127,9 @@ class S3Storage(Storage):
         """
         if not self.file_exists(path):
             raise FileNotFoundError(f"No such file: '{path}'")
-        return self.client.presigned_get_object(self.config["bucket_name"], path, expires=timedelta(days=7))
+        return self.client.presigned_get_object(
+            self.config["bucket_name"], path, expires=timedelta(days=7)
+        )
 
     def get_file(self, src: str) -> Iterator:
         """Get a file from the S3 bucket and return an Iterator.
@@ -156,7 +158,9 @@ class S3Storage(Storage):
         Raises:
             FileNotFoundError: If the specified path does not exist.
         """
-        objects = self.client.list_objects(self.config["bucket_name"], prefix=path, recursive=True)
+        objects = self.client.list_objects(
+            self.config["bucket_name"], prefix=path, recursive=True
+        )
         files = [obj.object_name for obj in objects]
         if not files:
             raise FileNotFoundError(f"No such directory: '{path}'")
@@ -173,7 +177,12 @@ class S3Storage(Storage):
             S3Error: If an error occurs while uploading the file.
         """
         try:
-            self.client.fput_object(self.config["bucket_name"], dst, src, part_size=self.config["multipart_chunksize"])
+            self.client.fput_object(
+                self.config["bucket_name"],
+                dst,
+                src,
+                part_size=self.config["multipart_chunksize"],
+            )
         except S3Error as e:
             raise e
 
