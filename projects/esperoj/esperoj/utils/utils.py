@@ -102,5 +102,9 @@ class Utils:
                 return ingest
             case "share":
                 return share
+            case "verify":
+                from esperoj.utils.verify import verify
+
+                return verify
             case _:
                 raise AttributeError(f"Util {name} does not exist.")
