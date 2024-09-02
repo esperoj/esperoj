@@ -37,7 +37,7 @@ def verify(esperoj, files: list[Record]) -> list[bool]:
             return calculate_hash(esperoj.storages[storage_name].get_file(name))
 
         def calculate_hash_from_url(url):
-            return calculate_hash(requests.get(url, stream=True, timeout=30).iter_content(2**20))
+            return calculate_hash(requests.get(url, stream=True, timeout=120).iter_content(2**20))
 
         def get_size_from_url(url):
             return int(requests.head(url, timeout=60).headers["content-length"])
@@ -55,7 +55,7 @@ def verify(esperoj, files: list[Record]) -> list[bool]:
                 if len(set(size_list)) == 1:
                     result = True
             else:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
                     hash_list = [file["SHA256"]]
                     urls = [file[host] for host in file_hosts]
                     urls.append(file["Internet Archive"])
@@ -76,7 +76,7 @@ def verify(esperoj, files: list[Record]) -> list[bool]:
             logger.error(f"Unexpected error: {e}")
             return False
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         results = []
         failed_files = []
         futures = {executor.submit(verify_file, file): file for file in files}
