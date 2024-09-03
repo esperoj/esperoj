@@ -16,7 +16,15 @@ defaults:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner.name }}
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        runner:
+          - name: ubuntu-22.04
+            arch: x86_64
+          - name: blacksmith-2vcpu-ubuntu-2204-arm
+            arch: aarch64
     steps:
       - name: Checkout repository
         uses: actions/checkout@main
@@ -45,8 +53,8 @@ jobs:
 
       - name: Change name
         run: |
-          mv build/__main__.bin ./esperoj_linux_x86_64
-          tar -czf esperoj_linux_x86_64.tar.gz -C build/__main__.dist .
+          mv build/__main__.bin ./esperoj_linux_${{ matrix.runner.arch }}
+          tar -czf esperoj_linux_${{ matrix.runner.arch }}.tar.gz -C build/__main__.dist .
           rm __main__.py
 
       - name: Release
@@ -54,8 +62,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            projects/esperoj/esperoj_linux_x86_64
-            projects/esperoj/esperoj_linux_x86_64.tar.gz
+            projects/esperoj/esperoj_linux_${{ matrix.runner.arch }}
+            projects/esperoj/esperoj_linux_${{ matrix.runner.arch }}.tar.gz
 
       - name: Send notification
         env:
