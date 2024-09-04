@@ -13,3 +13,16 @@ async def get_backup() -> Stream:
 
 
 app = Litestar(route_handlers=[get_backup])
+
+
+def run():
+    import os
+
+    import uvicorn
+
+    port = int(os.environ.get("PORT", 20711))
+    uvicorn.run(app, host="localhost", port=port, reload=False)
+
+
+if __name__ == "__main__":
+    run()

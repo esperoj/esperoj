@@ -4,6 +4,7 @@
 build/
 docs/
 public/
+uv.lock
 
 # Coverage.py
 htmlcov/
