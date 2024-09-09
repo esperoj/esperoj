@@ -9,19 +9,37 @@ authors = [
 description = "This is my personal package used to automate the boring stuffs."
 license = {text = "GPLv3"}
 name = "esperoj"
-version = "0.13.7"
+version = "0.13.8"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
-  "boto3>=1.35.10",
-  "seatable-api>=2.6.11",
-  "requests>=2.32.3",
-  "py7zr>=0.21.0"
+  "boto3 >=1.35.10",
+  "httpx[http2] >=0.27.2",
+  "seatable-api >=2.6.11",
+  "requests >=2.32.3",
+  "py7zr >=0.21.0",
+  "pydantic >=2.9.0"
 ]
 
 [project.optional-dependencies]
-cli = ["click"]
 api = ["litestar"]
+cli = ["click"]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "pytest-mock",
+  "pytest-xdist",
+  "ruff",
+  "pyright",
+  "pre-commit"
+]
+nuitka = [
+  "nuitka",
+  "patchelf",
+  "zstandard",
+  "ordered-set",
+  "wheel"
+]
 server = ["litestar[standard]"]
 
 [project.scripts]
