@@ -1,11 +1,14 @@
 """Fixtures for testing."""
 
+from datetime import datetime
 import tomllib
 from pathlib import Path
 
 import pytest
 from moto import mock_aws
 
+from esperoj.database.database import DatabaseFactory
+from esperoj.database.models import table_models
 from esperoj.storage.storage import StorageFactory
 
 
@@ -43,3 +46,38 @@ def s3_storage(config):
         s3 = StorageFactory.create(config["storages"][0])
         s3.client.create_bucket(Bucket=config["storages"][0]["bucket_name"])
         yield s3
+
+
+@pytest.fixture
+def memory_db(config):
+    db = DatabaseFactory.create(config["databases"][0], table_models)
+    for table_name in table_models:
+        db.create_table(table_name)
+    db.create_table("test")
+    fields_list = [{"name": "Alice"}, {"name": "Bob"}]
+    db.batch_create("test", fields_list)
+    mirror_info_dict = {
+    "sources": ["http://example.com/source1", "http://example.com/source2"],
+    "encrypted": True
+}
+    music_dict = {
+    "title": "My Favorite Song",
+    "comment": "This is a great track!",
+    "files": [],
+    "modified": datetime.now(),
+    "created": datetime.now()
+}
+    file_dict = {
+    "name": "example_file.mp3",
+    "sha256": "a" * 64,  # Replace with a valid SHA256 hash
+    "size": 1024,
+    "mirrors": {"mirror1": mirror_info_dict},
+    "musics": [],
+    "modified": datetime.now(),
+    "created": datetime.now(),
+    "metadata": {"genre": "Pop", "artist": "Artist Name"},
+    "verified": True
+}
+    db.create("files", file_dict)
+    db.create("musics", music_dict)
+    return db

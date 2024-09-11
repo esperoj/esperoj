@@ -67,7 +67,7 @@ tasks:
     cmds:
       - |
         [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        pytest -n $(nproc)
+        pytest --cov-report term --cov=esperoj -n $(nproc)
 
   dev-server:
     deps:

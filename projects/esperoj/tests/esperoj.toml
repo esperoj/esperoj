@@ -10,3 +10,7 @@ aws_secret_access_key = "testing"
 
 [storages.transfer_config]
 max_concurrency = 4
+
+[[databases]]
+name = "testing_db"
+type = "memory"

@@ -144,9 +144,12 @@ class Database(ABC):
         """
         return self
 
-    def __init__(self, name: str, config: dict[Any, Any]):
+    def __init__(self, name: str, config: dict[Any, Any], models: dict[str, type[Record]] | None = None):
+        if models is None:
+            models = {}
         self.config = config
         self.name = name
+        self.models = models
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Exit the database context.
@@ -367,7 +370,7 @@ class Database(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def query(self, table_name: str, query: Query | None) -> list[Record]:
+    def query(self, table_name: str, query: Query | None = None) -> list[Record]:
         """Query the table with the given query.
 
         Args:
@@ -411,7 +414,7 @@ class DatabaseFactory:
     """
 
     @staticmethod
-    def create(config: dict) -> Database:
+    def create(config: dict, models: dict[str, type[Record]] | None = None) -> Database:
         """Create a database instance based on the provided configuration.
 
         Args:
@@ -425,9 +428,14 @@ class DatabaseFactory:
             ValueError: If the database type in the configuration is unknown.
         """
         database_type = config["type"]
+        name = config["name"]
         match database_type:
             case "seatable":
                 from esperoj.database.seatable import SeatableDatabase
 
-                return SeatableDatabase(config)
+                return SeatableDatabase(name, config, models=models)
+            case "memory":
+                from esperoj.database.memory import MemoryDatabase
+
+                return MemoryDatabase(name, config, models=models)
         raise ValueError(f"Unknown database type: {database_type}")

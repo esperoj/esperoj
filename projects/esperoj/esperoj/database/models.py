@@ -35,3 +35,6 @@ class File(Record):
     created: datetime | None = None
     metadata: Annotated[dict[Any, Any], *JsonFieldConfig] = {}
     verified: bool = False
+
+
+table_models = {"musics": Music, "files": File}

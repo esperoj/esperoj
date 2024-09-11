@@ -93,7 +93,7 @@ exclude = ["**/node_modules",
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov-report term --cov=esperoj --color=yes --exitfirst --failed-first"
+addopts = "--color=yes --exitfirst --failed-first"
 testpaths = ["tests"]
 xfail_strict = true
 markers = [
