@@ -5,32 +5,6 @@ from collections.abc import Iterator
 from typing import TypedDict
 
 
-class DeleteFileError(TypedDict):
-    """DeleteFileError type.
-
-    TypedDict for errors encountered while deleting files.
-
-    Attributes:
-        path (str): The path of the file that failed to be deleted.
-        message (str): The error message related to the failure.
-    """
-
-    path: str
-    message: str
-
-
-class DeleteFilesResponse(TypedDict):
-    """DeleteFilesResponse type.
-
-    TypedDict for the response of the delete_files method.
-
-    Attributes:
-        errors (list[DeleteFileError]): A list of DeleteFileError objects representing errors encountered while deleting files.
-    """
-
-    errors: list[DeleteFileError]
-
-
 class Storage(ABC):
     """Abstract base class for storage.
 

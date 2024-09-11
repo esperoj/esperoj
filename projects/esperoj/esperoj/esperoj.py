@@ -69,17 +69,15 @@ class EsperojFactory:
         storages = {}
         databases = {}
         loggers = {}
-        logger = logging.getLogger("Esperoj")
+        logger = logging.getLogger("esperoj")
         logger.setLevel(logging.INFO)
         handler = logging.StreamHandler()
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-        loggers["Primary"] = logger
+        loggers["primary"] = logger
         config_text = ""
-        config_path = Path(config_file)
-        if not config_file:
-            config_path = Path.home() / ".config" / "esperoj" / "esperoj.toml"
+        config_path = Path(config_file) if config_file else Path.home() / ".config" / "esperoj" / "esperoj.toml"
         if config_path.suffix == ".7z":
             with SevenZipFile(str(config_path), password=getenv("ENCRYPTION_PASSPHRASE")) as seven_zip_file:
                 seven_zip_contents = seven_zip_file.readall()
