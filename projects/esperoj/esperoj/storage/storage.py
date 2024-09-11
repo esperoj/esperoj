@@ -20,38 +20,41 @@ class Storage(ABC):
         """
 
     @abstractmethod
-    def delete_files(self, paths: list[str]) -> DeleteFilesResponse:
-        """Delete files at the specified paths.
+    def delete(self, paths: list[str]) -> bool:
+        """Delete files or folders from the S3 bucket.
 
         Args:
-            paths (list[str]): A list of paths to the files to be deleted.
+            paths (list[str]): The paths of the files or folders to delete.
 
         Returns:
-            DeleteFilesResponse: A response containing a list of errors encountered while deleting files.
+            bool: Return True if operation succeeded and False if not.
         """
 
     @abstractmethod
-    def download_file(self, src: str, dst: str) -> None:
-        """Download a file from the source to the destination.
+    def download(self, src: str, dst: str) -> None:
+        """Download a file or folder from the S3 bucket.
 
         Args:
-            src (str): The source path of the file to download.
-            dst (str): The destination path where the file will be saved.
+            src (str): The path of the file or folder to download.
+            dst (str): The destination path where the file or folder will be saved.
+
+        Raises:
+            ClientError: If an error occurs while downloading.
         """
 
     @abstractmethod
-    def file_exists(self, path: str) -> bool:
-        """Check if a file exists at the specified path.
+    def exists(self, path: str) -> bool:
+        """Check if a file or folder exists in the S3 bucket.
 
         Args:
-            path (str): The path of the file to check.
+            path (str): The path of the file or folder to check.
 
         Returns:
-            bool: True if the file exists, False otherwise.
+            bool: True if the file or folder exists, False otherwise.
         """
 
     @abstractmethod
-    def get_link(self, path: str) -> str:
+    def link(self, path: str) -> str:
         """Get a download link for a file in the storage.
 
         Args:
@@ -62,7 +65,7 @@ class Storage(ABC):
         """
 
     @abstractmethod
-    def get_file(self, src: str) -> Iterator:
+    def stream(self, src: str) -> Iterator:
         """Get a file from the source and return an Iterator.
 
         Args:
@@ -73,23 +76,30 @@ class Storage(ABC):
         """
 
     @abstractmethod
-    def list_files(self, path: str) -> list[str]:
-        """List all files at the specified path.
+    def list(self, path: str) -> list[str]:
+        """List all files and folders in the specified path of the S3 bucket.
 
         Args:
-            path (str): The path to list files from.
+            path (str): The path to list files and folders from.
 
         Returns:
-            list[str]: A list of filenames.
+            list[str]: A list of file and folder paths.
+
+        Raises:
+            FileNotFoundError: If the specified path does not exist.
         """
 
     @abstractmethod
-    def upload_file(self, src: str, dst: str) -> None:
-        """Upload a file from the source to the destination.
-
+    def upload(self, src: str, dst: str) -> None:
+        """Upload a file or folder to the S3 bucket.
+    
         Args:
-            src (str): The source path of the file to upload.
-            dst (str): The destination path where the file will be saved.
+            src (str): The source path of the file or folder to upload.
+            dst (str): The destination path in the S3 bucket.
+    
+        Raises:
+            ClientError: If an error occurs while uploading.
+            FileNotFoundError: If the source file does not exist.
         """
 
     @abstractmethod

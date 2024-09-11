@@ -5,10 +5,13 @@ annotated-types==0.7.0
 anyio==4.4.0
     # via httpx
 boto3==1.35.14
-    # via esperoj (pyproject.toml)
+    # via
+    #   esperoj (pyproject.toml)
+    #   moto
 botocore==1.35.14
     # via
     #   boto3
+    #   moto
     #   s3transfer
 brotli==1.1.0 ; platform_python_implementation == 'CPython'
     # via py7zr
@@ -19,8 +22,10 @@ certifi==2024.8.30
     #   httpcore
     #   httpx
     #   requests
-cffi==1.17.1 ; platform_python_implementation == 'PyPy'
-    # via brotlicffi
+cffi==1.17.1
+    # via
+    #   brotlicffi
+    #   cryptography
 cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.3.2
@@ -29,6 +34,8 @@ colorama==0.4.6 ; sys_platform == 'win32'
     # via pytest
 coverage==7.6.1
     # via pytest-cov
+cryptography==43.0.1
+    # via moto
 distlib==0.3.8
     # via virtualenv
 execnet==2.1.1
@@ -58,10 +65,18 @@ inflate64==1.0.0
     # via py7zr
 iniconfig==2.0.0
     # via pytest
+jinja2==3.1.4
+    # via moto
 jmespath==1.0.1
     # via
     #   boto3
     #   botocore
+markupsafe==2.1.5
+    # via
+    #   jinja2
+    #   werkzeug
+moto==5.0.14
+    # via esperoj (pyproject.toml)
 multivolumefile==0.2.3
     # via py7zr
 nodeenv==1.9.1
@@ -84,7 +99,7 @@ py7zr==0.22.0
     # via esperoj (pyproject.toml)
 pybcj==1.0.2
     # via py7zr
-pycparser==2.22 ; platform_python_implementation == 'PyPy'
+pycparser==2.22
     # via cffi
 pycryptodomex==3.20.0
     # via py7zr
@@ -111,19 +126,26 @@ pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
     # via
     #   botocore
+    #   moto
     #   seatable-api
 python-engineio==3.14.2
     # via python-socketio
 python-socketio==4.6.1
     # via seatable-api
 pyyaml==6.0.2
-    # via pre-commit
+    # via
+    #   pre-commit
+    #   responses
 pyzstd==0.16.1
     # via py7zr
 requests==2.32.3
     # via
     #   esperoj (pyproject.toml)
+    #   moto
+    #   responses
     #   seatable-api
+responses==0.25.3
+    # via moto
 ruff==0.6.4
     # via esperoj (pyproject.toml)
 s3transfer==0.10.2
@@ -149,5 +171,10 @@ urllib3==2.2.2
     # via
     #   botocore
     #   requests
+    #   responses
 virtualenv==20.26.4
     # via pre-commit
+werkzeug==3.0.4
+    # via moto
+xmltodict==0.13.0
+    # via moto

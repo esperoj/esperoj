@@ -25,6 +25,7 @@ dependencies = [
 api = ["litestar"]
 cli = ["click"]
 dev = [
+  "moto",
   "pytest",
   "pytest-cov",
   "pytest-mock",
@@ -92,7 +93,7 @@ exclude = ["**/node_modules",
 ]
 
 [tool.pytest.ini_options]
-addopts = "--verbose --cov-report term --cov=esperoj --color=yes --exitfirst --failed-first"
+addopts = "--cov-report term --cov=esperoj --color=yes --exitfirst --failed-first"
 testpaths = ["tests"]
 xfail_strict = true
 markers = [

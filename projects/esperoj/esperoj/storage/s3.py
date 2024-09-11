@@ -41,7 +41,7 @@ class S3Storage(Storage):
         )
         self.client = boto3.client("s3", **self.config["client_config"])
 
-    def delete(self, paths: list[str]):
+    def delete(self, paths: list[str]) -> bool:
         """Delete files or folders from the S3 bucket.
 
         Args:
