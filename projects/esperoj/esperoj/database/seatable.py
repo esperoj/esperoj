@@ -186,6 +186,17 @@ class SeatableTable(Table):
         self.client.batch_update_links(link_id, self.name, other_table_id, list(record_ids_map.keys()), record_ids_map)
         return True
 
+    def get_link_id(self, field_key: FieldKey) -> str:
+        """Get the link id for the given field key.
+
+        Args:
+            field_key (FieldKey): The key of the field representing the link.
+
+        Returns:
+            str: The link ID for the given field key.
+        """
+        return self.batch_get_link_id([field_key])[field_key]
+
     def get_linked_records(self, field_key: FieldKey, record_ids: list[RecordId]) -> dict[RecordId, list[RecordId]]:
         """Retrieves the records linked to the given records through the specified field.
 
