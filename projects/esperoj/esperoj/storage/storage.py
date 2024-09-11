@@ -2,7 +2,6 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
-from typing import TypedDict
 
 
 class Storage(ABC):
@@ -92,11 +91,11 @@ class Storage(ABC):
     @abstractmethod
     def upload(self, src: str, dst: str) -> None:
         """Upload a file or folder to the S3 bucket.
-    
+
         Args:
             src (str): The source path of the file or folder to upload.
             dst (str): The destination path in the S3 bucket.
-    
+
         Raises:
             ClientError: If an error occurs while uploading.
             FileNotFoundError: If the source file does not exist.

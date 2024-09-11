@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import uuid4
 
-from pydantic import AnyUrl, BaseModel, BeforeValidator, Field, PlainSerializer
+from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer
 
 from esperoj.database.orm import OrmRecord
 

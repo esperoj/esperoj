@@ -1,11 +1,13 @@
 """orm module."""
-from typing import Optional, Self, Any
+
+from typing import Any, Self
 
 from pydantic import BaseModel
 
 FieldValue = Any
 FieldKey = str
 Fields = dict[FieldKey, FieldValue]
+
 
 class OrmRecord(BaseModel):
     _client: "OrmClient | None" = None
@@ -32,7 +34,7 @@ class OrmRecord(BaseModel):
         Returns:
             bool: True if the record was successfully deleted, False otherwise.
         """
-        return self._client.delete(getattr(self, "_primary_key"))
+        return self._client.delete(self._primary_key)
 
     def update(self, fields: Fields) -> Self:
         """Update the record with the given fields.
@@ -43,9 +45,10 @@ class OrmRecord(BaseModel):
         Returns:
             OrmRecord: The updated record instance.
         """
-        if self.update(getattr(self, "_primary_key"), fields):
+        if self.update(self._primary_key, fields):
             self.fields.update(fields)
         return self
+
 
 class OrmClient:
     pass
