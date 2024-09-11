@@ -51,7 +51,13 @@ class Record(BaseModel):
 
         Returns:
             bool: True if the record was successfully deleted, False otherwise.
+
+        Raises:
+            ValueError: If no table is associated with this record.
         """
+        if self._table is None:
+            raise ValueError("No table is associated with this record.")
+
         return self._table.delete(self.id)
 
     def update(self, fields: Fields) -> None:
@@ -61,7 +67,13 @@ class Record(BaseModel):
             fields (Fields): A dictionary of field keys and values to update.
 
         Updates the record's dictionary with the provided fields if the update is successful.
+
+        Raises:
+            ValueError: If no table is associated with this record.
         """
+        if self._table is None:
+            raise ValueError("No table is associated with this record.")
+
         if self._table.update(self.id, fields):
             self.__dict__.update(fields)
 
