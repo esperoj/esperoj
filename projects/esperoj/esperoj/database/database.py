@@ -275,12 +275,12 @@ class Database(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def batch_update(self, table_name: str, records: list[Fields]) -> list[Record]:
+    def batch_update(self, table_name: str, fields_list: list[Fields]) -> list[Record]:
         """Update the records with the given record_ids with the given fields.
 
         Args:
             table_name (str): The name of the table where the records will be updated.
-            records (list[tuple[ID, Fields]]): A list of tuples, where each tuple contains a record ID and a dictionary of fields to update.
+            fields_list (list[Fields]): A list of tuples, where each tuple contains a record ID and a dictionary of fields to update.
 
         Returns:
             list[Record]: A list of updated record instances.
