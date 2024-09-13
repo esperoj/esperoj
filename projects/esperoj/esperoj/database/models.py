@@ -1,18 +1,18 @@
 import json
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, TypedDict
 
-from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer
+from pydantic import BeforeValidator, Field, PlainSerializer
 
 from esperoj.database.database import ID, Record
 
 JsonFieldConfig = (
     BeforeValidator(lambda v: json.loads(v) if isinstance(v, str) else v),
-    PlainSerializer(lambda x: json.dumps(x) if not None else x),
+    PlainSerializer(lambda v: json.dumps(v) if not None else v),
 )
 
 
-class MirrorInfo(BaseModel):
+class MirrorInfo(TypedDict):
     sources: Annotated[list[str], Field(min_length=1)]
     encrypted: bool = False
 

@@ -34,16 +34,17 @@ class MemoryDatabase(Database):
             raise ValueError(f"Table {table_name} does not exist.")
         return [record for record in table if record.id in record_ids]
 
-    def batch_update(self, table_name: str, records: list[tuple[ID, Fields]]) -> list[Record]:
+    def batch_update(self, table_name: str, records: list[Fields]) -> list[Record]:
         table = self.tables.get(table_name)
         if table is None:
             raise ValueError(f"Table {table_name} does not exist.")
+        model_class = self.models.get(table_name, Record)
         updated_records = []
-        for record_id, fields in records:
+        for fields in records:
             for record in table:
-                if record.id == record_id:
-                    record.__dict__.update(fields)
-                    updated_records.append(record)
+                if record.id == fields["id"]:
+                    updated_record = record.model_copy(update=fields, deep=True)
+                    updated_records.append(model_class(**updated_record.model_dump()))
         return updated_records
 
     def batch_update_links(self, table_name: str, field_key: FieldKey, record_ids_map: dict[ID, list[ID]]) -> bool:

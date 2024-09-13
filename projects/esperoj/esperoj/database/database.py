@@ -19,63 +19,14 @@ ID = Annotated[str, Field(default_factory=lambda: str(uuid4())[:22], min_length=
 class Record(BaseModel):
     """Record class.
 
-    This class represents a record in a database table. It allows for operations such as updating and deleting
-    the record, as well as setting and getting the associated table.
+    This class represents a record in a database table.
     """
 
-    _table: "Table | None" = None
     id: ID
 
     model_config = ConfigDict(
         extra="allow",
     )
-
-    def get_table(self) -> "Table | None":
-        """Get the table associated with this record.
-
-        Returns:
-            Table | None: The table associated with this record, or None if no table is set.
-        """
-        return self._table
-
-    def set_table(self, table: "Table | None") -> None:
-        """Set the table associated with this record.
-
-        Args:
-            table (Table | None): The table to associate with this record.
-        """
-        self._table = table
-
-    def delete(self) -> bool:
-        """Delete the record from the database.
-
-        Returns:
-            bool: True if the record was successfully deleted, False otherwise.
-
-        Raises:
-            ValueError: If no table is associated with this record.
-        """
-        if self._table is None:
-            raise ValueError("No table is associated with this record.")
-
-        return self._table.delete(self.id)
-
-    def update(self, fields: Fields) -> None:
-        """Update the record with the given fields.
-
-        Args:
-            fields (Fields): A dictionary of field keys and values to update.
-
-        Updates the record's dictionary with the provided fields if the update is successful.
-
-        Raises:
-            ValueError: If no table is associated with this record.
-        """
-        if self._table is None:
-            raise ValueError("No table is associated with this record.")
-
-        if self._table.update(self.id, fields):
-            self.__dict__.update(fields)
 
 
 class Table:
@@ -260,7 +211,7 @@ class Database(ABC):
         Returns:
             Record: The updated record instance.
         """
-        return self.batch_update(table_name, [(record_id, fields)])[0]
+        return self.batch_update(table_name, [(fields)])[0]
 
     def update_link(
         self,
@@ -324,7 +275,7 @@ class Database(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def batch_update(self, table_name: str, records: list[tuple[ID, Fields]]) -> list[Record]:
+    def batch_update(self, table_name: str, records: list[Fields]) -> list[Record]:
         """Update the records with the given record_ids with the given fields.
 
         Args:
@@ -420,6 +371,7 @@ class DatabaseFactory:
         Args:
             config (dict): The configuration dictionary for the database, which must include a 'type' key
                            specifying the database type.
+            models: The list of models used by thr database.
 
         Returns:
             Database: The database instance corresponding to the specified type.

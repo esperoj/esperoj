@@ -1,270 +1,215 @@
-"""Module contains Seatable class."""
+"""Module contains SeatableDatabase class."""
 
 import os
-import uuid
 from typing import Any
-
+import uuid
 from seatable_api import Base
 
 from esperoj.database.database import (
     Database,
     FieldKey,
     Fields,
-    FieldValue,
     Record,
-    RecordId,
+    ID,
     Table,
 )
 from esperoj.database.query import Query
 
+class SeatableDatabase(Database):
+    """Represents a Seatable database."""
 
-class SeatableRecord(Record):
-    """Represents a record in a Seatable table."""
-
-    def __init__(self, record_id: RecordId, fields: Fields, table: "SeatableTable"):
-        """Initializes a SeatableRecord instance.
+    def __init__(self, name: str, config: dict[Any, Any], models: dict[str, type[Record]] | None = None):
+        """Initializes a SeatableDatabase instance.
 
         Args:
-            record_id (RecordId): The unique identifier of the record.
-            fields (Fields): A dictionary mapping field keys to field values.
-            table (SeatableTable): The table that the record belongs to.
+            name (str): The name of the database.
+            config (dict[Any, Any]): Configuration for the Seatable database.
+            models (dict[str, type[Record]] | None): Models for the database tables.
         """
-        super().__init__(record_id, fields, table)
+        super().__init__(name, config, models)
+        self.client = Base(config['api_token'], config['server_url'])
+        self.client.auth()
+        self.metadata = self.client.get_metadata()
 
+    def _seatable_record_to_record(self, table_name: str, fields_list: list[dict[FieldKey, Any]]) -> list[Record]:
+        """Converts dictionaries representing a record to a Record instance."""
+        model_class = self.models.get(table_name, Record)
+        return [model_class(id=fields["_id"], **{key: value for key, value in fields.items() if not key.startswith("_")}) for fields in fields_list]
 
-class SeatableTable(Table):
-    """Represents a table in a Seatable database."""
-
-    def __init__(self, name: str, database: "SeatableDatabase"):
-        """Initializes a SeatableTable instance.
-
-        Args:
-            name (str): The name of the table.
-            database (SeatableDatabase): The database that the table belongs to.
-        """
-        self.name = name
-        self.database = database
-        self.client = database.client
-        self.metadata = next((table for table in database.metadata["tables"] if table["name"] == self.name), {})
-        self.links = next(
-            (
-                {link["name"]: link["data"] | {"key": link["key"]}}
-                for link in self.metadata["columns"]
-                if link["type"] == "link"
-            ),
-            {},
-        )
-
-    def _record_from_dict(self, record_dict: dict[FieldKey, FieldValue]) -> Record:
-        """Converts a dictionary representing a record to a SeatableRecord instance.
+    def _fields_to_seatable_record(self, table_name: str, fields_list: list[dict[FieldKey, Any]]) -> list[Record]:
+        """Converts dictionaries representing a record to a Record instance.
 
         Args:
-            record_dict (dict[FieldKey, FieldValue]): A dictionary representing a record.
+            table_name (str): The name of the table.
+            fields_list (list[dict[FieldKey, Any]]): A list of dictionaries representing a record.
 
         Returns:
-            SeatableRecord: A SeatableRecord instance representing the record.
+            Records (list[Record]): Records instance representing the records.
         """
-        record_id = record_dict["_id"]
-        fields = {}
-        for key, value in record_dict.items():
-            if not key.startswith("_"):
-                fields[key] = value
-            if key in self.links:
-                fields[key] = [item["row_id"] if isinstance(item, dict) else item for item in record_dict[key]]
-        return SeatableRecord(record_id=record_id, fields=fields, table=self)
+        model_class = self.models.get(table_name, Record)
+        results = []
+        for fields in fields_list:
+            record_id = fields["_id"]
+            fields = {key: value for key, value in record_dict.items() if not key.startswith("_")}
+            results.extend(model_class(id=record_id, **fields))
+        return results
 
-    def _update_links(self, records: list[Record]) -> bool:
-        """Updates the links for a list of records.
-
-        Args:
-            records (list[Record]): A list of records to update the links for.
-
-        Returns:
-            bool: True if all links were updated successfully, False otherwise.
-        """
-        links = {key: {} for key in self.links}
-        for record in records:
-            for key, value in record.fields.items():
-                if key in links:
-                    links[key][record.record_id] = value
-        return all(self.batch_update_links(key, value) for key, value in links.items() if value != {})
-
-    def batch_create(self, fields_list: list[Fields]) -> list[Record]:
+    def batch_create(self, table_name: str, fields_list: list[Fields]) -> list[Record]:
         """Creates multiple records in the table.
 
         Args:
+            table_name (str): The name of the table.
             fields_list (list[Fields]): A list of dictionaries representing the fields for the new records.
 
         Returns:
-            list[Record]: A list of SeatableRecord instances representing the created records.
+            list[Record]: A list of Record instances representing the created records.
         """
+        model_class = self.models.get(table_name, Record)
         records = []
         for chunk in [fields_list[i : i + 1000] for i in range(0, len(fields_list), 1000)]:
-            chunk_fields = [{"_id": str(uuid.uuid4())[:22], **fields} for fields in chunk]
-            chunk_records = [self._record_from_dict(fields) for fields in chunk_fields]
-            if self.client.batch_append_rows(self.name, chunk_fields)["inserted_row_count"] != len(chunk_fields):
+            chunk_fields = [
+                {**{key: value for key, value in fields.items() if key != "id"}, "_id": fields.get("id", str(uuid.uuid4())[:22])}
+                for fields in (model_class(raw_fields).model_dump() for raw_fields in chunk)
+            ]
+            chunk_records = self._seatable_record_to_record(chunk_fields)
+            if self.client.batch_append_rows(table_name, chunk_fields)["inserted_row_count"] != len(chunk_fields):
                 raise RuntimeError("Failed to create all rows")
             if not self._update_links(chunk_records):
                 raise RuntimeError("Failed to link all records")
             records.extend(chunk_records)
         return records
 
-    def batch_delete(self, record_ids: list[RecordId]) -> bool:
+
+    def batch_delete(self, table_name: str, record_ids: list[ID]) -> bool:
         """Deletes multiple records from the table.
 
         Args:
-            record_ids (list[RecordId]): A list of record identifiers to delete.
+            table_name (str): The name of the table.
+            record_ids (list[ID]): A list of record IDs to delete.
 
         Returns:
-            bool: True if all records were deleted successfully, False otherwise.
+            bool: True if the records were successfully deleted, False otherwise.
         """
         for chunk in [record_ids[i : i + 1000] for i in range(0, len(record_ids), 1000)]:
-            if self.client.batch_delete_rows(self.name, chunk)["deleted_rows"] != len(chunk):
+            if self.client.batch_delete_rows(table_name, chunk)["deleted_rows"] != len(chunk):
                 raise RuntimeError("Failed to delete all records")
         return True
 
-    def batch_get(self, record_ids: list[RecordId]) -> list[Record]:
+    def batch_get(self, table_name: str, record_ids: list[ID]) -> list[Record]:
         """Retrieves multiple records from the table.
 
         Args:
-            record_ids (list[RecordId]): A list of record identifiers to retrieve.
+            table_name (str): The name of the table.
+            record_ids (list[ID]): A list of record IDs to retrieve.
 
         Returns:
-            list[Record]: A list of SeatableRecord instances representing the retrieved records.
+            list[Record]: A list of Record instances representing the retrieved records.
         """
-        query = f"""SELECT * from `{self.name}` WHERE `_id` IN ({','.join([f"'{record_id}'" for record_id in record_ids])})"""
-        return [self._record_from_dict(record) for record in self.client.query(query)]
+        query = f"""SELECT * from `table_name` WHERE `_id` IN ({','.join([f"'{record_id}'" for record_id in record_ids])})"""
+        return self._seatable_record_to_record(self.client.query(query))
 
-    def batch_get_link_id(self, field_keys: list[FieldKey]) -> dict[FieldKey, str]:
-        """Retrieves the link identifiers for the given field keys.
-
-        Args:
-            field_keys (list[FieldKey]): A list of field keys to retrieve the link identifiers for.
-
-        Returns:
-            dict[FieldKey, str]: A dictionary mapping field keys to their corresponding link identifiers.
-        """
-        return {key: self.links[key]["link_id"] for key in field_keys}
-
-    def batch_update(self, records: list[tuple[RecordId, Fields]]) -> list[Record]:
+    def batch_update(self, table_name: str, records: list[Fields]) -> list[Record]:
         """Updates multiple records in the table.
 
         Args:
-            records (list[tuple[RecordId, Fields]]): A list of tuples containing record identifiers and dictionaries of fields to update.
+            table_name (str): The name of the table.
+            records (list[tuple[ID, Fields]]): A list of tuples containing record IDs and fields to update.
 
         Returns:
-            list[Record]: A list of SeatableRecord instances representing the updated records.
+            list[Record]: A list of Record instances representing the updated records.
         """
         results = []
+        model_class = self.models.get(table_name, Record)
+        records  = [model_class(fields).model_dump() for fields in records]
         for chunk in [records[i : i + 1000] for i in range(0, len(records), 1000)]:
-            chunk_records = [self._record_from_dict({"_id": record_id, **fields}) for record_id, fields in chunk]
+            chunk_records = [self._seatable_record_to_record({"_id": fields["id"], **fields}) for fields in chunk]
             if not self._update_links(chunk_records):
                 raise RuntimeError("Failed to link all records")
             if not self.client.batch_update_rows(
-                self.name, [{"row_id": record_id, "row": fields} for record_id, fields in chunk]
+                table_name, [{"row_id": fields["id"], "row": fields} for fields in chunk]
             )["success"]:
                 raise RuntimeError("Failed to update all records")
             results += chunk_records
         return results
 
-    def batch_update_links(
-        self,
-        field_key: FieldKey,
-        record_ids_map: dict[RecordId, list[RecordId]],
-    ) -> bool:
-        """Updates the links between records in the table and records in another table.
+    def batch_update_links(self, table_name: str, field_key: FieldKey, record_ids_map: dict[ID, list[ID]]) -> bool:
+        """Updates links for multiple records in the table.
 
         Args:
-            field_key (FieldKey): The key of the field representing the link.
-            record_ids_map (dict[RecordId, list[RecordId]]): A dictionary mapping record identifiers in this table to lists of record identifiers in the linked table.
+            table_name (str): The name of the table.
+            field_key (FieldKey): The key of the link field.
+            record_ids_map (dict[ID, list[ID]]): A dictionary mapping record IDs to lists of linked record IDs.
 
         Returns:
-            bool: True if all links were updated successfully, False otherwise.
+            bool: True if the links were successfully updated, False otherwise.
         """
-        link_id = self.get_link_id(field_key)
-        other_table_id = self.links[field_key]["other_table_id"]
-        self.client.batch_update_links(link_id, self.name, other_table_id, list(record_ids_map.keys()), record_ids_map)
-        return True
+        return self.client.batch_update_rows(table_name, [
+            {"row_id": record_id, field_key: linked_ids}
+            for record_id, linked_ids in record_ids_map.items()
+        ])
 
-    def get_link_id(self, field_key: FieldKey) -> str:
-        """Get the link id for the given field key.
+    def get_linked_records(self, table_name: str, field_key: FieldKey, record_ids: list[ID]) -> dict[ID, list[ID]]:
+        """Retrieves linked records for the given record IDs.
 
         Args:
-            field_key (FieldKey): The key of the field representing the link.
+            table_name (str): The name of the table.
+            field_key (FieldKey): The key of the link field.
+            record_ids (list[ID]): A list of record IDs.
 
         Returns:
-            str: The link ID for the given field key.
+            dict[ID, list[ID]]: A dictionary mapping record IDs to lists of linked record IDs.
         """
-        return self.batch_get_link_id([field_key])[field_key]
-
-    def get_linked_records(self, field_key: FieldKey, record_ids: list[RecordId]) -> dict[RecordId, list[RecordId]]:
-        """Retrieves the records linked to the given records through the specified field.
-
-        Args:
-            field_key (FieldKey): The key of the field representing the link.
-            record_ids (list[RecordId]): A list of record identifiers to retrieve the linked records for.
-
-        Returns:
-            dict[RecordId, list[RecordId]]: A dictionary mapping record identifiers to lists of linked record identifiers.
-        """
+        records = self.client.get_rows(table_name, row_ids=record_ids)
         return {
-            record_id: [item["row_id"] for item in record_ids]
-            for record_id, record_ids in self.client.get_linked_records(
-                self.links[field_key]["table_id"],
-                self.links[field_key]["key"],
-                [{"row_id": item} for item in record_ids],
-            ).items()
+            record["_id"]: record.get(field_key, [])
+            for record in records
         }
 
-    def query(self, query: Query | None = None) -> list[Record]:
-        """Executes a query on the table and returns the resulting records.
+    def query(self, table_name: str, query: Query | None = None) -> list[Record]:
+        """Queries the table with the given query.
 
         Args:
-            query (Query): The query.
+            table_name (str): The name of the table.
+            query (Query | None): The query object to execute.
 
         Returns:
-            list[Record]: A list of SeatableRecord instances representing the resulting records.
+            list[Record]: A list of Record instances matching the query.
         """
-        data = self.client.query(f"SELECT * FROM `{self.name}` LIMIT 10000")
-        return [self._record_from_dict(row) for row in data]
+        # Note: This is a simplified implementation. You may need to translate the Query object
+        # into Seatable's query format for more complex queries.
+        records = self.client.get_rows(table_name)
+        return [self._seatable_record_to_record(table_name, record) for record in records]
 
-
-class SeatableDatabase(Database):
-    """Represents a Seatable database."""
-
-    def __init__(self, config: dict[Any, Any]):
-        """Initializes a SeatableDatabase instance.
-
-        Args:
-            config (dict[Any, Any]): A dictionary containing the configuration for the database.
-        """
-        self.config = config
-        self.name = config["name"]
-        self.aliases = config["aliases"] or []
-        self.server_url = config.get("server_url", "") or "https://cloud.seatable.io"
-        self.api_token = config.get("api_token", "") or os.getenv("SEATABLE_API_TOKEN")
-        self.client = Base(self.api_token, self.server_url)
-        self.client.auth()
-        self.metadata = self.client.get_metadata()
-
-    def create_table(self, name: str) -> SeatableTable:
+    def create_table(self, name: str) -> Table:
         """Creates a new table in the database.
 
         Args:
             name (str): The name of the new table.
 
         Returns:
-            SeatableTable: A SeatableTable instance representing the new table.
+            Table: The newly created table instance.
         """
-        return SeatableTable(name, self)
+        self.client.add_table(name)
+        return Table(name, self)
 
-    def get_table(self, name: str) -> SeatableTable:
-        """Retrieves an existing table from the database.
+    def get_table(self, name: str) -> Table:
+        """Retrieves a table from the database.
 
         Args:
             name (str): The name of the table to retrieve.
 
         Returns:
-            SeatableTable: A SeatableTable instance representing the retrieved table.
+            Table: The table instance.
         """
-        return SeatableTable(name, self)
+        if name not in [table['name'] for table in self.metadata['tables']]:
+            raise ValueError(f"Table {name} does not exist.")
+        return Table(name, self)
+
+    def close(self) -> bool:
+        """Closes the database connection.
+
+        Returns:
+            bool: True if the database was successfully closed, False otherwise.
+        """
+        # Seatable API doesn't require explicit closing, so we'll just return True
+        return True

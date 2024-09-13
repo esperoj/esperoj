@@ -1,7 +1,7 @@
 """Fixtures for testing."""
 
-from datetime import datetime
 import tomllib
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -56,28 +56,25 @@ def memory_db(config):
     db.create_table("test")
     fields_list = [{"name": "Alice"}, {"name": "Bob"}]
     db.batch_create("test", fields_list)
-    mirror_info_dict = {
-    "sources": ["http://example.com/source1", "http://example.com/source2"],
-    "encrypted": True
-}
+    mirror_info_dict = {"sources": ["http://example.com/source1", "http://example.com/source2"], "encrypted": True}
     music_dict = {
-    "title": "My Favorite Song",
-    "comment": "This is a great track!",
-    "files": [],
-    "modified": datetime.now(),
-    "created": datetime.now()
-}
+        "title": "My Favorite Song",
+        "comment": "This is a great track!",
+        "files": [],
+        "modified": datetime.now(),
+        "created": datetime.now(),
+    }
     file_dict = {
-    "name": "example_file.mp3",
-    "sha256": "a" * 64,  # Replace with a valid SHA256 hash
-    "size": 1024,
-    "mirrors": {"mirror1": mirror_info_dict},
-    "musics": [],
-    "modified": datetime.now(),
-    "created": datetime.now(),
-    "metadata": {"genre": "Pop", "artist": "Artist Name"},
-    "verified": True
-}
+        "name": "example_file.mp3",
+        "sha256": "a" * 64,  # Replace with a valid SHA256 hash
+        "size": 1024,
+        "mirrors": {"mirror1": mirror_info_dict},
+        "musics": [],
+        "modified": datetime.now(),
+        "created": datetime.now(),
+        "metadata": {"genre": "Pop", "artist": "Artist Name"},
+        "verified": True,
+    }
     db.create("files", file_dict)
     db.create("musics", music_dict)
     return db
