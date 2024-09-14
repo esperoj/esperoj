@@ -1,14 +1,7 @@
 """Module containing utility functions."""
 
-import concurrent.futures
 import hashlib
 from collections.abc import Iterator
-from pathlib import Path
-from urllib.parse import quote
-
-import requests
-
-from esperoj.exceptions import ShareUploadError
 
 
 def calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:

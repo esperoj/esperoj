@@ -6,22 +6,27 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from esperoj.database.database import Record
+from esperoj.database.models import File
 
 
 def ingest(
-    esperoj, path: Path, storage_names: list[str], post_process: Callable[[Path, dict, Record], Record]
-) -> list[Record]:
+    esperoj,
+    path: Path,
+    storage_names: list[str],
+    post_process: Callable[[Path, dict, File], File],
+    file_hosts: list[str],
+) -> list[File]:
     """Ingest a file into the Esperoj system.
 
     Args:
         esperoj (object): The Esperoj object representing the system.
         path (Path): The path to be ingested.
-        storage_names (str): The list of storages to upload.
+        storage_names (list[str]): The list of storages to upload.
+        file_hosts (list[str]): List of filr hosts.
         post_process: The function to do post processing.
 
     Returns:
-        list(Record): The database records representing the ingested files.
+        list[File]: The database records representing the ingested files.
 
     Raises:
         FileNotFoundError: If the specified file does not exist.
@@ -29,7 +34,6 @@ def ingest(
         RuntimeError: If the file type is not supported.
     """
     logger = esperoj.loggers["Primary"]
-
     file_paths = []
 
     if path.is_dir():
@@ -39,61 +43,52 @@ def ingest(
             raise FileNotFoundError
         file_paths = [path]
 
-    def ingest_file(file_path: Path) -> Record:
+    def ingest_file(file_path: Path) -> File:
         logger.info(f"Start to ingest `{file_path}`")
 
-        file_hosts = esperoj.config["file_hosts"]
         name = file_path.name
         size = file_path.stat().st_size
         f = file_path.open("rb")
         sha256sum = esperoj.utils.calculate_hash(f, algorithm="sha256")
         f.close()
         metadata = json.loads(subprocess.check_output(["exiftool", "-j", str(file_path)]))[0]
-        files = esperoj.databases["Primary"].get_table("Files")
+        files = esperoj.databases["Primary"].get_table("files")
 
-        def upload() -> Record:
+        def upload() -> File:
             """Upload the file to the storages, and file hosts, then return a database record for it.
 
             Returns:
-                Record: The database record representing the ingested file.
+                File: The database record representing the ingested file.
 
             Raises:
                 FileExistsError: If the file already exists in any of the storages or database.
             """
-            if list(filter(lambda file: file["Name"] == name, files.query())) != []:
+            if list(filter(lambda file: file["name"] == name, files.query())) != []:
                 raise FileExistsError
-            file = files.create(
-                {
-                    "Name": name,
-                    "Size": size,
-                    "SHA256": sha256sum,
-                    "Internet Archive": "https://example.com/",
-                    "Verified": False,
-                    "Storages": storage_names,
-                    "Metadata": json.dumps(metadata),
-                }
-            )
+            file = {
+                "name": name,
+                "size": size,
+                "sha256": sha256sum,
+                "verified": False,
+                "metadata": metadata,
+                "mirrors": {},
+            }
             for storage_name in storage_names:
-                storage = esperoj.storages[storage_name]
                 try:
-                    storage.upload_file(str(file_path), name)
+                    storage = esperoj.storages[storage_name]
+                    storage.upload(str(file_path), name)
+                    file["mirrors"][storage_name] = {"sources": [storage_name], "encrypted": False}
                 except Exception:
                     logger.error(f"Error when upload file `{name}` from `{storage_name}`")
-            results = esperoj.utils.share(str(file_path), name, file_hosts)
-            for host, result in results:
-                if not isinstance(result, Exception):
-                    file[host] = result
-            return file
+            for file_host in file_hosts:
+                try:
+                    url = esperoj.file_hosts[file_host].upload(str(file_path))
+                    file["mirrors"][file_host] = {"sources": [url], "encrypted": False}
+                except Exception:
+                    logger.error(f"Error when upload file `{name}` from `{file_host}`")
+            return files.create(file)
 
-        file = upload()
-        url = file.fields.get(file_hosts[0])
-        try:
-            if url:
-                archive_url = esperoj.save_page(url)
-                file.update({"Internet Archive": archive_url})
-        except Exception as e:
-            logger.error(f"Error when archive an `{url}` with {e}, for file `{name}`")
-        return file
+        return upload()
 
     with ThreadPoolExecutor(max_workers=4) as executor:
         results = []
@@ -102,7 +97,7 @@ def ingest(
             try:
                 file_path = futures[future]
                 file = future.result()
-                metadata = json.loads(file["Metadata"])
+                metadata = file.metadata
                 result = post_process(file_path, metadata, file)
                 results.append(result)
                 logger.info(f"Successful ingested file `{file_path}`")
