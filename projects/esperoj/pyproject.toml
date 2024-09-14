@@ -15,6 +15,7 @@ requires-python = ">=3.11,<4.0"
 dependencies = [
   "boto3 >=1.35.10",
   "httpx[http2] >=0.27.2",
+  "httpx_ratelimiter >= 0.0.6",
   "seatable-api >=2.6.11",
   "requests >=2.32.3",
   "py7zr >=0.21.0",
