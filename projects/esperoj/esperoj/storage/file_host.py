@@ -19,15 +19,15 @@ class FileHost(ABC):
     def close(self) -> None:
         raise NotImplementedError
 
-    def download(self, source: str, dest: str) -> None:
+    def download(self, src: str, dest: str) -> None:
         with Path(dest).open("wb") as file:
-            for chunk in self.stream(source):
+            for chunk in self.stream(src):
                 file.write(chunk)
 
     @abstractmethod
-    def stream(self, source: str) -> Iterator:
+    def stream(self, src: str) -> Iterator:
         raise NotImplementedError
 
     @abstractmethod
-    def upload(self, file: str) -> str:
+    def upload(self, src: str) -> str:
         raise NotImplementedError

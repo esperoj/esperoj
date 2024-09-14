@@ -68,10 +68,10 @@ class InternetArchive(FileHost):
         timestamp_end = url.find("/", 30)
         return url[:timestamp_end] + "if_" + url[timestamp_end:]
 
-    def _upload_to_temporary_host(self, file: str) -> str:
+    def _upload_to_temporary_host(self, src: str) -> str:
         url = "https://up1.fileditch.com/temp/upload.php"
-        with Path(file).open("rb") as f:
-            files = {"files[]": f}
+        with Path(src).open("rb") as file:
+            files = {"files[]": file}
             response = self.client.post(url, files=files)
             response.raise_for_status()
             json_response = response.json()
@@ -80,11 +80,11 @@ class InternetArchive(FileHost):
     def close(self) -> None:
         self.client.close()
 
-    def stream(self, source: str) -> Iterator[bytes]:
-        with self.client.stream("GET", source) as response:
+    def stream(self, src: str) -> Iterator[bytes]:
+        with self.client.stream("GET", src) as response:
             response.raise_for_status()
             yield from response.iter_bytes()
 
-    def upload(self, file: str) -> str:
-        url = self._upload_to_temporary_host(file)
+    def upload(self, src: str) -> str:
+        url = self._upload_to_temporary_host(src)
         return self._convert_url(self._archive_url("https://x.0ms.dev/q70/" + url))
