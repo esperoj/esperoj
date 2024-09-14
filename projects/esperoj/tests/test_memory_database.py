@@ -38,7 +38,7 @@ def test_batch_update_links(memory_db):
     musics = memory_db.query("musics")
     result = memory_db.batch_update_links("files", "musics", {files[0].id: [musics[0].id]})
     assert result is True
-    linked_records = memory_db.get_linked_records("files", "musics", [files[0].id])
+    linked_records = memory_db._get_linked_records("files", "musics", [files[0].id])
     assert linked_records[files[0].id][0] == musics[0].id
 
 

@@ -31,3 +31,39 @@ class FileHost(ABC):
     @abstractmethod
     def upload(self, src: str) -> str:
         raise NotImplementedError
+
+
+class FileHostFactory:
+    """FileHostFactory class.
+
+    A factory class for creating FileHost instances based on the provided configuration.
+    """
+
+    @staticmethod
+    def create(config: dict):
+        """Create a storage instance.
+
+        Args:
+            config (dict): The configuration for the storage.
+
+        Returns:
+            FileHost: An instance of the appropriate FileHost implementation.
+
+        Raises:
+            ValueError: If the storage type in the configuration is unknown.
+        """
+        file_host_type = config["type"]
+        match file_host_type:
+            case "internet_archive":
+                from esperoj.storage.internet_archive import InternetArchive
+
+                return InternetArchive(config["name"], config)
+            case "lain_la":
+                from esperoj.storage.lain_la import LainLa
+
+                return LainLa(config["name"], config)
+            case "file_haus":
+                from esperoj.storage.file_haus import FileHaus
+
+                return FileHaus(config["name"], config)
+        raise ValueError(f"Unknown file host type: {file_host_type}")

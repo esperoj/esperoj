@@ -331,6 +331,7 @@ source = { editable = "." }
 dependencies = [
     { name = "boto3" },
     { name = "httpx", extra = ["http2"] },
+    { name = "httpx-ratelimiter" },
     { name = "py7zr" },
     { name = "pydantic" },
     { name = "requests" },
@@ -370,6 +371,7 @@ requires-dist = [
     { name = "boto3", specifier = ">=1.35.10" },
     { name = "click", marker = "extra == 'cli'" },
     { name = "httpx", extras = ["http2"], specifier = ">=0.27.2" },
+    { name = "httpx-ratelimiter", specifier = ">=0.0.6" },
     { name = "litestar", marker = "extra == 'api'" },
     { name = "litestar", extras = ["standard"], marker = "extra == 'server'" },
     { name = "moto", marker = "extra == 'dev'" },
@@ -529,6 +531,19 @@ wheels = [
 [package.optional-dependencies]
 http2 = [
     { name = "h2" },
+]
+
+[[package]]
+name = "httpx-ratelimiter"
+version = "0.0.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pyrate-limiter" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/38/35/8912e02d6e09f58bc024657592799abffc69b01c65fcc1fcd1af657f1f7a/httpx_ratelimiter-0.0.6.tar.gz", hash = "sha256:30b23e749c3c639e9d4fc3ff35ff883a05c563469b0a2c79b60a13e9c7826931", size = 7395 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ea/9a/ffb494b35cd8e52ec7462afd5f7564afc4b7b769bd4a5c19c5e3d8d9d604/httpx_ratelimiter-0.0.6-py3-none-any.whl", hash = "sha256:0b81bb25d4cf5cf9b7a817f93d4df2ed3bd2571f74bfc0701450440285c131ec", size = 5875 },
 ]
 
 [[package]]
@@ -1102,6 +1117,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/ee/4a12a4b1990f1fabb77f9ef94d2cd6c795690eec79ad135b8236dc59dbd2/pyppmd-1.1.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:c0308e2e76ecb4c878a18c2d7a7c61dbca89b4ef138f65d5f5ead139154dcdea", size = 146510 },
     { url = "https://files.pythonhosted.org/packages/04/cd/a6571420345315f5340ac10897726303ae07260cb025dc4a60371d1e8b97/pyppmd-1.1.0-cp312-cp312-win32.whl", hash = "sha256:b4fa4c27dc1314d019d921f2aa19e17f99250557e7569eeb70e180558f46af74", size = 41332 },
     { url = "https://files.pythonhosted.org/packages/c0/a4/af77129d671d6adcc6c82e1b0f03f0ad0b70c44ac70ed4c72b5c8952553b/pyppmd-1.1.0-cp312-cp312-win_amd64.whl", hash = "sha256:c269d21e15f4175df27cf00296476097af76941f948734c642d7fb6e85b9b3b9", size = 46193 },
+]
+
+[[package]]
+name = "pyrate-limiter"
+version = "3.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/4c/83a2c03f4a169f3d9fdb6570f8f82d85e3903f6f183c21ee7d8cbd6655b4/pyrate_limiter-3.1.1.tar.gz", hash = "sha256:2f57eda712687e6eccddf6afe8f8a15b409b97ed675fe64a626058f12863b7b7", size = 276906 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/34/089a939b8cda558e1fccada8ba4b422cd8de0eccd4b87f686c185366b78e/pyrate_limiter-3.1.1-py3-none-any.whl", hash = "sha256:c51906f1d51d56dc992ff6c26e8300e32151bc6cfa3e6559792e31971dfd4e2b", size = 23478 },
 ]
 
 [[package]]

@@ -40,6 +40,7 @@ jobs:
       - name: Setup
         run: |
           pip install -r requirements-nuitka.txt
+          pip install -e .[cli,server]
           cp esperoj/__main__.py .
 
       - uses: Nuitka/Nuitka-Action@main

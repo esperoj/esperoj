@@ -8,7 +8,7 @@ from httpx_ratelimiter import LimiterTransport
 from esperoj.storage.file_host import FileHost
 
 
-class InternetArchive(FileHost):
+class LainLa(FileHost):
     def __init__(self, name: str, config: dict[Any, Any]):
         super().__init__(name, config)
         self.client = Client(http2=True, transport=LimiterTransport(per_minute=60), timeout=Timeout(120.0))

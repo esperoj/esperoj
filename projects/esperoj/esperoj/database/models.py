@@ -14,7 +14,7 @@ JsonFieldConfig = (
 
 class MirrorInfo(TypedDict):
     sources: Annotated[list[str], Field(min_length=1)]
-    encrypted: bool = False
+    encrypted: Annotated[bool, Field(default=False)]
 
 
 class Music(Record):

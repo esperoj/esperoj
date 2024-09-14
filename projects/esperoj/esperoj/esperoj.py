@@ -8,6 +8,7 @@ from pathlib import Path
 from py7zr import SevenZipFile
 
 from esperoj.database.database import DatabaseFactory
+from esperoj.storage.file_host import FileHostFactory
 from esperoj.storage.storage import StorageFactory
 from esperoj.utils.utils import Utils
 
@@ -28,14 +29,16 @@ class Esperoj:
         self,
         config: dict,
         databases,
+        file_hosts,
         storages,
         loggers,
     ):
         self.config = config
         self.databases = databases
+        self.file_hosts = file_hosts
         self.loggers = loggers
         self.storages = storages
-        self.utils = Esperoj.utils
+        self.utils = Utils()
 
     def __getattr__(self, name):
         """Dynamically import and return a method from the esperoj.scripts module.
@@ -68,6 +71,7 @@ class EsperojFactory:
         """
         storages = {}
         databases = {}
+        file_hosts = {}
         loggers = {}
         logger = logging.getLogger("esperoj")
         logger.setLevel(logging.INFO)
@@ -95,4 +99,8 @@ class EsperojFactory:
             database = DatabaseFactory.create(database_config)
             for name in [database.config["name"], *database.config.get("aliases", [])]:
                 databases[name] = database
-        return Esperoj(config=config, databases=databases, storages=storages, loggers=loggers)
+        for file_host_config in config["file_hosts"]:
+            file_host = FileHostFactory.create(file_host_config)
+            for name in [file_host_config["name"], *file_host.config.get("aliases", [])]:
+                file_hosts[name] = file_host
+        return Esperoj(config=config, databases=databases, file_hosts=file_hosts, storages=storages, loggers=loggers)

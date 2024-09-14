@@ -56,7 +56,7 @@ class MemoryDatabase(Database):
                 setattr(record, field_key, record_ids_map[record.id])
         return True
 
-    def get_linked_records(self, table_name: str, field_key: FieldKey, record_ids: list[ID]) -> dict[ID, list[ID]]:
+    def _get_linked_records(self, table_name: str, field_key: FieldKey, record_ids: list[ID]) -> dict[ID, list[ID]]:
         table = self.tables.get(table_name)
         if table is None:
             raise ValueError(f"Table {table_name} does not exist.")

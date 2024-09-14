@@ -157,7 +157,7 @@ class Database(ABC):
             bool: True if the links were successfully added, False otherwise.
         """
         record_ids = list(record_ids_map.keys())
-        current_other_record_ids_map = self.get_linked_records(table_name, field_key, record_ids)
+        current_other_record_ids_map = self._get_linked_records(table_name, field_key, record_ids)
         updated_record_ids_map = {}
         for record_id, other_record_ids in record_ids_map.items():
             current_other_record_ids = current_other_record_ids_map[record_id]
@@ -307,7 +307,7 @@ class Database(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_linked_records(self, table_name: str, field_key: FieldKey, record_ids: list[ID]) -> dict[ID, list[ID]]:
+    def _get_linked_records(self, table_name: str, field_key: FieldKey, record_ids: list[ID]) -> dict[ID, list[ID]]:
         """Get the linked records for the given record_ids.
 
         Args:

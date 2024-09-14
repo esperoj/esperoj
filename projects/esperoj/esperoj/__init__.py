@@ -3,6 +3,6 @@
 
 def nuitka() -> list:
     """Use to let nuitka knows what I need."""
-    import esperoj.utils
+    import esperoj.server
 
-    return [esperoj.utils]
+    return [esperoj.server]
