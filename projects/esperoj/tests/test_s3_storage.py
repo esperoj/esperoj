@@ -30,11 +30,17 @@ def test_list(s3_storage, tmp_path):
     file_path_1.write_text("This is test file 1")
     file_path_2 = tmp_path / "test2.txt"
     file_path_2.write_text("This is test file 2")
+    file_path_3 = tmp_path / "special_chars_!@#$.txt"
+    file_path_3.write_text("File with special characters")
     s3_storage.upload(str(file_path_1), "test/test1.txt")
-    s3_storage.upload(str(file_path_2), "test/test2.txt")
-    files = s3_storage.list("test/")
-    assert "test/test1.txt" in files
-    assert "test/test2.txt" in files
+    s3_storage.upload(str(file_path_2), "test/subfolder/test2.txt")
+    s3_storage.upload(str(file_path_3), "test/special_chars_!@#$.txt")
+    assert set(s3_storage.list("test/")) == {
+        "test/test1.txt",
+        "test/subfolder/test2.txt",
+        "test/special_chars_!@#$.txt",
+    }
+    assert set(s3_storage.list("test/subfolder/")) == {"test/subfolder/test2.txt"}
 
 
 def test_size(s3_storage, tmp_file):

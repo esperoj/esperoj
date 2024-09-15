@@ -33,14 +33,14 @@ def ingest(
         FileExistsError: If the file already exists in the system.
         RuntimeError: If the file type is not supported.
     """
-    logger = esperoj.loggers["Primary"]
+    logger = esperoj.loggers["primary"]
     file_paths = []
 
     if path.is_dir():
         file_paths = [file_path for file_path in path.iterdir() if file_path.is_file()]
     else:
         if not path.is_file():
-            raise FileNotFoundError
+            raise FileNotFoundError(f"The specified path {path} does not exist.")
         file_paths = [path]
 
     def ingest_file(file_path: Path) -> File:
@@ -51,8 +51,9 @@ def ingest(
         f = file_path.open("rb")
         sha256sum = esperoj.utils.calculate_hash(f, algorithm="sha256")
         f.close()
-        metadata = json.loads(subprocess.check_output(["exiftool", "-j", str(file_path)]))[0]
-        files = esperoj.databases["Primary"].get_table("files")
+        result = subprocess.run(["exiftool", "-j", str(file_path)], check=True, capture_output=True, text=True)
+        metadata = json.loads(result.stdout)[0]
+        files = esperoj.databases["primary"].get_table("files")
 
         def upload() -> File:
             """Upload the file to the storages, and file hosts, then return a database record for it.

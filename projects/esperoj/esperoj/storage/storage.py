@@ -64,7 +64,7 @@ class Storage(ABC):
         """
 
     @abstractmethod
-    def stream(self, src: str) -> Iterator:
+    def stream(self, src: str) -> Iterator[bytes]:
         """Get a file from the source and return an Iterator.
 
         Args:

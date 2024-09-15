@@ -8,7 +8,7 @@ from esperoj.database.database import ID, Record
 
 JsonFieldConfig = (
     BeforeValidator(lambda v: json.loads(v) if isinstance(v, str) else v),
-    PlainSerializer(lambda v: json.dumps(v) if not None else v),
+    PlainSerializer(lambda v: json.dumps(v) if v is not None else v),
 )
 
 

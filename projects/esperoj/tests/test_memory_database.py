@@ -12,11 +12,15 @@ def test_batch_create(memory_db):
 
 def test_batch_delete(memory_db):
     records = memory_db.query("test")
-    result = memory_db.batch_delete("test", records[0].id)
+    result = memory_db.batch_delete("test", [records[0].id, records[1].id])
     assert result is True
     remaining_records = memory_db.query("test")
-    assert len(remaining_records) == 1
-    assert remaining_records[0].name == "Bob"
+    assert len(remaining_records) == 0
+
+
+def test_batch_delete_non_existent(memory_db):
+    result = memory_db.batch_delete("test", ["non_existent_id"])
+    assert result is False
 
 
 def test_batch_get(memory_db):
@@ -28,9 +32,16 @@ def test_batch_get(memory_db):
 
 def test_batch_update(memory_db):
     records = memory_db.query("test")
-    updated_records = memory_db.batch_update("test", [{"id": records[0].id, "name": "Charlie"}])
-    assert len(updated_records) == 1
+    updates = [
+        {"id": records[0].id, "name": "Charlie"},
+        {"id": records[1].id, "age": 30},
+        {"id": "non_existent_id", "name": "Invalid"},
+    ]
+    updated_records = memory_db.batch_update("test", updates)
+    assert len(updated_records) == 2
     assert updated_records[0].name == "Charlie"
+    assert updated_records[1].age == 30
+    assert records[1].name == updated_records[1].name
 
 
 def test_batch_update_links(memory_db):

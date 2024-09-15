@@ -55,7 +55,8 @@ class S3Storage(Storage):
         response = self.client.delete_objects(
             Bucket=self.config["bucket_name"], Delete={"Objects": [{"Key": path} for path in paths]}
         )
-        return response.get("Errors") is None
+        errors = response.get("Errors", [])
+        return not errors
 
     def download(self, src: str, dst: str) -> None:
         """Download a file or folder from the S3 bucket.
@@ -109,7 +110,7 @@ class S3Storage(Storage):
             ExpiresIn=3600 * 24 * 7,
         )
 
-    def stream(self, src: str) -> Iterator:
+    def stream(self, src: str) -> Iterator[bytes]:
         """Get a file from the S3 bucket and return an Iterator.
 
         Args:
@@ -124,24 +125,22 @@ class S3Storage(Storage):
         return self.client.get_object(Bucket=self.config["bucket_name"], Key=src)["Body"].iter_chunks(2**20)
 
     def list(self, path: str) -> list[str]:
-        """List all files and folders in the specified path of the S3 bucket.
+        """List all files in the specified path of the S3 bucket.
 
         Args:
-            path (str): The path to list files and folders from.
+            path (str): The path to list files from.
 
         Returns:
-            list[str]: A list of file and folder paths.
+            list[str]: A list of file paths.
 
         Raises:
             FileNotFoundError: If the specified path does not exist.
         """
         paginator = self.client.get_paginator("list_objects_v2")
         files: list[str] = []
-        for page in paginator.paginate(Bucket=self.config["bucket_name"], Prefix=path, Delimiter="/"):
+        for page in paginator.paginate(Bucket=self.config["bucket_name"], Prefix=path):
             if "Contents" in page:
                 files.extend(obj["Key"] for obj in page.get("Contents", []))
-            if "CommonPrefixes" in page:
-                files.extend(prefix["Prefix"] for prefix in page.get("CommonPrefixes", []))
         if not files:
             raise FileNotFoundError(f"No such directory: '{path}'")
         return files

@@ -60,18 +60,12 @@ class MemoryDatabase(Database):
         table = self.tables.get(table_name)
         if table is None:
             raise ValueError(f"Table {table_name} does not exist.")
-        result = {}
-        for record in table:
-            if record.id in record_ids:
-                result[record.id] = getattr(record, field_key, [])
-        return result
+        return {record.id: getattr(record, field_key, []) for record in table if record.id in record_ids}
 
     def query(self, table_name: str, query: Query | None = None) -> list[Record]:
         table = self.tables.get(table_name)
         if table is None:
             raise ValueError(f"Table {table_name} does not exist.")
-        if query is None:
-            return table
         return table
 
     def create_table(self, name: str) -> Table:

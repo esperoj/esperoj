@@ -66,7 +66,7 @@ class InternetArchive(FileHost):
 
     def _convert_url(self, url: str) -> str:
         timestamp_end = url.find("/", 30)
-        return url[:timestamp_end] + "if_" + url[timestamp_end:]
+        return f"{url[:timestamp_end]}if_{url[timestamp_end:]}"
 
     def _upload_to_temporary_host(self, src: str) -> str:
         url = "https://up1.fileditch.com/temp/upload.php"
@@ -87,4 +87,4 @@ class InternetArchive(FileHost):
 
     def upload(self, src: str) -> str:
         url = self._upload_to_temporary_host(src)
-        return self._convert_url(self._archive_url("https://x.0ms.dev/q70/" + url))
+        return self._convert_url(self._archive_url(f"https://x.0ms.dev/q70/{url}"))
