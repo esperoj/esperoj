@@ -200,18 +200,17 @@ class Database(ABC):
         """
         return self.batch_get(table_name, [record_id])[0]
 
-    def update(self, table_name: str, record_id: ID, fields: Fields) -> Record:
+    def update(self, table_name: str, fields: Fields) -> Record:
         """Update the record with the given record_id with the given fields.
 
         Args:
             table_name (str): The name of the table where the record will be updated.
-            record_id (ID): The ID of the record to update.
             fields (Fields): A dictionary of field keys and values to update.
 
         Returns:
             Record: The updated record instance.
         """
-        return self.batch_update(table_name, [(fields)])[0]
+        return self.batch_update(table_name, [fields])[0]
 
     def update_link(
         self,

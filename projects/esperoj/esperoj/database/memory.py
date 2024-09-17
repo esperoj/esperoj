@@ -41,9 +41,11 @@ class MemoryDatabase(Database):
         model_class = self.models.get(table_name, Record)
         updated_records = []
         for fields in fields_list:
-            for record in table:
+            for i in range(len(table)):
+                record = table[i]
                 if record.id == fields["id"]:
                     updated_record = record.model_copy(update=fields, deep=True)
+                    table[i] = updated_record
                     updated_records.append(model_class(**updated_record.model_dump()))
         return updated_records
 

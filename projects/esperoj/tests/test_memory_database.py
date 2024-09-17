@@ -38,6 +38,7 @@ def test_batch_update(memory_db):
         {"id": "non_existent_id", "name": "Invalid"},
     ]
     updated_records = memory_db.batch_update("test", updates)
+    assert updated_records == memory_db.batch_get("test", [record.id for record in updated_records])
     assert len(updated_records) == 2
     assert updated_records[0].name == "Charlie"
     assert updated_records[1].age == 30
