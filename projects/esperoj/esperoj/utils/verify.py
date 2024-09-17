@@ -37,7 +37,7 @@ def verify(esperoj, files: list[File]) -> list[bool]:
         calculate_hash = esperoj.utils.calculate_hash
 
         def calculate_hash_from_mirror_info(mirror_name, mirror_info):
-            if mirror_name in esperoj.storages:
+            if mirror_name in storages:
                 return calculate_hash(storages[mirror_name].stream(mirror_info["sources"][0]))
             return calculate_hash(file_hosts[mirror_name].stream(mirror_info["sources"][0]))
 

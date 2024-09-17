@@ -1,7 +1,8 @@
 """Fixtures for testing."""
 
+import json
+import logging
 import tomllib
-from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -9,25 +10,15 @@ from moto import mock_aws
 
 from esperoj.database.database import DatabaseFactory
 from esperoj.database.models import table_models
+from esperoj.esperoj import Esperoj
+from esperoj.storage.file_host import FileHostFactory
 from esperoj.storage.storage import StorageFactory
-
-
-@pytest.fixture(autouse=True)
-def _mock_env(mocker):
-    """Mock the environment variables for Internet Archive access."""
-    mocker.patch.dict(
-        "os.environ",
-        {
-            "INTERNET_ARCHIVE_ACCESS_KEY": "test_key",
-            "INTERNET_ARCHIVE_SECRET_KEY": "test_secret",
-        },
-    )
 
 
 @pytest.fixture()
 def config():
     """Return a config."""
-    p = Path(__file__).with_name("esperoj.toml")
+    p = Path(__file__).parent / "test_data" / "esperoj.toml"
     return tomllib.loads(p.read_text())
 
 
@@ -51,30 +42,38 @@ def s3_storage(config):
 @pytest.fixture
 def memory_db(config):
     db = DatabaseFactory.create(config["databases"][0], table_models)
-    for table_name in table_models:
+    for table_name in ["files", "musics"]:
+        p = Path(__file__).parent / "test_data" / "json" / f"{table_name}.json"
         db.create_table(table_name)
+        db.batch_create(table_name, json.loads(p.read_text()))
     db.create_table("test")
     fields_list = [{"name": "Alice"}, {"name": "Bob"}]
     db.batch_create("test", fields_list)
-    mirror_info_dict = {"sources": ["http://example.com/source1", "http://example.com/source2"], "encrypted": True}
-    music_dict = {
-        "title": "My Favorite Song",
-        "comment": "This is a great track!",
-        "files": [],
-        "modified": datetime.now(),
-        "created": datetime.now(),
-    }
-    file_dict = {
-        "name": "example_file.mp3",
-        "sha256": "a" * 64,  # Replace with a valid SHA256 hash
-        "size": 1024,
-        "mirrors": {"mirror1": mirror_info_dict},
-        "musics": [],
-        "modified": datetime.now(),
-        "created": datetime.now(),
-        "metadata": {"genre": "Pop", "artist": "Artist Name"},
-        "verified": True,
-    }
-    db.create("files", file_dict)
-    db.create("musics", music_dict)
     return db
+
+
+@pytest.fixture
+def local_file_host(config, tmp_path):
+    local_file_host_config = config["file_hosts"][0]
+    local_file_host_config["base_src"] = str(tmp_path)
+    return FileHostFactory.create(local_file_host_config)
+
+
+@pytest.fixture
+def esperoj(config, memory_db, s3_storage, local_file_host):
+    loggers = {}
+    databases = {"primary": memory_db}
+    storages = {"s3_storage": s3_storage}
+    file_hosts = {"local_file_host": local_file_host}
+    logger = logging.getLogger("esperoj")
+    logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    loggers["primary"] = logger
+    for file in memory_db.query("files"):
+        src = Path(__file__).parent / "test_data" / "samples" / f"{file.name}"
+        s3_storage.upload(str(src), src.name)
+        local_file_host.upload(src)
+    return Esperoj(config=config, databases=databases, file_hosts=file_hosts, storages=storages, loggers=loggers)

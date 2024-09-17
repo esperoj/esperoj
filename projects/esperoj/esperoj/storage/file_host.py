@@ -25,6 +25,10 @@ class FileHost(ABC):
                 file.write(chunk)
 
     @abstractmethod
+    def size(self, src: str) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
     def stream(self, src: str) -> Iterator:
         raise NotImplementedError
 
@@ -62,6 +66,10 @@ class FileHostFactory:
                 from esperoj.storage.lain_la import LainLa
 
                 return LainLa(config["name"], config)
+            case "local_file_host":
+                from esperoj.storage.local_file_host import LocalFileHost
+
+                return LocalFileHost(config["name"], config)
             case "file_haus":
                 from esperoj.storage.file_haus import FileHaus
 

@@ -14,3 +14,8 @@ max_concurrency = 4
 [[databases]]
 name = "testing_db"
 type = "memory"
+
+[[file_hosts]]
+name = "local_file_host"
+type = "local_file_host"
+base_src = "/tmp/tests"

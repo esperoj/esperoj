@@ -55,7 +55,6 @@ jobs:
       - name: Change name
         run: |
           mv build/__main__.bin ./esperoj_linux_${{ matrix.runner.arch }}
-          tar -czf esperoj_linux_${{ matrix.runner.arch }}.tar.gz -C build/__main__.dist .
           rm __main__.py
 
       - name: Release
@@ -64,7 +63,6 @@ jobs:
         with:
           files: |
             projects/esperoj/esperoj_linux_${{ matrix.runner.arch }}
-            projects/esperoj/esperoj_linux_${{ matrix.runner.arch }}.tar.gz
 
       - name: Send notification
         env:

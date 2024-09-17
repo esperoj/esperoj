@@ -80,6 +80,11 @@ class InternetArchive(FileHost):
     def close(self) -> None:
         self.client.close()
 
+    def size(self, src: str) -> int:
+        response = self.client.head(self.proxy + src)
+        response.raise_for_status()
+        return int(response.headers.get("Content-Length", 0))
+
     def stream(self, src: str) -> Iterator[bytes]:
         with self.client.stream("GET", self.proxy + src) as response:
             response.raise_for_status()

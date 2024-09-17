@@ -19,7 +19,7 @@ class MirrorInfo(TypedDict):
 
 class Music(Record):
     title: Annotated[str, Field(min_length=1, max_length=255)]
-    comment: str = ""
+    comment: str | None = None
     files: list[ID] = []
     modified: datetime | None = None
     created: datetime | None = None
