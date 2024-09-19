@@ -1,7 +1,5 @@
 version: '3'
 
-dotenv: ['{{.HOME}}/{{.MACHINE_NAME}}/.env', '{{.HOME}}/.env', '.env']
-
 run: when_changed
 
 
@@ -10,19 +8,23 @@ tasks:
     status:
       - test -d .venv
     cmds:
+      - uv python install
       - uv venv
       - uv pip install -r requirements-{{or .ENV "dev"}}.txt
+      - uv pip install -e .[cli,server]
 
-  build:
-    deps:
-      - task: setup
-        vars: { ENV: 'dev' }
+  lock:
     cmds:
       - |
-        uv run pdoc \
-          --docformat google \
-          --output-directory "{{or .OUTPUT_DIRECTORY "public/docs"}}" \
-          esperoj
+        uv pip compile pyproject.toml \
+          --extra nuitka \
+          --universal \
+          --output-file requirements-nuitka.txt
+      - |
+        uv pip compile pyproject.toml \
+          --extra dev \
+          --universal \
+          --output-file requirements-dev.txt
 
   nuitka:
     deps:
@@ -32,7 +34,7 @@ tasks:
       - cp esperoj/__main__.py .
       - defer: rm __main__.py
       - |
-        uv run python -m nuitka \
+        uv run nuitka \
           --static-libpython=yes \
           --standalone \
           --onefile \
@@ -65,13 +67,7 @@ tasks:
     cmds:
       - |
         [ -z "$VIRTUAL_ENV" ] && source .venv/bin/activate || true
-        pytest -n $(nproc)
-
-  deploy:
-    deps: [build]
-    cmds:
-      - npx vercel deploy
-      - rm -rf public/docs
+        pytest --cov-report term --cov=esperoj -n $(nproc)
 
   dev-server:
     deps:

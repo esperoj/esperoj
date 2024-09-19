@@ -1,10 +1,9 @@
 *.bin
 .ruff_cache/
-.vercel
 build/
 docs/
 public/
-uv.lock
+debug.py
 
 # Coverage.py
 htmlcov/

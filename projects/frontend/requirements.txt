@@ -1,1 +1,0 @@
-esperoj[api] @ git+https://github.com/esperoj/esperoj.git@main#egg=esperoj&subdirectory=projects/esperoj

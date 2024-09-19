@@ -8,6 +8,7 @@ from pathlib import Path
 from py7zr import SevenZipFile
 
 from esperoj.database.database import DatabaseFactory
+from esperoj.storage.file_host import FileHostFactory
 from esperoj.storage.storage import StorageFactory
 from esperoj.utils.utils import Utils
 
@@ -28,14 +29,16 @@ class Esperoj:
         self,
         config: dict,
         databases,
+        file_hosts,
         storages,
         loggers,
     ):
         self.config = config
         self.databases = databases
+        self.file_hosts = file_hosts
         self.loggers = loggers
         self.storages = storages
-        self.utils = Esperoj.utils
+        self.utils = Utils()
 
     def __getattr__(self, name):
         """Dynamically import and return a method from the esperoj.scripts module.
@@ -68,18 +71,17 @@ class EsperojFactory:
         """
         storages = {}
         databases = {}
+        file_hosts = {}
         loggers = {}
-        logger = logging.getLogger("Esperoj")
+        logger = logging.getLogger("esperoj")
         logger.setLevel(logging.INFO)
         handler = logging.StreamHandler()
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
-        loggers["Primary"] = logger
+        loggers["primary"] = logger
         config_text = ""
-        config_path = Path(config_file)
-        if not config_file:
-            config_path = Path.home() / ".config" / "esperoj" / "esperoj.toml"
+        config_path = Path(config_file) if config_file else Path.home() / ".config" / "esperoj" / "esperoj.toml"
         if config_path.suffix == ".7z":
             with SevenZipFile(str(config_path), password=getenv("ENCRYPTION_PASSPHRASE")) as seven_zip_file:
                 seven_zip_contents = seven_zip_file.readall()
@@ -91,9 +93,14 @@ class EsperojFactory:
         config = tomllib.loads(config_text)
         for storage_config in config["storages"]:
             storage = StorageFactory.create(storage_config)
-            storages[storage_config["name"]] = storage
+            for name in [storage_config["name"], *storage.config.get("aliases", [])]:
+                storages[name] = storage
         for database_config in config["databases"]:
             database = DatabaseFactory.create(database_config)
-            for name in [database.config["name"]] + database.config["aliases"]:
+            for name in [database.config["name"], *database.config.get("aliases", [])]:
                 databases[name] = database
-        return Esperoj(config=config, databases=databases, storages=storages, loggers=loggers)
+        for file_host_config in config["file_hosts"]:
+            file_host = FileHostFactory.create(file_host_config)
+            for name in [file_host_config["name"], *file_host.config.get("aliases", [])]:
+                file_hosts[name] = file_host
+        return Esperoj(config=config, databases=databases, file_hosts=file_hosts, storages=storages, loggers=loggers)

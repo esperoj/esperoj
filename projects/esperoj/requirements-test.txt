@@ -1,7 +1,0 @@
--e .[cli,server]
-
-# Test
-pytest
-pytest-cov
-pytest-mock
-pytest-xdist

@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.12"]
     name: Python ${{ matrix.python-version }}
     steps:
       - name: Checkout
@@ -43,7 +43,7 @@ jobs:
       - uses: yezz123/setup-uv@main
 
       - name: Setup
-        run: ENV=test task setup
+        run: ENV=dev task setup
 
       - name: Test package
         run: task test

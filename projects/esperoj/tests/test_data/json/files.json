@@ -1,0 +1,14 @@
+[{
+  "id": "6aca0e2c-395c-4c00-97c",
+  "name": "music.flac",
+  "sha256": "156ea28d36f70bd792ee24447ede7dc15c9263cafc01797b8be948e1e9a7ec43",
+  "size": 10,
+  "musics": [
+    "204c15ab-484b-47af-b86"
+  ],
+  "modified": "2024-09-10T17:09:35.857+02:00",
+  "created": "2024-05-05T08:04:15.978+02:00",
+  "metadata": "{\"SourceFile\": \"/home/esperoj/music/music.flac\", \"ExifToolVersion\": 12.57, \"FileName\": \"music.flac\", \"Directory\": \"/home/esperoj/music\"}",
+  "verified": true,
+  "mirrors": "{\"s3_storage\": {\"sources\": [\"music.flac\"], \"encrypted\": false},\"local_file_host\": {\"sources\": [\"music.flac\"], \"encrypted\": false}}"
+}]

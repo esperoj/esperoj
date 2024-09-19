@@ -1,7 +1,5 @@
-FROM gitpod/workspace-python-3.11
+FROM gitpod/workspace-python-3.12
 ENV MACHINE_NAME="container"
-RUN sudo apt-get update -qqy \
-    && sudo apt-get install -qqy --no-install-recommends parallel sudo zsh jq \
-    && curl -fsLS https://codeberg.org/esperoj/dotfiles/raw/branch/main/bin/install.sh | bash -s -- dotfiles \
-    && ~/bin/setup.sh \
-    && sudo rm -rf ~/.cache /var/lib/apt/lists /var/cache/apt/archives
+RUN curl -fsLS https://codeberg.org/esperoj/dotfiles/raw/branch/main/bin/install.sh | bash -s -- dotfiles ; \
+    sudo ~/bin/setup.sh docker_gitpod ; \
+    rm -rf ~/.cache /var/lib/apt/lists /var/cache/apt/archives

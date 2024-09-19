@@ -21,9 +21,9 @@ jobs:
     strategy:
       matrix:
         runner:
-          - name: ubuntu-22.04
+          - name: ubuntu-latest
             arch: x86_64
-          - name: blacksmith-2vcpu-ubuntu-2204-arm
+          - name: blacksmith-arm
             arch: aarch64
     steps:
       - name: Checkout repository
@@ -31,7 +31,7 @@ jobs:
 
       - uses: actions/setup-python@main
         with:
-          python-version: "3.11"
+          python-version: "3.x"
           cache: 'pip'
           cache-dependency-path: |
             pyproject.toml
@@ -40,6 +40,7 @@ jobs:
       - name: Setup
         run: |
           pip install -r requirements-nuitka.txt
+          pip install -e .[cli,server]
           cp esperoj/__main__.py .
 
       - uses: Nuitka/Nuitka-Action@main
@@ -54,7 +55,6 @@ jobs:
       - name: Change name
         run: |
           mv build/__main__.bin ./esperoj_linux_${{ matrix.runner.arch }}
-          tar -czf esperoj_linux_${{ matrix.runner.arch }}.tar.gz -C build/__main__.dist .
           rm __main__.py
 
       - name: Release
@@ -63,7 +63,6 @@ jobs:
         with:
           files: |
             projects/esperoj/esperoj_linux_${{ matrix.runner.arch }}
-            projects/esperoj/esperoj_linux_${{ matrix.runner.arch }}.tar.gz
 
       - name: Send notification
         env:

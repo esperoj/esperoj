@@ -9,19 +9,38 @@ authors = [
 description = "This is my personal package used to automate the boring stuffs."
 license = {text = "GPLv3"}
 name = "esperoj"
-version = "0.13.7"
+version = "0.14.0"
 readme = "README.md"
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.12,<4.0"
 dependencies = [
-  "boto3>=1.35.10",
-  "seatable-api>=2.6.11",
-  "requests>=2.32.3",
-  "py7zr>=0.21.0"
+  "boto3 >=1.35.10",
+  "httpx[http2] >=0.27.2",
+  "httpx_ratelimiter >= 0.0.6",
+  "seatable-api >=2.6.11",
+  "py7zr >=0.21.0",
+  "pydantic >=2.9.0",
 ]
 
 [project.optional-dependencies]
-cli = ["click"]
 api = ["litestar"]
+cli = ["click"]
+dev = [
+  "moto",
+  "pytest",
+  "pytest-cov",
+  "pytest-mock",
+  "pytest-xdist",
+  "ruff",
+  "pyright",
+  "pre-commit"
+]
+nuitka = [
+  "nuitka",
+  "patchelf",
+  "zstandard",
+  "ordered-set",
+  "wheel"
+]
 server = ["litestar[standard]"]
 
 [project.scripts]
@@ -45,8 +64,28 @@ omit = ["*/tests/*"]
 parallel = true
 source = ["esperoj"]
 
+[tool.mypy]
+plugins = [
+  "pydantic.mypy"
+]
+python_version="3.12"
+follow_imports = "silent"
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+
+# for strict mypy: (this is the tricky one :-))
+disallow_untyped_defs = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
 [tool.pyright]
-pythonVersion = "3.11"
+pythonVersion = "3.12"
 # typeCheckingMode = "standard"
 include = ["esperoj"]
 exclude = ["**/node_modules",
@@ -54,7 +93,7 @@ exclude = ["**/node_modules",
 ]
 
 [tool.pytest.ini_options]
-addopts = "--verbose --cov-report term --cov=esperoj --color=yes --exitfirst --failed-first"
+addopts = "--color=yes --exitfirst --failed-first"
 testpaths = ["tests"]
 xfail_strict = true
 markers = [
@@ -99,8 +138,6 @@ lint.select = [
   "W", # pycodestyle - warning
   "YTT", # flake8-2020
 ]
-
-line-length = 120
 lint.ignore = [
   "S608", # Possible SQL injection
   "A003", # flake8-builtins - class attribute {name} is shadowing a python builtin
@@ -126,6 +163,8 @@ lint.ignore = [
   "BLE001", # Do not catch blind exception: `Exception`
   "G004", # Logging statement uses f-string
 ]
+
+line-length = 120
 src = ["esperoj", "tests"]
 target-version = "py311"
 exclude = [
