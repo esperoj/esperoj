@@ -1,0 +1,28 @@
+image: ghcr.io/esperoj/esperoj-dev
+
+tasks:
+    - name: Setup
+      before: |
+        ~/.local/bin/chezmoi init --apply --force
+        source ~/.profile
+        rclone copy -v cache:.zsh_history ~
+      init: |
+        source ~/.profile
+        ENV=dev task -t projects/esperoj/Taskfile.yml setup
+      command: |
+        (
+          cd ~
+          ln -s /workspace .
+        )
+        git remote set-url origin git@github.com:esperoj/esperoj.git
+        source ~/.profile
+        start.sh home koofr caddy
+        task -t projects/esperoj/Taskfile.yml dev-server
+
+ports:
+    - port: 20711
+      name: Caddy
+      onOpen: open-browser
+      description: Caddy
+      visibility: private
+      protocol: https
