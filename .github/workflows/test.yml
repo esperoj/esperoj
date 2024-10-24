@@ -17,6 +17,7 @@ defaults:
 jobs:
   test:
     runs-on: ${{ vars.default_runner || 'ubuntu-latest' }}
+    if: github.server_url == 'https://git.gay' && github.repository == 'esperoj/esperoj'
     strategy:
       matrix:
         python-version: ["3.12"]
@@ -30,7 +31,7 @@ jobs:
 
       - name: Install uv
         id: setup-uv
-        uses: astral-sh/setup-uv@main
+        uses: ${{ vars.actions_prefix || '' }}astral-sh/setup-uv@main
         with:
           enable-cache: false
           # cache-dependency-glob: "projects/esperoj/requirements-dev.txt"
