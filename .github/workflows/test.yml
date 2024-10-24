@@ -5,6 +5,8 @@ on:
     branches:
       - main
       - dev
+    paths:
+      - 'projects/esperoj'
   pull_request:
   workflow_dispatch:
 
@@ -22,7 +24,7 @@ jobs:
       image: esperoj/dotfiles:dev
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.12", "3.13"]
     name: Python ${{ matrix.python-version }}
     steps:
       - name: Checkout
@@ -32,10 +34,7 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.local/bin:$PATH"
-          uv cache dir
-          pwd
-          df -hT
-          uv python install ${{ matrix.python-version }}
+          uv python pin ${{ matrix.python-version }}
           ENV=dev task setup
 
       - name: Test package
