@@ -31,7 +31,7 @@ jobs:
 
       - name: Install uv
         id: setup-uv
-        uses: https://github.com/astral-sh/setup-uv@main
+        uses: astral-sh/setup-uv@main
         with:
           enable-cache: true
           cache-suffix: ${{ runner.os }}-${{ matrix.python-version }}
