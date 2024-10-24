@@ -91,9 +91,7 @@ python-engineio==3.14.2
 python-socketio==4.6.1
     # via seatable-api
 pyzstd==0.16.2
-    # via
-    #   esperoj (pyproject.toml)
-    #   py7zr
+    # via py7zr
 requests==2.32.3
     # via seatable-api
 s3transfer==0.10.2

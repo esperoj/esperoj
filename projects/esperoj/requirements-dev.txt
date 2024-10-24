@@ -143,9 +143,7 @@ pyyaml==6.0.2
     #   pre-commit
     #   responses
 pyzstd==0.16.2
-    # via
-    #   esperoj (pyproject.toml)
-    #   py7zr
+    # via py7zr
 requests==2.32.3
     # via
     #   moto

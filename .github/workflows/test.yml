@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - main
+      - dev
   pull_request:
+  workflow_dispatch:
 
 defaults:
   run:
@@ -27,23 +29,17 @@ jobs:
       - name: Install task
         run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
 
-      - uses: actions/setup-python@main
+      - name: Install uv
+        id: setup-uv
+        uses: https://github.com/astral-sh/setup-uv@main
         with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Cache venv
-        id: cache-venv
-        uses: actions/cache@main
-        env:
-          cache-name: cache-venv
-        with:
-          path: .venv
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('requirements-dev.txt', 'pyproject.toml') }}
-
-      - uses: yezz123/setup-uv@main
+          enable-cache: true
+          cache-suffix: ${{ runner.os }}-${{ matrix.python-version }}
 
       - name: Setup
-        run: ENV=dev task setup
+        run: |
+          uv python install ${{ matrix.python-version }}
+          ENV=dev task setup
 
       - name: Test package
         run: task test
@@ -54,7 +50,7 @@ jobs:
           MY_UUID: ${{ secrets.MY_UUID }}
         if: ${{ always() }}
         run: |
-          curl -fsLS https://codeberg.org/esperoj/dotfiles/raw/branch/main/bin/notify.sh | bash -s -- "" \
+          curl -fsLS https://raw.githubusercontent.com/esperoj/dotfiles/refs/heads/main/bin/notify.sh | bash -s -- "" \
           "Title: Workflow ${{ github.workflow }} of ${{ github.repository }} completed" \
           "Actions: view, View log, ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
           | jq
