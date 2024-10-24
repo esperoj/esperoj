@@ -6,7 +6,7 @@ on:
       - main
       - dev
     paths:
-      - 'projects/esperoj'
+      - 'projects/esperoj/**'
   pull_request:
   workflow_dispatch:
 
