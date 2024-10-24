@@ -30,11 +30,10 @@ jobs:
 
       - name: Setup
         run: |
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           uv cache dir
           pwd
           df -hT
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.local/bin:$PATH"
           uv python install ${{ matrix.python-version }}
           ENV=dev task setup
 
