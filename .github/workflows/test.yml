@@ -34,6 +34,7 @@ jobs:
         uses: astral-sh/setup-uv@main
         with:
           enable-cache: true
+          cache-dependency-glob: "projects/esperoj/requirements-dev.txt"
           cache-suffix: ${{ runner.os }}-${{ matrix.python-version }}
 
       - name: Setup
