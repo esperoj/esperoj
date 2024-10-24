@@ -32,34 +32,8 @@ export default {
                 }
             }
             if (response.status >= 200 && response.status <= 299 && request.method == 'GET') {
-                if (isRangeRequest) {
-                    let attempts = RANGE_RETRY_ATTEMPTS;
-                    do {
-                        let controller = new AbortController();
-                        response = await fetch(modifiedRequest, {
-                            signal: controller.signal
-                        });
-                        if (response.headers.has("content-range")) {
-                            if (attempts < RANGE_RETRY_ATTEMPTS) {
-                                console.log(`Retry for ${targetUrl} succeeded - response has content-range header`);
-                            }
-                            break;
-                        } else if (response.ok) {
-                            attempts -= 1;
-                            console.error(`Range header in request for ${targetUrl} but no content-range header in response. Will retry ${attempts} more times`);
-                            if (attempts > 0) {
-                                controller.abort();
-                            }
-                        } else {
-                            break;
-                        }
-                    } while (attempts > 0);
-                    if (attempts <= 0) {
-                        console.error(`Tried range request for ${targetUrl} ${RANGE_RETRY_ATTEMPTS} times, but no content-range in response.`);
-                    }
-                }
                 const newResponse = new Response(response.body, response);
-                newResponse.headers.set('Cache-Control', isRangeRequest ? 'no-cache': `public, max-age=${ttl}, immutable`);
+                newResponse.headers.set('Cache-Control', (isRangeRequest || ttl < 1) ? 'no-store': `public, max-age=${ttl}, immutable`);
                 return newResponse;
             }
             return response;

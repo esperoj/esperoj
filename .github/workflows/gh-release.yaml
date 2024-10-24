@@ -22,7 +22,7 @@ jobs:
     strategy:
       matrix:
         runner:
-          - name: ubuntu-latest
+          - name: blacksmith
             arch: x86_64
           - name: blacksmith-arm
             arch: aarch64
