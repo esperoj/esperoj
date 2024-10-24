@@ -139,4 +139,3 @@ class TransferManager:
 
         for future in asyncio.as_completed(tasks):
             yield await future
-
