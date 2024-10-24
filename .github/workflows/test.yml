@@ -18,6 +18,8 @@ jobs:
   test:
     runs-on: ${{ vars.default_runner || 'ubuntu-latest' }}
     if: github.server_url == 'https://git.gay' && github.repository == 'esperoj/esperoj'
+    container:
+      image: esperoj/dotfiles:dev
     strategy:
       matrix:
         python-version: ["3.12"]
@@ -25,17 +27,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@main
-
-      - name: Install task
-        run: sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b ~/.local/bin
-
-      - name: Install uv
-        id: setup-uv
-        uses: ${{ vars.actions_prefix || '' }}astral-sh/setup-uv@main
-        with:
-          enable-cache: false
-          # cache-dependency-glob: "projects/esperoj/requirements-dev.txt"
-          # cache-suffix: ${{ runner.os }}-${{ matrix.python-version }}
 
       - name: Setup
         run: |
