@@ -63,8 +63,7 @@ tasks:
       - task: setup
         vars: { ENV: 'dev' }
     cmds:
-      - |
-        echo uv # run pytest --cov-report term --cov=esperoj
+      - uv run pytest --cov-report term --cov=esperoj
 
   dev-server:
     deps:
