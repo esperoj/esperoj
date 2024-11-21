@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 from moto import mock_aws
 
-from esperoj.database.database import DatabaseFactory
-from esperoj.database.models import table_models
+from esperoj.config import getConfig
+from esperoj.database import createDatabase
 from esperoj.esperoj import Esperoj
 from esperoj.storage.file_host import FileHostFactory
 from esperoj.storage.storage import StorageFactory
@@ -30,6 +30,7 @@ def aws_credentials():
 def config():
     """Return a config."""
     p = Path(__file__).parent / "test_data" / "esperoj.toml"
+    return getConfig(str(p))
     return tomllib.loads(p.read_text())
 
 
@@ -52,7 +53,7 @@ def s3_storage(config, aws_credentials):
 
 @pytest.fixture
 def memory_db(config):
-    db = DatabaseFactory.create(config["databases"][0], table_models)
+    db = createDatabase(config["databases"][0])
     for table_name in ["files", "musics"]:
         p = Path(__file__).parent / "test_data" / "json" / f"{table_name}.json"
         db.create_table(table_name)

@@ -355,38 +355,3 @@ class Database(ABC):
             Table: The table instance.
         """
         raise NotImplementedError
-
-
-class DatabaseFactory:
-    """DatabaseFactory class.
-
-    This class provides a factory method for creating database instances based on the provided configuration.
-    """
-
-    @staticmethod
-    def create(config: dict, models: dict[str, type[Record]] | None = None) -> Database:
-        """Create a database instance based on the provided configuration.
-
-        Args:
-            config (dict): The configuration dictionary for the database, which must include a 'type' key
-                           specifying the database type.
-            models: The list of models used by thr database.
-
-        Returns:
-            Database: The database instance corresponding to the specified type.
-
-        Raises:
-            ValueError: If the database type in the configuration is unknown.
-        """
-        database_type = config["type"]
-        name = config["name"]
-        match database_type:
-            case "seatable":
-                from esperoj.database.seatable import SeatableDatabase
-
-                return SeatableDatabase(name, config, models=models)
-            case "memory":
-                from esperoj.database.memory import MemoryDatabase
-
-                return MemoryDatabase(name, config, models=models)
-        raise ValueError(f"Unknown database type: {database_type}")

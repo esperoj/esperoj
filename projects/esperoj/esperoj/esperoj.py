@@ -7,7 +7,7 @@ from pathlib import Path
 
 from py7zr import SevenZipFile
 
-from esperoj.database.database import DatabaseFactory
+from esperoj.database import createDatabase
 from esperoj.database.models import table_models
 from esperoj.storage.file_host import FileHostFactory
 from esperoj.storage.storage import StorageFactory
