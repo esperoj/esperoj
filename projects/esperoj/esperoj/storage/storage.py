@@ -111,31 +111,3 @@ class Storage(ABC):
         Returns:
             size (int): Size of the object.
         """
-
-
-class StorageFactory:
-    """StorageFactory class.
-
-    A factory class for creating storage instances based on the provided configuration.
-    """
-
-    @staticmethod
-    def create(config: dict):
-        """Create a storage instance.
-
-        Args:
-            config (dict): The configuration for the storage.
-
-        Returns:
-            Storage: An instance of the appropriate Storage implementation.
-
-        Raises:
-            ValueError: If the storage type in the configuration is unknown.
-        """
-        storage_type = config["type"]
-        match storage_type:
-            case "s3":
-                from esperoj.storage.s3 import S3Storage
-
-                return S3Storage(config)
-        raise ValueError(f"Unknown storage type: {storage_type}")

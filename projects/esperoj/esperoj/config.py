@@ -8,6 +8,7 @@ config = {}
 
 def getConfig(config_file: str = ""):
     global config
+    config_text = ""
     if not config:
         config_path = Path(config_file) if config_file else Path(getenv("ESPEROJ_CONFIG_FILE", str(Path.home() / ".config" / "esperoj" / "esperoj.toml")))
         if config_path.suffix == ".7z":

@@ -30,8 +30,10 @@ cfgv==3.4.0
     # via pre-commit
 charset-normalizer==3.3.2
     # via requests
-colorama==0.4.6 ; sys_platform == 'win32'
-    # via pytest
+colorama==0.4.6 ; sys_platform == 'win32' or platform_system == 'Windows'
+    # via
+    #   pytest
+    #   tqdm
 coverage==7.6.1
     # via pytest-cov
 cryptography==43.0.1
@@ -69,12 +71,18 @@ inflate64==1.0.0
     # via py7zr
 iniconfig==2.0.0
     # via pytest
+internetarchive==5.1.0
+    # via esperoj (pyproject.toml)
 jinja2==3.1.5
     # via moto
 jmespath==1.0.1
     # via
     #   boto3
     #   botocore
+jsonpatch==1.33
+    # via internetarchive
+jsonpointer==3.0.0
+    # via jsonpatch
 markupsafe==2.1.5
     # via
     #   jinja2
@@ -146,6 +154,7 @@ pyzstd==0.16.2
     # via py7zr
 requests==2.32.3
     # via
+    #   internetarchive
     #   moto
     #   responses
     #   seatable-api
@@ -168,6 +177,8 @@ sniffio==1.3.1
     #   httpx
 texttable==1.7.0
     # via py7zr
+tqdm==4.67.1
+    # via internetarchive
 typing-extensions==4.12.2
     # via
     #   pydantic
@@ -175,6 +186,7 @@ typing-extensions==4.12.2
 urllib3==2.2.2
     # via
     #   botocore
+    #   internetarchive
     #   requests
     #   responses
 virtualenv==20.26.4

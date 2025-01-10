@@ -32,12 +32,14 @@ def createDatabase(config: dict, models: dict[str, type[Record]] | None = table_
             return MemoryDatabase(name, config, models=models)
     raise ValueError(f"Unknown database type: {database_type}")
 
-def getDatabase(name):
+def getDatabase(name, models: dict[str, type[Record]] | None = table_models):
     if not (database := databases.get(name)):
         for database_config in getConfig()["databases"]:
-            if database_config["name"] == name:
-                database = createDatabase(database_config)
-        databases[name] = database
+            names = [database_config["name"], *database_config.get("aliases", [])]
+            if name in names:
+                database = createDatabase(database_config, models)
+                for _name in names:
+                    databases[_name] = database
     return database
 
 def getAllDatabases():

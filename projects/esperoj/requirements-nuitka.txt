@@ -25,6 +25,8 @@ cffi==1.17.1 ; platform_python_implementation == 'PyPy'
     #   zstandard
 charset-normalizer==3.3.2
     # via requests
+colorama==0.4.6 ; platform_system == 'Windows'
+    # via tqdm
 h11==0.14.0
     # via httpcore
 h2==4.1.0
@@ -48,10 +50,16 @@ idna==3.8
     #   requests
 inflate64==1.0.0
     # via py7zr
+internetarchive==5.1.0
+    # via esperoj (pyproject.toml)
 jmespath==1.0.1
     # via
     #   boto3
     #   botocore
+jsonpatch==1.33
+    # via internetarchive
+jsonpointer==3.0.0
+    # via jsonpatch
 multivolumefile==0.2.3
     # via py7zr
 nuitka==2.4.8
@@ -93,7 +101,9 @@ python-socketio==4.6.1
 pyzstd==0.16.2
     # via py7zr
 requests==2.32.3
-    # via seatable-api
+    # via
+    #   internetarchive
+    #   seatable-api
 s3transfer==0.10.2
     # via boto3
 seatable-api==2.8.1
@@ -109,6 +119,8 @@ sniffio==1.3.1
     #   httpx
 texttable==1.7.0
     # via py7zr
+tqdm==4.67.1
+    # via internetarchive
 typing-extensions==4.12.2
     # via
     #   pydantic
@@ -116,6 +128,7 @@ typing-extensions==4.12.2
 urllib3==2.2.2
     # via
     #   botocore
+    #   internetarchive
     #   requests
 wheel==0.44.0
     # via esperoj (pyproject.toml)

@@ -6,9 +6,7 @@ from pathlib import Path
 
 import click
 
-scripts_folder = Path.home() / "scripts"
-if getenv("ESPEROJ_SCRIPTS_FOLDER"):
-    scripts_folder = Path(getenv("ESPEROJ_SCRIPTS_FOLDER"))
+scripts_folder = Path(getenv("ESPEROJ_SCRIPTS_FOLDER", str(Path.home() / "scripts")))
 sys.path.append(str(scripts_folder))
 
 

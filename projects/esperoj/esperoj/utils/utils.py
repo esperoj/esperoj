@@ -118,10 +118,5 @@ class Utils:
             case "run_command":
                 return run_command
 
-            case "verify":
-                from esperoj.utils.verify import verify
-
-                return verify
-
             case _:
                 raise AttributeError(f"Util {name} does not exist.")
