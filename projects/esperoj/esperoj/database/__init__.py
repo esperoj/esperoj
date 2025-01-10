@@ -39,3 +39,8 @@ def getDatabase(name):
                 database = createDatabase(database_config)
         databases[name] = database
     return database
+
+def getAllDatabases():
+    for database_config in getConfig()["databases"]:
+        getDatabase(database_config["name"])
+    return databases

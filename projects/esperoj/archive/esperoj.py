@@ -54,7 +54,7 @@ class Esperoj:
             mod = __import__(f"{name}", None, None, ["get_esperoj_method"])
         except ImportError:
             return None
-        return mod.get_esperoj_method(self)
+        return mod.get_esperoj_method()
 
 
 class EsperojFactory:

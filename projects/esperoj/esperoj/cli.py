@@ -54,10 +54,7 @@ def cli(ctx, config_file, debug):
         config_file (str): The path to the configuration file.
         debug (bool): Whether to enable debug mode.
     """
-    from esperoj.esperoj import EsperojFactory
-
-    esperoj = EsperojFactory.create(config_file)
-    ctx.obj = esperoj
+    # ctx.obj = esperoj
 
 
 if __name__ == "__main__":

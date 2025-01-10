@@ -31,7 +31,6 @@ def config():
     """Return a config."""
     p = Path(__file__).parent / "test_data" / "esperoj.toml"
     return getConfig(str(p))
-    return tomllib.loads(p.read_text())
 
 
 @pytest.fixture()
