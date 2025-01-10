@@ -49,12 +49,12 @@ jobs:
           working-directory: "projects/esperoj"
           nuitka-version: main
           script-name: __main__.py
-          standalone: true
-          onefile: true
           output-dir: "build"
 
       - name: Change name
         run: |
+          ls
+          ls *
           mv build/__main__.bin ./esperoj_linux_${{ matrix.runner.arch }}
           rm __main__.py
 
