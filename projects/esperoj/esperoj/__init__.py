@@ -7,4 +7,5 @@ def nuitka() -> list:
     import esperoj.utils
     import esperoj.storage
     import esperoj.database
-    return [esperoj.server, esperoj.database, esperoj.utils, esperoj.storage]
+    import esperoj.logging
+    return [esperoj.server, esperoj.database, esperoj.utils, esperoj.storage, esperoj.logging]
