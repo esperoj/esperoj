@@ -1,10 +1,13 @@
-import httpx
-from esperoj.logging import getLogger
 import subprocess
 from os import getenv
 from typing import Literal
 
-logger = getLogger(__name__)
+import httpx
+
+from esperoj.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def run_command(
     host: Literal[
@@ -34,7 +37,7 @@ def run_command(
                 "Succeed triggered. Visit https://github.com/esperoj/dotfiles/actions/workflows/run-command.yml"
             )
         else:
-            logger.error(f"Failed with status code: {response.status_code}")
+            logger.error("Failed with status code: %s", response.status_code)
     elif host in ["codeberg", "cezeri"]:
         server, repo_id, token = {
             "codeberg": ("ci.codeberg.org", 12554, getenv("WOODPECKER_TOKEN")),
@@ -52,7 +55,7 @@ def run_command(
 
         result = response.json()
         number = result.get("number")
-        logger.info(f"https://{server}/repos/{repo_id}/pipeline/{number}")
+        logger.info("https://%s/repos/%s/pipeline/%s", server, repo_id, number)
     elif host in ["framagit", "gitlab"]:
         server, project_id, token = {
             "gitlab": ("https://gitlab.com", 58158450, getenv("GITLAB_DOTFILES_TRIGGER_TOKEN")),

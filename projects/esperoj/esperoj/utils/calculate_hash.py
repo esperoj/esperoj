@@ -1,6 +1,7 @@
 import hashlib
 from collections.abc import Iterator
 
+
 def calculate_hash(stream: Iterator, algorithm: str = "sha256") -> str:
     """Calculate the hash of a stream of data using the specified algorithm.
 

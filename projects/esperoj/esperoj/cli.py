@@ -52,7 +52,7 @@ def cli(ctx, config_file, debug):
         config_file (str): The path to the configuration file.
         debug (bool): Whether to enable debug mode.
     """
-    # ctx.obj = esperoj
+    return
 
 
 if __name__ == "__main__":

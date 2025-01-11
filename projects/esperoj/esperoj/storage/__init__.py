@@ -1,13 +1,14 @@
 """Storage module."""
 
+from esperoj.config import get_config
 from esperoj.storage.file_host import FileHost
 from esperoj.storage.storage import Storage
-from esperoj.config import getConfig
 
 file_hosts = {}
 storages = {}
 
-def createStorage(config) -> Storage:
+
+def create_storage(config) -> Storage:
     """Create a storage instance based on the provided configuration.
 
     Args:
@@ -20,7 +21,6 @@ def createStorage(config) -> Storage:
         ValueError: If the storage type in the configuration is unknown.
     """
     storage_type = config["type"]
-    name = config["name"]
     match storage_type:
         case "s3":
             from esperoj.storage.s3 import S3Storage
@@ -28,22 +28,25 @@ def createStorage(config) -> Storage:
             return S3Storage(config)
     raise ValueError(f"Unknown storage type: {storage_type}")
 
-def getStorage(name):
+
+def get_storage(name):
     if not (storage := storages.get(name)):
-        for storage_config in getConfig()["storages"]:
+        for storage_config in get_config()["storages"]:
             names = [storage_config["name"], *storage_config.get("aliases", [])]
             if name in names:
-                storage = createStorage(storage_config)
+                storage = create_storage(storage_config)
                 for _name in names:
                     storages[_name] = storage
     return storage
 
-def getAllstorages():
-    for storage_config in getConfig()["storages"]:
-        getStorage(storage_config["name"])
+
+def get_all_storages():
+    for storage_config in get_config()["storages"]:
+        get_storage(storage_config["name"])
     return storages
 
-def createFileHost(config) -> FileHost:
+
+def create_file_host(config) -> FileHost:
     """Create a FileHost instance based on the provided configuration.
 
     Args:
@@ -74,17 +77,19 @@ def createFileHost(config) -> FileHost:
             return LocalFileHost(name, config)
     raise ValueError(f"Unknown file host type: {file_host_type}")
 
-def getFileHost(name):
+
+def get_file_host(name):
     if not (file_host := file_hosts.get(name)):
-        for file_host_config in getConfig()["file_hosts"]:
+        for file_host_config in get_config()["file_hosts"]:
             names = [file_host_config["name"], *file_host_config.get("aliases", [])]
             if name in names:
-                file_host = createFileHost(file_host_config)
+                file_host = create_file_host(file_host_config)
                 for _name in names:
                     file_hosts[_name] = file_host
     return file_host
 
-def getAllFileHosts():
-    for file_host_config in getConfig()["file_hosts"]:
-        getFileHost(file_host_config["name"])
+
+def get_all_file_hosts():
+    for file_host_config in get_config()["file_hosts"]:
+        get_file_host(file_host_config["name"])
     return file_hosts

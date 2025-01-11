@@ -1,16 +1,20 @@
 import tomllib
 from os import getenv
 from pathlib import Path
+
 from py7zr import SevenZipFile
 
-config = {}
+configs = {}
 
 
-def getConfig(config_file: str = ""):
-    global config
+def get_config(config_file: str = ""):
     config_text = ""
-    if not config:
-        config_path = Path(config_file) if config_file else Path(getenv("ESPEROJ_CONFIG_FILE", str(Path.home() / ".config" / "esperoj" / "esperoj.toml")))
+    if not (config := configs.get("esperoj")):
+        config_path = (
+            Path(config_file)
+            if config_file
+            else Path(getenv("ESPEROJ_CONFIG_FILE", str(Path.home() / ".config" / "esperoj" / "esperoj.toml")))
+        )
         if config_path.suffix == ".7z":
             with SevenZipFile(str(config_path), password=getenv("ENCRYPTION_PASSPHRASE")) as seven_zip_file:
                 seven_zip_contents = seven_zip_file.readall()
@@ -20,4 +24,5 @@ def getConfig(config_file: str = ""):
         else:
             config_text = config_path.read_text()
         config = tomllib.loads(config_text)
+        configs["esperoj"] = config
     return config

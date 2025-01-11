@@ -1,11 +1,13 @@
 """Database module."""
+
+from esperoj.config import get_config
+from esperoj.database.database import Database, Record
 from esperoj.database.models import table_models
-from esperoj.database.database import Record, Database
-from esperoj.config import getConfig
 
 databases = {}
 
-def createDatabase(config: dict, models: dict[str, type[Record]] | None = table_models) -> Database:
+
+def create_database(config: dict, models: dict[str, type[Record]] | None = table_models) -> Database:
     """Create a database instance based on the provided configuration.
 
     Args:
@@ -32,17 +34,19 @@ def createDatabase(config: dict, models: dict[str, type[Record]] | None = table_
             return MemoryDatabase(name, config, models=models)
     raise ValueError(f"Unknown database type: {database_type}")
 
-def getDatabase(name, models: dict[str, type[Record]] | None = table_models):
+
+def get_database(name, models: dict[str, type[Record]] | None = table_models):
     if not (database := databases.get(name)):
-        for database_config in getConfig()["databases"]:
+        for database_config in get_config()["databases"]:
             names = [database_config["name"], *database_config.get("aliases", [])]
             if name in names:
-                database = createDatabase(database_config, models)
+                database = create_database(database_config, models)
                 for _name in names:
                     databases[_name] = database
     return database
 
-def getAllDatabases():
-    for database_config in getConfig()["databases"]:
-        getDatabase(database_config["name"])
+
+def get_all_databases():
+    for database_config in get_config()["databases"]:
+        get_database(database_config["name"])
     return databases

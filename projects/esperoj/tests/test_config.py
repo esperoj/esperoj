@@ -1,3 +1,7 @@
-from esperoj.config import getConfig
 import json
-print(json.dumps(getConfig()))
+
+from esperoj.config import get_config
+from esperoj.logging import get_logger
+
+logger = get_logger(__name__)
+logger.info(json.dumps(get_config()))
