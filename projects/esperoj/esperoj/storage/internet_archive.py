@@ -1,6 +1,6 @@
-import os
 import time
 from collections.abc import Iterator
+from os import getenv
 from pathlib import Path
 from typing import Any
 
@@ -14,8 +14,9 @@ class InternetArchive(FileHost):
     def __init__(self, name: str, config: dict[Any, Any]):
         super().__init__(name, config)
         self.client = Client(http2=True, transport=LimiterTransport(per_minute=15), timeout=Timeout(120.0))
-        self.proxy = os.getenv("ESPEROJ_WORKER_PROXY", "https://proxy.esperoj.workers.dev/")
+        self.proxy = getenv("ESPEROJ_WORKER_PROXY", "https://proxy.esperoj.workers.dev/")
         self.max_file_size = 2**30
+        self.probabilities = {"small": 10, "large": 90}
 
     def _archive_url(self, url: str) -> str:
         api_key = self.config.get("access_key")
@@ -32,11 +33,11 @@ class InternetArchive(FileHost):
             "capture_outlinks": 0,
             "capture_screenshot": 0,
             "delay_wb_availability": 0,
-            "force_get": 0,
+            "force_get": 1,
             "skip_first_archive": 1,
             "outlinks_availability": 0,
             "email_result": 1,
-            "js_behavior_timeout": 30,
+            "js_behavior_timeout": 0,
         }
 
         try:
@@ -93,4 +94,4 @@ class InternetArchive(FileHost):
 
     def upload(self, src: str) -> str:
         url = self._upload_to_temporary_host(src)
-        return self._convert_url(self._archive_url(f"https://x.0ms.dev/q70/{url}"))
+        return self._convert_url(self._archive_url(url))
