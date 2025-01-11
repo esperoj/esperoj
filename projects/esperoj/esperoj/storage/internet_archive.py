@@ -3,6 +3,7 @@ from collections.abc import Iterator
 from os import getenv
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from httpx import Client, HTTPStatusError, Timeout
 from httpx_ratelimiter import LimiterTransport
@@ -71,13 +72,12 @@ class InternetArchive(FileHost):
         return f"{url[:timestamp_end]}if_{url[timestamp_end:]}"
 
     def _upload_to_temporary_host(self, src: str) -> str:
-        url = "https://up1.fileditch.com/temp/upload.php"
-        with Path(src).open("rb") as file:
-            files = {"files[]": file}
-            response = self.client.post(url, files=files)
+        src_path = Path(src)
+        upload_url = "https://transfer.adminforge.de/{src_path.name}"
+        with src_path.open("rb") as file:
+            response = self.client.put(upload_url, data=file)
             response.raise_for_status()
-            json_response = response.json()
-            return json_response["files"][0]["url"]
+            return f'https://transfer.adminforge.de/{"get" + urlparse(response.text).path}'
 
     def close(self) -> None:
         self.client.close()
@@ -88,7 +88,8 @@ class InternetArchive(FileHost):
         return int(response.headers.get("Content-Length", 0))
 
     def stream(self, src: str, chunk_size: int = 64 * 2**10) -> Iterator[bytes]:
-        with self.client.stream("GET", self.proxy + src) as response:
+        headers = {"User-Agent": "esperoj cli"}
+        with self.client.stream("GET", self.proxy + src, headers=headers) as response:
             response.raise_for_status()
             yield from response.iter_bytes(chunk_size=chunk_size)
 
