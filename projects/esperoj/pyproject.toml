@@ -162,7 +162,7 @@ lint.ignore = [
   "S607", # Starting a process with a partial executable path
   "C901", # `function` is too complex
   "BLE001", # Do not catch blind exception: `Exception`
-  # "G004", # Logging statement uses f-string
+  "PLE1205", # Too many arguments for `logging` format string 
 ]
 
 line-length = 120

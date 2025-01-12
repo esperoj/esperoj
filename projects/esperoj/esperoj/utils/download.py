@@ -90,7 +90,7 @@ def download(download_info_list: list) -> Iterable[tuple[Exception | None, Downl
                     move(file_path, download_info.dest)
             return (None, download_info)
         except Exception as e:
-            logger.error(e)
+            logger.error("Exception :: ", e)
             return (e, download_info)
 
     with ThreadPoolExecutor(max_workers=4) as executor:
