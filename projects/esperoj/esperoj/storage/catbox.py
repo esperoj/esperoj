@@ -9,12 +9,10 @@ from esperoj.storage.file_host import FileHost
 
 
 class Catbox(FileHost):
-    def __init__(self, name: str, config: dict[Any, Any]):
-        super().__init__(name, config)
+    def __init__(self, config: dict[Any, Any]):
+        super().__init__(config)
         self.client = Client(http2=True, transport=LimiterTransport(per_minute=60), timeout=Timeout(60.0))
         self.max_file_size = 200 * 2**20
-        self.speed = 50 * 8
-        self.probabilities = {"small": 60, "large": 40}
 
     def close(self) -> None:
         self.client.close()

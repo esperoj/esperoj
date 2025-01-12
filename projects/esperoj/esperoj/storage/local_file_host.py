@@ -7,11 +7,10 @@ from esperoj.storage.file_host import FileHost
 
 
 class LocalFileHost(FileHost):
-    def __init__(self, name: str, config: dict[Any, Any]):
-        super().__init__(name, config)
+    def __init__(self, config: dict[Any, Any]):
+        super().__init__(config)
         self.base_src = Path(config["base_src"])
         self.base_src.mkdir(parents=True, exist_ok=True)
-        self.probabilities = {"small": 50, "large": 50}
 
     def size(self, src: str) -> int:
         file_path = self.base_src / Path(src)

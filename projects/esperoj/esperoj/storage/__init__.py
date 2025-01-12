@@ -29,7 +29,7 @@ def create_storage(config) -> Storage:
     raise ValueError(f"Unknown storage type: {storage_type}")
 
 
-def get_storage(name):
+def get_storage(name) -> Storage:
     if not (storage := storages.get(name)):
         for storage_config in get_config()["storages"]:
             names = [storage_config["name"], *storage_config.get("aliases", [])]
@@ -37,6 +37,8 @@ def get_storage(name):
                 storage = create_storage(storage_config)
                 for _name in names:
                     storages[_name] = storage
+    if not storage:
+        raise ValueError(f"Can't find storage with name '{name}'.")
     return storage
 
 
@@ -59,26 +61,26 @@ def create_file_host(config) -> FileHost:
         ValueError: If the file_host type in the configuration is unknown.
     """
     file_host_type = config["type"]
-    name = config["name"]
+    config["name"]
     match file_host_type:
         case "catbox":
             from esperoj.storage.catbox import Catbox
 
-            return Catbox(name, config)
+            return Catbox(config)
 
-        case "internet_archive":
+        case "internet_archive" | "internet-archive":
             from esperoj.storage.internet_archive import InternetArchive
 
-            return InternetArchive(name, config)
+            return InternetArchive(config)
 
         case "local_file_host":
             from esperoj.storage.local_file_host import LocalFileHost
 
-            return LocalFileHost(name, config)
+            return LocalFileHost(config)
     raise ValueError(f"Unknown file host type: {file_host_type}")
 
 
-def get_file_host(name):
+def get_file_host(name) -> FileHost:
     if not (file_host := file_hosts.get(name)):
         for file_host_config in get_config()["file_hosts"]:
             names = [file_host_config["name"], *file_host_config.get("aliases", [])]
@@ -86,6 +88,8 @@ def get_file_host(name):
                 file_host = create_file_host(file_host_config)
                 for _name in names:
                     file_hosts[_name] = file_host
+    if not file_host:
+        raise ValueError(f"Can't find file_host with name '{name}'.")
     return file_host
 
 
@@ -93,3 +97,7 @@ def get_all_file_hosts():
     for file_host_config in get_config()["file_hosts"]:
         get_file_host(file_host_config["name"])
     return file_hosts
+
+
+def get_file_host_or_storage(name) -> FileHost | Storage:
+    return get_file_host(name) or get_storage(name)

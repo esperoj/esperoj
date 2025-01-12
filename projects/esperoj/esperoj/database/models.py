@@ -19,7 +19,7 @@ class SourceInfo(TypedDict):
 
 
 class MirrorInfo(TypedDict):
-    sources: Annotated[list[SourceInfo], Field(min_length=1)]
+    sources: list[SourceInfo]
     encrypted: Annotated[bool, Field(default=False)]
 
 

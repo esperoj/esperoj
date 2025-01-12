@@ -12,12 +12,11 @@ from esperoj.storage.file_host import FileHost
 
 
 class InternetArchive(FileHost):
-    def __init__(self, name: str, config: dict[Any, Any]):
-        super().__init__(name, config)
+    def __init__(self, config: dict[Any, Any]):
+        super().__init__(config)
         self.client = Client(http2=True, transport=LimiterTransport(per_minute=15), timeout=Timeout(120.0))
         self.proxy = getenv("ESPEROJ_WORKER_PROXY", "https://proxy.esperoj.workers.dev/")
-        self.max_file_size = 2**30
-        self.probabilities = {"small": 10, "large": 90}
+        self.max_file_size = 2 * 2**30
 
     def _archive_url(self, url: str) -> str:
         api_key = self.config.get("access_key")
@@ -69,13 +68,13 @@ class InternetArchive(FileHost):
 
     def _convert_url(self, url: str) -> str:
         timestamp_end = url.find("/", 30)
-        return f"{url[:timestamp_end]}if_{url[timestamp_end:]}"
+        return f"{url[:timestamp_end]}im_{url[timestamp_end:]}"
 
     def _upload_to_temporary_host(self, src: str) -> str:
         src_path = Path(src)
         upload_url = "https://transfer.adminforge.de/{src_path.name}"
         with src_path.open("rb") as file:
-            response = self.client.put(upload_url, data=file)
+            response = self.client.put(upload_url, files={"upload-file": file})
             response.raise_for_status()
             return f'https://transfer.adminforge.de/{"get" + urlparse(response.text).path}'
 

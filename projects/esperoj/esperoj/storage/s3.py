@@ -26,6 +26,7 @@ class S3Storage(Storage):
         Args:
             config (dict): Configuration for S3Storage.
         """
+        super().__init__(config)
         self.__DEFAULT_CONFIG = {
             "name": "S3 Storage",
             "bucket_name": "esperoj",

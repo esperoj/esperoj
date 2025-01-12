@@ -5,9 +5,11 @@ from typing import Any, Self
 
 
 class FileHost(ABC):
-    def __init__(self, name: str, config: dict[Any, Any]):
-        self.name = name
-        self.config = config
+    def __init__(self, config: dict[Any, Any]):
+        self.__DEFAULT_CONFIG = {"name": "Storage", "probabilities": {"small": 50, "large": 50}}
+        self.config = self.__DEFAULT_CONFIG | config
+        self.probabilities = self.config["probabilities"]
+        self.name = self.config["name"]
 
     def __enter__(self) -> Self:
         return self

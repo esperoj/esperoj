@@ -10,13 +10,16 @@ class Storage(ABC):
     This class defines the interface for storage implementations.
     """
 
-    @abstractmethod
     def __init__(self, config: dict) -> None:
         """Initialize the Storage.
 
         Args:
             config (dict): Configuration for the storage.
         """
+        self.__DEFAULT_CONFIG = {"name": "Storage", "probabilities": {"small": 50, "large": 50}}
+        self.config = self.__DEFAULT_CONFIG | config
+        self.probabilities = self.config["probabilities"]
+        self.name = self.config["name"]
 
     @abstractmethod
     def delete(self, paths: list[str]) -> bool:
