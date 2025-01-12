@@ -38,7 +38,7 @@ def choose_host(download_info: DownloadInfo) -> FileHost | Storage:
             },
         }
         for host in download_info.mirrors
-        if len(download_info.mirrors[host]["sources"]) > 0  # and get_file_host_or_storage(host) is not None)
+        if len(download_info.mirrors[host]["sources"]) > 0
     ]
     file_category = "small" if download_info.size < 10 * 2**20 else "large"
     total_score = sum(host["probabilities"][file_category] for host in hosts)
@@ -51,6 +51,7 @@ def choose_host(download_info: DownloadInfo) -> FileHost | Storage:
         if chosen_host < cumulative:
             result = get_file_host_or_storage(host["name"])
             break
+
     return result
 
 

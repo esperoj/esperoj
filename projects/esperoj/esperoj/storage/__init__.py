@@ -100,4 +100,8 @@ def get_all_file_hosts():
 
 
 def get_file_host_or_storage(name) -> FileHost | Storage:
-    return get_file_host(name) or get_storage(name)
+    try:
+        return get_file_host(name)
+    except Exception:
+        return get_storage(name)
+    raise ValueError(f"Can't find file_host or storage with name '{name}'.")
