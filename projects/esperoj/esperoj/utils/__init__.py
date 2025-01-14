@@ -10,7 +10,7 @@ def get_util(name):
     return util
 
 
-def nuikta():
-    from esperoj.utils import calculate_hash, run_command
+def nuitka():
+    from esperoj.utils import calculate_hash, download, replicate, run_command, upload
 
-    return [calculate_hash, run_command]
+    return [calculate_hash, download, replicate, run_command, upload]
