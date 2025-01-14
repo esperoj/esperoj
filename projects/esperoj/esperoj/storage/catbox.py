@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from os import getenv
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ class Catbox(FileHost):
         super().__init__(config)
         self.client = Client(http2=True, transport=LimiterTransport(per_minute=60), timeout=Timeout(60.0))
         self.max_file_size = 200 * 2**20
+        self.proxy = getenv("ESPEROJ_WORKER_PROXY", "https://proxy.esperoj.workers.dev/")
 
     def close(self) -> None:
         self.client.close()
@@ -23,7 +25,8 @@ class Catbox(FileHost):
         return int(response.headers.get("Content-Length", 0))
 
     def stream(self, src: str, chunk_size: int = 64 * 2**10) -> Iterator[bytes]:
-        with self.client.stream("GET", src) as response:
+        headers = {"User-Agent": "esperoj cli"}
+        with self.client.stream("GET", self.proxy + src, headers=headers) as response:
             response.raise_for_status()
             yield from response.iter_bytes(chunk_size=chunk_size)
 
