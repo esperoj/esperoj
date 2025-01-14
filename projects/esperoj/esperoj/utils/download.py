@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from esperoj.database.models import MirrorInfo
 from esperoj.exceptions import VerificationError
 from esperoj.logging import get_logger
-from esperoj.storage import FileHost, Storage, get_file_host_or_storage
+from esperoj.storage import FileHost, Storage, get_mirror
 from esperoj.utils import get_util
 
 logger = get_logger(__name__)
@@ -33,8 +33,8 @@ def choose_host(download_info: DownloadInfo) -> FileHost | Storage:
         {
             "name": host,
             "probabilities": {
-                "small": get_file_host_or_storage(host).probabilities["small"],
-                "large": get_file_host_or_storage(host).probabilities["large"],
+                "small": get_mirror(host).probabilities["small"],
+                "large": get_mirror(host).probabilities["large"],
             },
         }
         for host in download_info.mirrors
@@ -44,12 +44,12 @@ def choose_host(download_info: DownloadInfo) -> FileHost | Storage:
     total_score = sum(host["probabilities"][file_category] for host in hosts)
     chosen_host = randbelow(total_score)
     cumulative = 0
-    result = get_file_host_or_storage(hosts[0]["name"])
+    result = get_mirror(hosts[0]["name"])
 
     for _, host in enumerate(hosts):
         cumulative += host["probabilities"][file_category]
         if chosen_host < cumulative:
-            result = get_file_host_or_storage(host["name"])
+            result = get_mirror(host["name"])
             break
 
     return result

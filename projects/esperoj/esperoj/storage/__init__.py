@@ -99,7 +99,7 @@ def get_all_file_hosts():
     return file_hosts
 
 
-def get_file_host_or_storage(name) -> FileHost | Storage:
+def get_mirror(name) -> FileHost | Storage:
     try:
         return get_file_host(name)
     except Exception:

@@ -35,7 +35,7 @@ class File(Record):
     name: Annotated[str, Field(min_length=1, max_length=255)]
     sha256: Annotated[str, Field(min_length=64, max_length=64)]
     size: Annotated[int, Field(gt=0)]
-    mirrors: Annotated[dict[str, MirrorInfo], *JsonFieldConfig] | None
+    mirrors: Annotated[dict[str, MirrorInfo], *JsonFieldConfig]
     musics: list[ID] | None = []
     modified: str | None = None
     created: str | None = None
