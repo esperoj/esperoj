@@ -72,9 +72,9 @@ class InternetArchive(FileHost):
 
     def _upload_to_temporary_host(self, src: str) -> str:
         src_path = Path(src)
-        upload_url = "https://transfer.adminforge.de/{src_path.name}"
+        upload_url = f"https://transfer.adminforge.de/{src_path.name}"
         with src_path.open("rb") as file:
-            response = self.client.put(upload_url, files={"upload-file": file})
+            response = self.client.put(upload_url, content=file)
             response.raise_for_status()
             return f'https://transfer.adminforge.de/{"get" + urlparse(response.text).path}'
 
