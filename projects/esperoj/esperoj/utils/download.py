@@ -28,28 +28,28 @@ class DownloadInfo(BaseModel):
     dest: Path
 
 
-def choose_host(download_info: DownloadInfo) -> FileHost | Storage:
-    hosts = [
+def choose_mirror(download_info: DownloadInfo) -> FileHost | Storage:
+    mirrors = [
         {
-            "name": host,
+            "name": mirror,
             "probabilities": {
-                "small": get_mirror(host).probabilities["small"],
-                "large": get_mirror(host).probabilities["large"],
+                "small": get_mirror(mirror).probabilities["small"],
+                "large": get_mirror(mirror).probabilities["large"],
             },
         }
-        for host in download_info.mirrors
-        if len(download_info.mirrors[host]["sources"]) > 0
+        for mirror in download_info.mirrors
+        if len(download_info.mirrors[mirror]["sources"]) > 0
     ]
     file_category = "small" if download_info.size < 10 * 2**20 else "large"
-    total_score = sum(host["probabilities"][file_category] for host in hosts)
-    chosen_host = randbelow(total_score)
+    total_score = sum(mirror["probabilities"][file_category] for mirror in mirrors)
+    chosen_mirror = randbelow(total_score)
     cumulative = 0
-    result = get_mirror(hosts[0]["name"])
+    result = get_mirror(mirrors[0]["name"])
 
-    for _, host in enumerate(hosts):
-        cumulative += host["probabilities"][file_category]
-        if chosen_host < cumulative:
-            result = get_mirror(host["name"])
+    for _, mirror in enumerate(mirrors):
+        cumulative += mirror["probabilities"][file_category]
+        if chosen_mirror < cumulative:
+            result = get_mirror(mirror["name"])
             break
 
     return result
@@ -60,34 +60,40 @@ def download(download_info_list: list) -> Iterable[tuple[Exception | None, Downl
 
     def download_file(download_info: DownloadInfo):
         try:
-            host = choose_host(download_info)
-            mirror = download_info.mirrors[host.name]
-            sources = mirror["sources"]
-            encrypted = mirror["encrypted"]
+            mirror = choose_mirror(download_info)
+            mirror_info = download_info.mirrors[mirror.name]
+            sources = mirror_info["sources"]
+            encrypted = mirror_info["encrypted"]
             password = default_password if encrypted else None
-            logger.info("Downloading file '%s' from host '%s'", download_info.name, host.name)
+            logger.info("Downloading file '%s' from mirror '%s'", download_info.name, mirror.name)
 
-            with TemporaryDirectory() as tmpdirname:
+            with TemporaryDirectory() as tmpdirname, NamedTemporaryFile(dir=tmpdirname, delete=False) as tmpfilename:
                 tmpdir = Path(tmpdirname)
-                with NamedTemporaryFile(dir=tmpdirname, delete=False) as tmpfilename:
-                    raw_path = Path(tmpfilename.name)
-                    with raw_path.open("wb") as file:
-                        for source in sources:
-                            for chunk in host.stream(source["src"]):
-                                file.write(chunk)
+                raw_path = Path(tmpfilename.name)
+                with raw_path.open("wb") as file:
+                    for source in sources:
+                        for chunk in mirror.stream(source["src"]):
+                            file.write(chunk)
 
-                    file_path = raw_path
+                file_path = raw_path
 
-                    if len(sources) > 1 or encrypted:
-                        with SevenZipFile(str(raw_path), "r", password=password) as archive:
-                            archive.extractall(path=str(tmpdir))
-                        file_path = tmpdir / download_info.name
+                if len(sources) > 1 or encrypted:
+                    with SevenZipFile(str(raw_path), "r", password=password) as archive:
+                        archive.extractall(path=str(tmpdir))
+                    file_path = tmpdir / download_info.name
 
-                    with file_path.open("rb") as file:
-                        if calculate_hash(file) != download_info.sha256:
-                            raise VerificationError(file_names=[download_info.name])
+                with file_path.open("rb") as file:
+                    sha256 = calculate_hash(file)
+                    if sha256 != download_info.sha256:
+                        logger.error(
+                            "Hashes mismatch for file '%s':\n'%s'\n'%s'",
+                            download_info.name,
+                            download_info.sha256,
+                            sha256,
+                        )
+                        raise VerificationError(file_names=[download_info.name])
 
-                    move(file_path, download_info.dest)
+                move(file_path, download_info.dest)
             return (None, download_info)
         except Exception as e:
             logger.error("Exception :: ", e)

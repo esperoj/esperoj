@@ -43,6 +43,8 @@ def get_database(name, models: dict[str, type[Record]] | None = table_models):
                 database = create_database(database_config, models)
                 for _name in names:
                     databases[_name] = database
+    if database is None:
+        raise ValueError(f"Can't find database '{name}'")
     return database
 
 
