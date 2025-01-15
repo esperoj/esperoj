@@ -9,17 +9,17 @@ authors = [
 description = "This is my personal package used to automate the boring stuffs."
 license = {text = "GPLv3"}
 name = "esperoj"
-version = "0.15.1"
+version = "0.16.0"
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
 dependencies = [
   "boto3 >=1.35.10",
   "httpx[http2] >=0.27.2",
-  "httpx_ratelimiter >= 0.0.6",
   "seatable-api >=2.6.11",
   "py7zr >=0.21.0",
   "pydantic >=2.9.0",
   "internetarchive >= 5.1.0",
+  "httpx-ratelimiter",
 ]
 
 [project.optional-dependencies]
@@ -210,3 +210,6 @@ known-first-party = ["esperoj"]
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 88
+
+[tool.uv.sources]
+httpx-ratelimiter = { git = "https://github.com/nhlong2/httpx_ratelimiter.git", rev = "main" }

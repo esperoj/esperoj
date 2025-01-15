@@ -43,7 +43,7 @@ def replicate(limit: int = 16) -> list[Record]:
                 upload_info = {**dict(file), "src": dest}
                 upload_info["mirrors"] = mirrors_to_upload
                 upload_result = upload([upload_info])[0]
-                new_mirrors = file.mirrors | upload_result.mirrors
+                new_mirrors = {**file.mirrors, **upload_result.mirrors}
         except Exception as e:
             logger.error("An error occured when replicating file '%s'.", file.name)
             logger.error("Exception :: ", e)
@@ -52,4 +52,7 @@ def replicate(limit: int = 16) -> list[Record]:
     with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {executor.submit(replicate_file, file): file for file in files_to_process}
         new_files = [future.result() for future in as_completed(futures)]
+        if len(new_files) == 0:
+            logger.info("No file needs to be replicated.")
+            return []
         return files_table.batch_update([{"id": file.id, "mirrors": file.mirrors} for file in new_files])

@@ -39,7 +39,7 @@ httpx==0.27.2
     # via
     #   esperoj (pyproject.toml)
     #   httpx-ratelimiter
-httpx-ratelimiter==0.0.6
+httpx-ratelimiter @ git+https://github.com/nhlong2/httpx_ratelimiter.git@9b12b519b58bb25541a58452c5e9cdb09abeb348
     # via esperoj (pyproject.toml)
 hyperframe==6.0.1
     # via h2
@@ -88,7 +88,7 @@ pydantic-core==2.23.3
     # via pydantic
 pyppmd==1.1.0
     # via py7zr
-pyrate-limiter==3.1.1
+pyrate-limiter==3.7.0
     # via httpx-ratelimiter
 python-dateutil==2.9.0.post0
     # via

@@ -40,7 +40,7 @@ class File(Record):
     modified: str | None = None
     created: str | None = None
     metadata: Annotated[dict[Any, Any], *JsonFieldConfig]
-    verified: bool = False
+    verified: bool | None = False
 
 
 table_models = {"musics": Music, "files": File}

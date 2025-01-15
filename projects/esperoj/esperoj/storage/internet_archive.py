@@ -14,9 +14,10 @@ from esperoj.storage.file_host import FileHost
 class InternetArchive(FileHost):
     def __init__(self, config: dict[Any, Any]):
         super().__init__(config)
-        self.client = Client(http2=True, transport=LimiterTransport(per_minute=15), timeout=Timeout(120.0))
         self.proxy = getenv("ESPEROJ_WORKER_PROXY", "https://proxy.esperoj.workers.dev/")
         self.max_file_size = 2 * 2**30
+        mounts = {"all://": LimiterTransport(per_second=5), "all://*archive.org": LimiterTransport(per_minute=15)}
+        self.client = Client(http2=True, mounts=mounts, timeout=Timeout(120.0))
 
     def _archive_url(self, url: str) -> str:
         api_key = self.config.get("access_key")
