@@ -5,8 +5,9 @@ export default {
         const path = url.href.substring(url.origin.length + 1);
         const ttl = parseInt(request.headers.get('esperoj-cache-ttl'), 10) || 365 * 24 * 3600;
         const isRangeRequest = request.headers.has('Range');
-        const targetUrl = (!isRangeRequest && (request.headers.get('esperoj-use-0ms') == "1" || !request.headers.has('esperoj-use-0ms')) && request.method == 'GET')
-        ? "https://x.0ms.dev/q70/" + path: path;
+        const targetUrl = path
+        /* (!isRangeRequest && (request.headers.get('esperoj-use-0ms') == "1" || !request.headers.has('esperoj-use-0ms')) && request.method == 'GET')
+        ? "https://x.0ms.dev/q70/" + path: path; */
 
         async function fetchWithRedirect(targetUrl) {
             const headers = new Headers(request.headers);

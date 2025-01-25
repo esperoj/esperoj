@@ -23,12 +23,29 @@ class MirrorInfo(TypedDict):
     encrypted: Annotated[bool, Field(default=False)]
 
 
-class Music(Record):
+class Album(Record):
     title: Annotated[str, Field(min_length=1, max_length=255)]
-    comment: str | None = None
-    files: list[ID] | None = []
+    creator: Annotated[str, Field(min_length=1, max_length=255)]
+    description: str | None = None
+    subjects: list[str] | None = None
+    collections: list[str] | None = None
+    sources: Annotated[list[str], *JsonFieldConfig] | None = None
+    files: list[ID] | None = None
+    date: str | None = None
     modified: str | None = None
     created: str | None = None
+
+
+class Music(Record):
+    title: Annotated[str, Field(min_length=1, max_length=255)]
+    creator: Annotated[str, Field(min_length=1, max_length=255)]
+    subjects: list[str] | None = None
+    collections: list[str] | None = None
+    description: str | None = None
+    files: list[ID] | None = None
+    modified: str | None = None
+    created: str | None = None
+    date: str | None = None
 
 
 class File(Record):
@@ -36,11 +53,12 @@ class File(Record):
     sha256: Annotated[str, Field(min_length=64, max_length=64)]
     size: Annotated[int, Field(gt=0)]
     mirrors: Annotated[dict[str, MirrorInfo], *JsonFieldConfig]
-    musics: list[ID] | None = []
+    musics: list[ID] | None = None
+    albums: list[ID] | None = None
     modified: str | None = None
     created: str | None = None
     metadata: Annotated[dict[Any, Any], *JsonFieldConfig]
     verified: bool | None = False
 
 
-table_models = {"musics": Music, "files": File}
+table_models = {"albums": Album, "musics": Music, "files": File}

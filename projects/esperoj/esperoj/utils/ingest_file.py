@@ -29,4 +29,4 @@ def ingest_file(file_path: Path, mirrors: list[str]) -> File:
         }
         upload_result = upload([upload_info])[0]
         logger.info("Ingested file '%s'", file_path.name)
-        return files.create({**dict(upload_result), "metadata": metadata})
+        return files.create({**dict(upload_result), "src": None, "metadata": metadata})

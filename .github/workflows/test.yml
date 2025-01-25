@@ -1,5 +1,8 @@
 name: Test
 
+permissions:
+  pull-requests: write
+
 on:
   push:
     branches:
@@ -27,6 +30,10 @@ jobs:
         python-version: ["3.12", "3.13"]
     name: Python ${{ matrix.python-version }}
     steps:
+
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@master
+
       - name: Checkout
         uses: actions/checkout@main
 

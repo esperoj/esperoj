@@ -27,6 +27,10 @@ jobs:
           - name: blacksmith-arm
             arch: aarch64
     steps:
+
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@master
+
       - name: Checkout repository
         uses: actions/checkout@main
 
