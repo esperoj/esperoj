@@ -49,9 +49,12 @@ class SeatableDatabase(Database):
                 if not key.startswith("_"):
                     record_fields[key] = value
                 if key in self.links[table_name]:
-                    record_fields[key] = [
-                        item["row_id"] if isinstance(item, dict) else item for item in record_fields[key]
-                    ]
+                    if isinstance(record_fields[key], list):
+                        record_fields[key] = [
+                            item["row_id"] if isinstance(item, dict) else item for item in record_fields[key]
+                        ]
+                    else:
+                        record_fields[key] = []
             records.append(model_class(**record_fields))
         return records
 

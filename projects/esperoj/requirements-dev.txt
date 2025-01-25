@@ -164,7 +164,7 @@ ruff==0.6.4
     # via esperoj (pyproject.toml)
 s3transfer==0.10.2
     # via boto3
-seatable-api==2.8.1
+seatable-api==2.8.2
     # via esperoj (pyproject.toml)
 six==1.16.0
     # via
