@@ -12,19 +12,15 @@ upload = get_util("upload")
 download = get_util("download")
 
 
+def is_needed_to_process(file: File) -> bool:
+    return any(len(mirror_info["sources"]) == 0 for mirror_info in file.mirrors.values())
+
+
 def replicate(limit: int = 16) -> list[Record]:
     db = get_database("primary")
     files_table = db.get_table("files")
     files = files_table.query()
-    files_to_process = []
-    for file in files:
-        need_to_process = False
-        for mirror_info in file.mirrors.values():
-            if len(mirror_info["sources"]) == 0:
-                need_to_process = True
-        if need_to_process:
-            files_to_process.append(file)
-    files_to_process = files_to_process[:limit]
+    files_to_process = list(filter(is_needed_to_process, files))[:limit]
 
     def replicate_file(file) -> File:
         try:
