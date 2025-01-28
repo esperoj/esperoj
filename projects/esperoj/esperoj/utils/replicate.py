@@ -27,7 +27,6 @@ def replicate(limit: int = 16) -> list[Record]:
     files_to_process = files_to_process[:limit]
 
     def replicate_file(file) -> File:
-        new_mirrors = file.mirrors
         try:
             with TemporaryDirectory() as tmpdirname:
                 dest = Path(tmpdirname) / file.name
@@ -43,13 +42,13 @@ def replicate(limit: int = 16) -> list[Record]:
                 upload_info = {**dict(file), "src": dest}
                 upload_info["mirrors"] = mirrors_to_upload
                 upload_result = upload([upload_info])[0]
-                new_mirrors = {**file.mirrors, **upload_result.mirrors}
+                file.mirrors = {**file.mirrors, **upload_result.mirrors}
         except Exception as e:
             logger.error("An error occured when replicating file '%s'.", file.name)
             logger.error("Exception :: ", e)
-        return file.model_copy(update={"mirrors": new_mirrors}, deep=True)
+        return file
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {executor.submit(replicate_file, file): file for file in files_to_process}
         new_files = [future.result() for future in as_completed(futures)]
         if len(new_files) == 0:
