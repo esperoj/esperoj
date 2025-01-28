@@ -1,3 +1,4 @@
+import random
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -19,8 +20,9 @@ def verify(files: list[File]) -> list[bool]:
         name = file.name
         start_time = time.time()
         logger.info("Started to verify file '%s'.", name)
-
-        for mirror_name, mirror_info in file.mirrors.items():
+        mirrors_items = list(file.mirrors.items())
+        random.shuffle(mirrors_items)
+        for mirror_name, mirror_info in mirrors_items:
             if not result:
                 break
             for source in mirror_info["sources"]:
