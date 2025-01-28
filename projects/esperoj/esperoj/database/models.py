@@ -57,7 +57,7 @@ class File(Record):
     albums: list[ID] | None = None
     modified: str | None = None
     created: str | None = None
-    metadata: Annotated[dict[Any, Any], *JsonFieldConfig]
+    metadata: Annotated[dict[Any, Any], *JsonFieldConfig] | None = None
     verified: bool | None = False
 
 

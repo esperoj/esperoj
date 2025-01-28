@@ -33,5 +33,5 @@ class LocalFileHost(FileHost):
         shutil.copy2(file_path, destination)
         return str(destination)
 
-    def close(self) -> None:
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         pass

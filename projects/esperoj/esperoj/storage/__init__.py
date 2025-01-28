@@ -77,6 +77,11 @@ def create_file_host(config) -> FileHost:
             from esperoj.storage.local_file_host import LocalFileHost
 
             return LocalFileHost(config)
+        case "qu_ax":
+            from esperoj.storage.qu_ax import QuAx
+
+            return QuAx(config)
+
     raise ValueError(f"Unknown file host type: {file_host_type}")
 
 

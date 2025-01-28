@@ -1,5 +1,4 @@
 import time
-from collections.abc import Iterator
 from os import getenv
 from pathlib import Path
 from typing import Any
@@ -14,10 +13,10 @@ from esperoj.storage.file_host import FileHost
 class InternetArchive(FileHost):
     def __init__(self, config: dict[Any, Any]):
         super().__init__(config)
-        self.proxy = getenv("ESPEROJ_WORKER_PROXY", "https://proxy.esperoj.workers.dev/")
-        self.max_file_size = 2 * 2**30
         mounts = {"all://": LimiterTransport(per_second=5), "all://*archive.org": LimiterTransport(per_minute=15)}
+        self.max_file_size = 2 * 2**30
         self.client = Client(http2=True, mounts=mounts, timeout=Timeout(120.0))
+        self.transfer_host = getenv("TRANSFER_HOST", "transfer.sh")
 
     def _archive_url(self, url: str) -> str:
         api_key = self.config.get("access_key")
@@ -73,25 +72,11 @@ class InternetArchive(FileHost):
 
     def _upload_to_temporary_host(self, src: str) -> str:
         src_path = Path(src)
-        upload_url = f"https://transfer.adminforge.de/{src_path.name}"
+        upload_url = f"https://{self.transfer_host}/{src_path.name}"
         with src_path.open("rb") as file:
             response = self.client.put(upload_url, content=file)
             response.raise_for_status()
-            return f'https://transfer.adminforge.de/{"get" + urlparse(response.text).path}'
-
-    def close(self) -> None:
-        self.client.close()
-
-    def size(self, src: str) -> int:
-        response = self.client.head(self.proxy + src)
-        response.raise_for_status()
-        return int(response.headers.get("Content-Length", 0))
-
-    def stream(self, src: str, chunk_size: int = 64 * 2**10) -> Iterator[bytes]:
-        headers = {"User-Agent": "esperoj cli"}
-        with self.client.stream("GET", self.proxy + src, headers=headers) as response:
-            response.raise_for_status()
-            yield from response.iter_bytes(chunk_size=chunk_size)
+            return f'https://{self.transfer_host}/{"get" + urlparse(response.text).path}'
 
     def upload(self, src: str) -> str:
         url = self._upload_to_temporary_host(src)
