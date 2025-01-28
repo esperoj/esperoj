@@ -7,19 +7,19 @@ from httpx_ratelimiter import LimiterTransport
 from esperoj.storage.file_host import FileHost
 
 
-class Catbox(FileHost):
+class QuAx(FileHost):
     def __init__(self, config: dict[Any, Any]):
         super().__init__(config)
-        mounts = {"all://": LimiterTransport(per_second=5), "all://*catbox.moe": LimiterTransport(per_second=8)}
-        self.max_file_size = 200 * 2**20
+        mounts = {"all://": LimiterTransport(per_second=5), "all://*qu.ax": LimiterTransport(per_second=16)}
+        self.max_file_size = 250 * 2**20
         self.client = Client(http2=True, mounts=mounts, timeout=Timeout(60.0))
 
     def upload(self, src: str) -> str:
         file_path = Path(src)
-        url = "https://catbox.moe/user/api.php"
+        url = "https://qu.ax/upload.php"
         with file_path.open("rb") as file:
-            files = {"fileToUpload": file}
-            data = {"reqtype": "fileupload", "userhash": ""}
+            files = {"files[]": file}
+            data = {"expiry": "-1"}
             response = self.client.post(url, files=files, data=data)
             response.raise_for_status()
-            return response.text
+            return response.json()["files"][0]["url"]
