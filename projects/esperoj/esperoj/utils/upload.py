@@ -50,7 +50,7 @@ def upload(upload_info_list: list[dict[str, Any]]) -> Iterable[UploadInfo]:
                         multivolumefile.open(archive_path, mode="wb", volume=block_size) as target_archive,
                         SevenZipFile(target_archive, "w", password=password) as archive,  # type: ignore
                     ):
-                        archive.write(str(src))
+                        archive.write(str(src), arcname=src.name)
                     files = sorted(file for file in tmpdir.glob("*.7z*"))
                     for file in files:
                         f = file.open("rb")

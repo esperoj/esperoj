@@ -67,21 +67,21 @@ def download(download_info_list: list) -> Iterable[tuple[Exception | None, Downl
             password = default_password if encrypted else None
             logger.info("Downloading file '%s' from mirror '%s'", download_info.name, mirror.name)
 
-            with TemporaryDirectory() as tmpdirname, NamedTemporaryFile(dir=tmpdirname, delete=False) as tmpfilename:
-                tmpdir = Path(tmpdirname)
-                raw_path = Path(tmpfilename.name)
-                with raw_path.open("wb") as file:
+            def download_to_path(path):
+                with path.open("wb") as file:
                     for source in sources:
                         for chunk in mirror.stream(source["src"]):
                             file.write(chunk)
 
-                file_path = raw_path
-
+            with TemporaryDirectory() as tmpdirname, NamedTemporaryFile(dir=tmpdirname, delete=False) as tmpfilename:
+                tmpdir = Path(tmpdirname)
+                file_path = tmpdir / download_info.name
                 if len(sources) > 1 or encrypted:
-                    with SevenZipFile(str(raw_path), "r", password=password) as archive:
+                    download_to_path(tmpdir / tmpfilename.name)
+                    with SevenZipFile(str(tmpdir / tmpfilename.name), "r", password=password) as archive:
                         archive.extractall(path=str(tmpdir))
-                    file_path = tmpdir / download_info.name
-
+                else:
+                    download_to_path(file_path)
                 with file_path.open("rb") as file:
                     sha256 = calculate_hash(file)
                     if sha256 != download_info.sha256:
@@ -92,14 +92,13 @@ def download(download_info_list: list) -> Iterable[tuple[Exception | None, Downl
                             sha256,
                         )
                         raise VerificationError(file_names=[download_info.name])
-
                 move(file_path, download_info.dest)
             return (None, download_info)
         except Exception as e:
             logger.error("Exception :: ", e)
             return (e, download_info)
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {
             executor.submit(download_file, DownloadInfo(**download_info)): download_info
             for download_info in download_info_list
