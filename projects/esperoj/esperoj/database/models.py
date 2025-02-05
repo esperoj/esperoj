@@ -25,7 +25,7 @@ class MirrorInfo(TypedDict):
 
 class Album(Record):
     title: Annotated[str, Field(min_length=1, max_length=255)]
-    creator: Annotated[str, Field(min_length=1, max_length=255)]
+    creator: Annotated[str, Field(min_length=1, max_length=255)] | None = None
     description: str | None = None
     subjects: list[str] | None = None
     collections: list[str] | None = None
