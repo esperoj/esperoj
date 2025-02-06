@@ -13,9 +13,8 @@ calculate_hash = get_util("calculate_hash")
 download = get_util("download")
 
 
-def verify(files: list[File]) -> list[bool]:
+def verify(files: list[File]) -> list[tuple[File, bool]]:
     def verify_file(file) -> bool:
-        result = True
         name = file.name
         start_time = time.time()
         logger.info("Started to verify file '%s'.", name)
@@ -27,11 +26,11 @@ def verify(files: list[File]) -> list[bool]:
                 download_info = {**dict(file), "mirrors": {mirror_name: mirror_info}, "dest": dest}
                 error = download([download_info])[0][0]
                 if error:
-                    result = False
                     logger.error("Verified failed for file '%s'.", name)
+                    return False
         logger.info("Verified file '%s' in %d seconds.", name, time.time() - start_time)
-        return result
+        return True
 
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {executor.submit(verify_file, file): file for file in files}
-        return [future.result() for future in as_completed(futures)]
+        return [(futures[future], future.result()) for future in as_completed(futures)]
