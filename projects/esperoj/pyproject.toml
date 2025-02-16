@@ -20,6 +20,7 @@ dependencies = [
   "pydantic >=2.9.0",
   "internetarchive >= 5.1.0",
   "httpx-ratelimiter",
+  "nanoid>=2.0.0",
 ]
 
 [project.optional-dependencies]

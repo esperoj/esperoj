@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from functools import partial
 from typing import Annotated, Any
-from uuid import uuid4
 
+from nanoid import generate
 from pydantic import BaseModel, ConfigDict, Field
 
 from esperoj.database.query import Query
@@ -13,7 +13,7 @@ type FieldValue = Any
 type FieldKey = str
 type Fields = dict[FieldKey, FieldValue]
 
-ID = Annotated[str, Field(default_factory=lambda: str(uuid4())[:22], min_length=1, max_length=36)]
+ID = Annotated[str, Field(default_factory=lambda: generate(size=22), min_length=1, max_length=36)]
 
 
 class Record(BaseModel):
