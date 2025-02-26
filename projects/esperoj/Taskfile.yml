@@ -7,9 +7,12 @@ tasks:
     status:
       - test -d .venv
     cmds:
-      - uv venv
+      - |
+        venv="$TMPDIR/esperoj-venv"
+        uv venv "$venv"
+        ln -s "$venv" ./.venv
       - uv pip install -r requirements-{{or .ENV "dev"}}.txt
-      - uv pip install -e .[cli,server]
+      - uv pip install -e ".[cli,server]"
 
   lock:
     cmds:

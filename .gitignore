@@ -47,6 +47,7 @@ node_modules/
 
 # Poetry
 .venv/
+.venv
 dist/
 
 # PyCharm

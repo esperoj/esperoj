@@ -91,6 +91,8 @@ moto==5.0.14
     # via esperoj (pyproject.toml)
 multivolumefile==0.2.3
     # via py7zr
+nanoid==2.0.0
+    # via esperoj (pyproject.toml)
 nodeenv==1.9.1
     # via
     #   pre-commit
