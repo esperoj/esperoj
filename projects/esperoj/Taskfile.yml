@@ -16,6 +16,7 @@ tasks:
 
   lock:
     cmds:
+      - uv cache clean
       - |
         uv pip compile pyproject.toml \
           --extra nuitka \
@@ -60,6 +61,11 @@ tasks:
             ruff format .
             pyright .
         fi
+  update:
+    cmds:
+      - rm requirements-*
+      - task: lock
+
 
   test:
     deps:

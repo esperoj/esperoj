@@ -15,12 +15,12 @@ requires-python = ">=3.11,<4.0"
 dependencies = [
   "boto3>=1.35.10",
   "httpx[http2]>=0.27.2",
-  "seatable-api>=2.8.2",
+  "seatable-api>=3.0.0",
   "py7zr>=0.21.0",
   "pydantic>=2.9.0",
-  "internetarchive>= 5.1.0",
+  "internetarchive>=5.1.0",
   "httpx-ratelimiter",
-  "nanoid>= 2.0.0",
+  "nanoid>=2.0.0",
 ]
 
 [project.optional-dependencies]

@@ -7,7 +7,7 @@ from typing import Any, Self
 DEFAULT_CONFIG = {
     "name": "File Host",
     "probabilities": {"small": 50, "large": 50},
-    "proxy": getenv("ESPEROJ_WORKER_PROXY", "https://proxy.esperoj.workers.dev/"),
+    "proxy": getenv("ESPEROJ_WORKER_PROXY", "https://proxy.esperoj.workers.dev"),
 }
 
 
@@ -36,7 +36,7 @@ class FileHost(ABC):
 
     def stream(self, src: str, chunk_size: int = 64 * 2**10) -> Iterator[bytes]:
         headers = {"User-Agent": "Esperoj CLI"}
-        with self.client.stream("GET", self.proxy + src, headers=headers) as response:  # type: ignore
+        with self.client.stream("GET", f"{self.proxy}/{src}", headers=headers) as response:  # type: ignore
             response.raise_for_status()
             yield from response.iter_bytes(chunk_size=chunk_size)
 
