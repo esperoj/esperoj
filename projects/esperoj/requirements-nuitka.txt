@@ -29,7 +29,7 @@ charset-normalizer==3.4.1
     # via requests
 colorama==0.4.6 ; sys_platform == 'win32'
     # via tqdm
-h11==0.14.0
+h11==0.16.0
     # via
     #   httpcore
     #   wsproto
