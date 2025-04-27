@@ -46,7 +46,7 @@ execnet==2.1.1
     # via pytest-xdist
 filelock==3.18.0
     # via virtualenv
-h11==0.14.0
+h11==0.16.0
     # via
     #   httpcore
     #   wsproto
