@@ -12,8 +12,8 @@ setup:
 		python3 -m venv $(TMP_VENV_DIR) && \
 		ln -s $(TMP_VENV_DIR) $(VENV_DIR); \
 	fi
-	@. $(VENV_DIR)/bin/activate && pip install -r requirements-$(ENV).txt
-	@. $(VENV_DIR)/bin/activate && pip install -e ".[cli,server]"
+	# @. $(VENV_DIR)/bin/activate && pip install -r requirements-$(ENV).txt
+	@. $(VENV_DIR)/bin/activate && pip install -e ".[cli,$(ENV)]"
 
 lock:
 	@. $(VENV_DIR)/bin/activate && pip cache purge
