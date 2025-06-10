@@ -106,7 +106,7 @@ python-socketio==5.12.1
     # via seatable-api
 pyzstd==0.16.2
     # via py7zr
-requests==2.32.3
+requests==2.32.4
     # via
     #   internetarchive
     #   seatable-api

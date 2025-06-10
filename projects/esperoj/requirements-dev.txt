@@ -158,7 +158,7 @@ pyyaml==6.0.2
     #   responses
 pyzstd==0.16.2
     # via py7zr
-requests==2.32.3
+requests==2.32.4
     # via
     #   internetarchive
     #   moto
