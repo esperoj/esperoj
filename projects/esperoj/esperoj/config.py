@@ -1,6 +1,7 @@
 import tomllib
 from os import getenv
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from py7zr import SevenZipFile
 
@@ -17,10 +18,9 @@ def get_config(config_file: str = ""):
         )
         if config_path.suffix == ".7z":
             with SevenZipFile(str(config_path), password=getenv("ENCRYPTION_PASSPHRASE")) as seven_zip_file:
-                seven_zip_contents = seven_zip_file.readall()
-                if seven_zip_contents is not None:
-                    for _, bio in seven_zip_contents.items():
-                        config_text = bio.read().decode("utf-8")
+                with TemporaryDirectory() as tmpdirname:
+                    seven_zip_file.extractall(path=tmpdirname)
+                    config_text = (Path(tmpdirname) / seven_zip_file.getnames()[0]).read_text()
         else:
             config_text = config_path.read_text()
         config = tomllib.loads(config_text)

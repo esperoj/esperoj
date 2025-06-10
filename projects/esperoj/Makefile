@@ -7,12 +7,12 @@ TMP_VENV_DIR ?= $(TMPDIR)/esperoj-venv
 REQUIREMENTS_DEV ?= requirements-dev.txt
 REQUIREMENTS_NUITKA ?= requirements-nuitka.txt
 
-setup:
+setup: .venv
+.venv:
 	@if [ ! -d $(VENV_DIR) ]; then \
 		python3 -m venv $(TMP_VENV_DIR) && \
 		ln -s $(TMP_VENV_DIR) $(VENV_DIR); \
 	fi
-	# @. $(VENV_DIR)/bin/activate && pip install -r requirements-$(ENV).txt
 	@. $(VENV_DIR)/bin/activate && pip install -e ".[cli,$(ENV)]"
 
 lock:

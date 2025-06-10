@@ -70,7 +70,7 @@ source = ["esperoj"]
 plugins = [
   "pydantic.mypy"
 ]
-python_version="3.12"
+python_version="3.11"
 follow_imports = "silent"
 warn_redundant_casts = true
 warn_unused_ignores = true
@@ -87,7 +87,7 @@ init_typed = true
 warn_required_dynamic_aliases = true
 
 [tool.pyright]
-pythonVersion = "3.12"
+pythonVersion = "3.11"
 # typeCheckingMode = "standard"
 include = ["esperoj"]
 exclude = ["**/node_modules",

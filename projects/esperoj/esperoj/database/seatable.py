@@ -191,7 +191,7 @@ class SeatableDatabase(Database):
             list[Record]: A list of Record instances representing the retrieved records.
         """
         # TODO: This line risks sql injection. Find alternatives.
-        query = f"""SELECT * from `{table_name}` WHERE `_id` IN ({','.join([f"'{record_id}'" for record_id in record_ids])}) LIMIT 10000"""
+        query = f"""SELECT * from `{table_name}` WHERE `_id` IN ({",".join([f"'{record_id}'" for record_id in record_ids])}) LIMIT 10000"""
         return self._seatable_record_to_record(table_name, self.client.query(query))
 
     def batch_update(self, table_name: str, fields_list: list[Fields]) -> list[Record]:

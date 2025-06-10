@@ -9,10 +9,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from esperoj.database.query import Query
 
-type FieldValue = Any
-type FieldKey = str
-type Fields = dict[FieldKey, FieldValue]
+# type FieldValue = Any
+# type FieldKey = str
+# type Fields = dict[FieldKey, FieldValue]
 
+FieldValue = Any
+FieldKey = str
+Fields = dict[FieldKey, FieldValue]
 ID = Annotated[str, Field(default_factory=lambda: generate(size=22), min_length=1, max_length=36)]
 
 

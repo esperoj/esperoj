@@ -58,7 +58,7 @@ class InternetArchive(FileHost):
                     case "pending":
                         time.sleep(16)
                     case "success":
-                        return f'https://web.archive.org/web/{status["timestamp"]}/{status["original_url"]}'
+                        return f"https://web.archive.org/web/{status['timestamp']}/{status['original_url']}"
                     case _:
                         raise RuntimeError(
                             f"Error: Unexpected status {status['status']} with message {status.get('message', '')}"
@@ -76,7 +76,7 @@ class InternetArchive(FileHost):
         with src_path.open("rb") as file:
             response = self.client.put(upload_url, content=file)
             response.raise_for_status()
-            return f'https://{self.transfer_host}/{"get" + urlparse(response.text).path}'
+            return f"https://{self.transfer_host}/{'get' + urlparse(response.text).path}"
 
     def upload(self, src: str) -> str:
         url = self._upload_to_temporary_host(src)

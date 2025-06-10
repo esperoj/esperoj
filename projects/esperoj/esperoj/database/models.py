@@ -1,7 +1,8 @@
 import json
-from typing import Annotated, Any, TypedDict
+from typing import Annotated, Any  # , TypedDict
 
 from pydantic import BeforeValidator, Field, PlainSerializer
+from typing_extensions import TypedDict
 
 from esperoj.database.database import ID, Record
 
