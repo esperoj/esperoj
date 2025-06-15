@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from esperoj.database.models import MirrorInfo
 from esperoj.exceptions import VerificationError
-from esperoj.logging import get_logger
+from esperoj.log import get_logger
 from esperoj.storage import FileHost, Storage, get_mirror
 from esperoj.utils import get_util
 

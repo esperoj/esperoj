@@ -117,7 +117,7 @@ lint.select = [
   "ERA", # eradicate
   "EXE", # flake8-executable
   "F", # pyflakes
-  "G", # flake8-logging-format
+  "G", # flake8-log-format
   "I", # isort
   "ICN", # flake8-import-conventions
   "ISC", # flake8-implicit-str-concat
@@ -163,7 +163,7 @@ lint.ignore = [
   "S607", # Starting a process with a partial executable path
   "C901", # `function` is too complex
   "BLE001", # Do not catch blind exception: `Exception`
-  "PLE1205", # Too many arguments for `logging` format string 
+  "PLE1205", # Too many arguments for `log` format string 
 ]
 
 line-length = 120

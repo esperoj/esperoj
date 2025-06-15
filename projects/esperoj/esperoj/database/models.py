@@ -52,6 +52,7 @@ class Song(Record):
     language: str | None = None
     composer: str | None = None
 
+
 class File(Record):
     name: Annotated[str, Field(min_length=1, max_length=255)]
     sha256: Annotated[str, Field(min_length=64, max_length=64)]

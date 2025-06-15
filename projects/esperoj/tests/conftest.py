@@ -1,13 +1,13 @@
 """Fixtures for testing."""
 
 import json
-import logging
 import os
 from pathlib import Path
 
 import pytest
 from moto import mock_aws
 
+import log
 from esperoj.config import getConfig
 from esperoj.database import createDatabase
 from esperoj.esperoj import Esperoj
@@ -71,10 +71,10 @@ def local_file_host(config, tmp_path):
 
 @pytest.fixture
 def logger(scope="session"):
-    logger = logging.getLogger("tests")
-    logger.setLevel(logging.INFO)
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logger = log.getLogger("tests")
+    logger.setLevel(log.INFO)
+    handler = log.StreamHandler()
+    formatter = log.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     return logger

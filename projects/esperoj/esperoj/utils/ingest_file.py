@@ -4,7 +4,7 @@ from pathlib import Path
 
 from esperoj.database import get_database
 from esperoj.database.models import File
-from esperoj.logging import get_logger
+from esperoj.log import get_logger
 from esperoj.utils import get_util
 
 logger = get_logger(__name__)

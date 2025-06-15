@@ -10,7 +10,7 @@ from py7zr import SevenZipFile
 from pydantic import BaseModel, Field
 
 from esperoj.database.models import MirrorInfo, SourceInfo
-from esperoj.logging import get_logger
+from esperoj.log import get_logger
 from esperoj.storage import FileHost, Storage, get_mirror
 from esperoj.utils import get_util
 

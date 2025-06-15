@@ -4,7 +4,7 @@ from typing import Literal
 
 import httpx
 
-from esperoj.logging import get_logger
+from esperoj.log import get_logger
 
 logger = get_logger(__name__)
 
