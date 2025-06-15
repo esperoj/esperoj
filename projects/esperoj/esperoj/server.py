@@ -20,7 +20,7 @@ def run():
 
     import uvicorn
 
-    port = int(os.environ.get("PORT", 20711))
+    port = int(os.environ.get("PORT", "20711"))
     uvicorn.run(app, host="localhost", port=port, reload=False)
 
 

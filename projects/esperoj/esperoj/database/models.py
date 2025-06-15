@@ -37,9 +37,9 @@ class Album(Record):
     created: str | None = None
 
 
-class Music(Record):
+class Song(Record):
     title: Annotated[str, Field(min_length=1, max_length=255)]
-    creator: Annotated[str, Field(min_length=1, max_length=255)]
+    artist: Annotated[str, Field(min_length=1, max_length=255)]
     subjects: list[str] | None = None
     collections: list[str] | None = None
     description: str | None = None
@@ -47,7 +47,10 @@ class Music(Record):
     modified: str | None = None
     created: str | None = None
     date: str | None = None
-
+    www: str | None = None
+    album: str | None = None
+    language: str | None = None
+    composer: str | None = None
 
 class File(Record):
     name: Annotated[str, Field(min_length=1, max_length=255)]
@@ -62,4 +65,4 @@ class File(Record):
     verified: bool | None = False
 
 
-table_models = {"albums": Album, "musics": Music, "files": File}
+table_models = {"albums": Album, "songs": Song, "files": File}

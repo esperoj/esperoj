@@ -9,10 +9,6 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from esperoj.database.query import Query
 
-# type FieldValue = Any
-# type FieldKey = str
-# type Fields = dict[FieldKey, FieldValue]
-
 FieldValue = Any
 FieldKey = str
 Fields = dict[FieldKey, FieldValue]

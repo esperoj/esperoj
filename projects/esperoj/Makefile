@@ -1,5 +1,3 @@
-.PHONY: setup lock nuitka lint update test dev-server start release
-
 # Define variables
 ENV ?= dev
 VENV_DIR ?= .venv
@@ -7,8 +5,8 @@ TMP_VENV_DIR ?= $(TMPDIR)/esperoj-venv
 REQUIREMENTS_DEV ?= requirements-dev.txt
 REQUIREMENTS_NUITKA ?= requirements-nuitka.txt
 
-setup: .venv
-.venv:
+setup: $(VENV_DIR)
+$(VENV_DIR):
 	@if [ ! -d $(VENV_DIR) ]; then \
 		python3 -m venv $(TMP_VENV_DIR) && \
 		ln -s $(TMP_VENV_DIR) $(VENV_DIR); \
@@ -26,7 +24,7 @@ nuitka: setup
 	@. $(VENV_DIR)/bin/activate && nuitka --static-libpython=yes --standalone --onefile --output-dir="build" __main__.py
 
 lint: setup
-	@. $(VENV_DIR)/bin/activate && pre-commit run --all-files --color always
+	@pre-commit run --all-files --color always
 	@. $(VENV_DIR)/bin/activate && pyright
 	@if [ -d "$${ESPEROJ_SCRIPTS_FOLDER}" ]; then \
 		cd "$${ESPEROJ_SCRIPTS_FOLDER}"; \
