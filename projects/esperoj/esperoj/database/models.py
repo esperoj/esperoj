@@ -39,7 +39,7 @@ class Album(Record):
 
 class Song(Record):
     title: Annotated[str, Field(min_length=1, max_length=255)]
-    artist: Annotated[str, Field(min_length=1, max_length=255)]
+    artists: list[str] | None = None
     subjects: list[str] | None = None
     collections: list[str] | None = None
     description: str | None = None
@@ -50,7 +50,7 @@ class Song(Record):
     www: str | None = None
     album: str | None = None
     language: str | None = None
-    composer: str | None = None
+    composers: list[str] | None = None
 
 
 class File(Record):
