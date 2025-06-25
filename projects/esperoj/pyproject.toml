@@ -9,7 +9,7 @@ authors = [
 description = "This is my personal package used to automate the boring stuffs."
 license = {text = "GPLv3"}
 name = "esperoj"
-version = "0.18.1"
+version = "0.19.0"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
@@ -211,6 +211,3 @@ known-first-party = ["esperoj"]
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 88
-
-[tool.uv.sources]
-httpx-ratelimiter = { git = "https://github.com/nhlong2/httpx_ratelimiter.git", rev = "main" }

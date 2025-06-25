@@ -16,7 +16,7 @@ files = get_database("primary").get_table("files")
 def ingest_file(file_path: Path, mirrors: list[str]) -> File:
     logger.info("Started to ingest file '%s'", file_path.name)
     metadata = json.loads(
-        subprocess.run(["exiftool", "-j", str(file_path)], check=True, capture_output=True, text=True).stdout
+        subprocess.run(["exiftool", "-j", str(file_path)], check=True, capture_output=True, encoding='utf-8').stdout
     )[0]
 
     with file_path.open("rb") as file:
