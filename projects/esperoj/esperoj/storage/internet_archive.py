@@ -5,7 +5,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 from httpx import Client, HTTPStatusError, Timeout
-from httpx_ratelimiter import LimiterTransport
 
 from esperoj.storage.file_host import FileHost
 
@@ -13,9 +12,8 @@ from esperoj.storage.file_host import FileHost
 class InternetArchive(FileHost):
     def __init__(self, config: dict[Any, Any]):
         super().__init__(config)
-        mounts = {"all://": LimiterTransport(per_second=5), "all://*archive.org": LimiterTransport(per_minute=15)}
         self.max_file_size = 2 * 2**30
-        self.client = Client(http2=True, mounts=mounts, timeout=Timeout(120.0))
+        self.client = Client(http2=True, timeout=Timeout(120.0))
         self.transfer_host = getenv("TRANSFER_HOST", "transfer.sh")
 
     def _archive_url(self, url: str) -> str:

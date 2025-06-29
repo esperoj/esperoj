@@ -9,17 +9,16 @@ authors = [
 description = "This is my personal package used to automate the boring stuffs."
 license = {text = "GPLv3"}
 name = "esperoj"
-version = "0.19.0"
+version = "0.19.1"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
-  "boto3>=1.35.10",
-  "httpx[http2]>=0.27.2",
+  "boto3",
+  "httpx[http2]",
   "seatable-api>=3.0.0",
   "py7zr>=0.21.0",
   "pydantic>=2.9.0",
-  "internetarchive>=5.1.0",
-  "httpx-ratelimiter",
+  "internetarchive",
   "nanoid>=2.0.0",
 ]
 

@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any
 
 from httpx import Client, Timeout
-from httpx_ratelimiter import LimiterTransport
 
 from esperoj.storage.file_host import FileHost
 
@@ -10,9 +9,8 @@ from esperoj.storage.file_host import FileHost
 class QuAx(FileHost):
     def __init__(self, config: dict[Any, Any]):
         super().__init__(config)
-        mounts = {"all://": LimiterTransport(per_second=5), "all://*qu.ax": LimiterTransport(per_second=16)}
         self.max_file_size = 250 * 2**20
-        self.client = Client(http2=True, mounts=mounts, timeout=Timeout(60.0))
+        self.client = Client(http2=True, timeout=Timeout(60.0))
 
     def upload(self, src: str) -> str:
         file_path = Path(src)
