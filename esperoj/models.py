@@ -14,7 +14,7 @@ class Item(models.Model):
     history = HistoricalRecords()
 
     def __str__(self):
-        return f"Item {self.pk}"
+        return f"{self.title} - {self.authors[0]}"
 
 
 # ----------
