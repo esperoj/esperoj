@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Item, File, StorageLocation, FileStorage, Song
+import simple_history.admin
 
 # Inline for File inside Item
 class FileInline(admin.TabularInline):
@@ -13,7 +14,7 @@ class FileStorageInline(admin.TabularInline):
     show_change_link = True  # adds link to file detail page
 
 @admin.register(Item)
-class ItemAdmin(admin.ModelAdmin):
+class ItemAdmin(simple_history.admin.SimpleHistoryAdmin):
     inlines = [FileInline]
     list_display = ('title', 'id', 'created_at', 'updated_at')
     search_fields = ('title',)
@@ -38,7 +39,7 @@ class FileStorageAdmin(admin.ModelAdmin):
     autocomplete_fields = ['file']
 
 @admin.register(Song)
-class SongAdmin(admin.ModelAdmin):
+class SongAdmin(simple_history.admin.SimpleHistoryAdmin):
     # Song inherits from Item, so re-use the Item inline setup
     inlines = [FileInline]
     list_display = ('title', 'id', 'created_at', 'updated_at')
