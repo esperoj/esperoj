@@ -1,46 +1,134 @@
+from django import forms
 from django.contrib import admin
-from .models import Item, File, StorageLocation, FileStorage, Song
-import simple_history.admin
+from django.utils.html import format_html
+from simple_history.admin import SimpleHistoryAdmin
+from .models import Creator, Subject, Collection, File, FileStorage, Item, Song, Book
 
-# Inline for File inside Item
-class FileInline(admin.TabularInline):
-    model = File
-    extra = 1
-    show_change_link = True  # adds link to file detail page
+LANG_CHOICES = [
+    ("en", "English"),
+    ("vi", "Vietnamese"),
+    ("ja", "Japanese"),
+    ("fr", "French"),
+    ("es", "Spanish"),
+    ("de", "German"),
+    ("zh", "Chinese"),
+]
+
+class CreatorAdmin(SimpleHistoryAdmin):
+    search_fields = ("name",)
+    list_display = ("name", "created_at", "updated_at")
+    ordering = ("name",)
+
+class SubjectAdmin(SimpleHistoryAdmin):
+    search_fields = ("name",)
+    list_display = ("name", "created_at", "updated_at")
+    ordering = ("name",)
+
+class CollectionAdmin(SimpleHistoryAdmin):
+    search_fields = ("name",)
+    list_display = ("name", "created_at", "updated_at")
+    ordering = ("name",)
 
 class FileStorageInline(admin.TabularInline):
     model = FileStorage
-    extra = 1
-    show_change_link = True  # adds link to file detail page
+    fk_name = "file"
+    extra = 0
+    fields = ("storage_name", "path", "is_primary", "sha1", "sha256", "updated_at")
+    readonly_fields = ("updated_at",)
+    show_change_link = True
 
-@admin.register(Item)
-class ItemAdmin(simple_history.admin.SimpleHistoryAdmin):
-    inlines = [FileInline]
-    list_display = ('title', 'id', 'created_at', 'updated_at')
-    search_fields = ('title',)
+class FileAdminForm(forms.ModelForm):
+    class Meta:
+        model = File
+        fields = "__all__"
 
-@admin.register(File)
-class FileAdmin(admin.ModelAdmin):
-    list_display = ('name', 'item', 'size', 'mime_type', 'created_at')
-    search_fields = ('name', 'item__title')
-    autocomplete_fields = ['item']
-    inlines = [FileStorageInline]
+class FileAdmin(SimpleHistoryAdmin):
+    form = FileAdminForm
+    inlines = (FileStorageInline,)
+    list_display = ("name", "size", "mime_type", "linked_song_count", "linked_book_count", "primary_storage_link", "updated_at")
+    search_fields = ("name", "sha1", "sha256", "path")
+    list_filter = ("mime_type",)
+    readonly_fields = ("created_at", "updated_at")
+    ordering = ("name", "-updated_at")
+    fieldsets = (
+        (None, {"fields": ("name", "path", "size", "mime_type")}),
+        ("Hashes", {"fields": ("sha1", "sha256")}),
+        ("Timestamps", {"fields": ("created_at", "updated_at")}),
+    )
+    autocomplete_fields = ()
 
-@admin.register(StorageLocation)
-class StorageLocationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'backend', 'active', 'created_at')
-    search_fields = ('name', 'backend')
+    def primary_storage_link(self, obj):
+        primary = obj.get_primary_storage()
+        if not primary:
+            return "-"
+        url = f"/admin/{primary._meta.app_label}/{primary._meta.model_name}/{primary.pk}/change/"
+        return format_html('<a href="{}">{}: {}</a>', url, primary.storage_name, primary.path)
+    primary_storage_link.short_description = "Primary Storage"
 
-@admin.register(FileStorage)
-class FileStorageAdmin(admin.ModelAdmin):
-    list_display = ('file', 'storage_location', 'stored_path', 'is_primary', 'created_at')
-    search_fields = ('file__name', 'storage_location__name')
-    list_filter = ('is_primary', 'storage_location')
-    autocomplete_fields = ['file']
+    def linked_song_count(self, obj):
+        app = obj._meta.app_label
+        qurl = f"/admin/{app}/song/?files__id__exact={obj.pk}"
+        count = Song.objects.filter(files__id=obj.pk).count()
+        return format_html('<a href="{}">Songs: {}</a>', qurl, count)
+    linked_song_count.short_description = "Songs"
 
-@admin.register(Song)
-class SongAdmin(simple_history.admin.SimpleHistoryAdmin):
-    # Song inherits from Item, so re-use the Item inline setup
-    inlines = [FileInline]
-    list_display = ('title', 'id', 'created_at', 'updated_at')
-    search_fields = ('title',)
+    def linked_book_count(self, obj):
+        app = obj._meta.app_label
+        qurl = f"/admin/{app}/book/?files__id__exact={obj.pk}"
+        count = Book.objects.filter(files__id=obj.pk).count()
+        return format_html('<a href="{}">Books: {}</a>', qurl, count)
+    linked_book_count.short_description = "Books"
+
+class BaseItemForm(forms.ModelForm):
+    languages = forms.MultipleChoiceField(choices=LANG_CHOICES, required=False, widget=forms.SelectMultiple)
+
+    class Meta:
+        model = Item
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        initial = []
+        if self.instance and getattr(self.instance, "languages", None):
+            initial = [str(x).lower() for x in self.instance.languages]
+        self.fields["languages"].initial = initial
+
+    def clean_languages(self):
+        data = self.cleaned_data.get("languages", [])
+        return [str(x).lower() for x in data]
+
+class BaseItemAdmin(SimpleHistoryAdmin):
+    form = BaseItemForm
+    list_display = ("title", "date", "languages_display", "created_at", "updated_at")
+    search_fields = ("title", "creators__name", "subjects__name", "collections__name")
+    list_filter = ("collections", "creators", "subjects", "date")
+    filter_horizontal = ("collections", "creators", "subjects")
+    readonly_fields = ("created_at", "updated_at", "date")
+    ordering = ("-date", "title")
+    fieldsets = (
+        (None, {"fields": ("title",)}),
+        ("Relations", {"fields": ("collections", "creators", "subjects", "files")}),
+        ("Languages & Date", {"fields": ("languages", "year", "month", "day", "date")}),
+        ("Timestamps", {"fields": ("created_at", "updated_at")}),
+    )
+    autocomplete_fields = ("files",)
+
+    def languages_display(self, obj):
+        if not obj.languages:
+            return "-"
+        return ", ".join([str(x).upper() for x in obj.languages])
+    languages_display.short_description = "Languages"
+
+class SongAdmin(BaseItemAdmin):
+    pass
+
+class BookAdmin(BaseItemAdmin):
+    pass
+
+admin.site.register(Creator, CreatorAdmin)
+admin.site.register(Subject, SubjectAdmin)
+admin.site.register(Collection, CollectionAdmin)
+admin.site.register(File, FileAdmin)
+admin.site.register(FileStorage, SimpleHistoryAdmin)
+admin.site.register(Song, SongAdmin)
+admin.site.register(Book, BookAdmin)
