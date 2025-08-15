@@ -1,12 +1,12 @@
 from django.db import models
 from django.db.models import Q, Index, UniqueConstraint, CheckConstraint
+from django.contrib.postgres.indexes import GinIndex
 from django.core.validators import MinValueValidator, MaxValueValidator
 from simple_history.models import HistoricalRecords
 import datetime
 
-
 class Creator(models.Model):
-    name = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -18,10 +18,9 @@ class Creator(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Subject(models.Model):
-    name = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -33,10 +32,9 @@ class Subject(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Collection(models.Model):
-    name = models.CharField(max_length=100, db_index=True)
+    name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -49,14 +47,13 @@ class Collection(models.Model):
     def __str__(self):
         return self.name
 
-
 class File(models.Model):
-    name = models.CharField(max_length=512, db_index=True)
+    name = models.CharField(max_length=512)
     path = models.CharField(max_length=1024)
     size = models.PositiveBigIntegerField(validators=[MinValueValidator(0)])
-    mime_type = models.CharField(max_length=255, blank=True, db_index=True)
-    sha1 = models.CharField(max_length=40, blank=True, db_index=True)
-    sha256 = models.CharField(max_length=64, blank=True, db_index=True)
+    mime_type = models.CharField(max_length=255, blank=True, null=True)
+    sha1 = models.CharField(max_length=40, blank=True, null=True)
+    sha256 = models.CharField(max_length=64, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     history = HistoricalRecords()
@@ -65,9 +62,14 @@ class File(models.Model):
         ordering = ["name", "-created_at"]
         indexes = [
             Index(fields=["name"]),
+            Index(fields=["updated_at"]),
+            Index(fields=["path"]),
             Index(fields=["sha1"]),
             Index(fields=["sha256"]),
-            Index(fields=["updated_at"]),
+        ]
+        constraints = [
+            UniqueConstraint(fields=["sha256"], condition=Q(sha256__isnull=False), name="unique_sha256"),
+            UniqueConstraint(fields=["sha1"], condition=Q(sha1__isnull=False), name="unique_sha1"),
         ]
 
     def get_primary_storage(self):
@@ -79,14 +81,12 @@ class File(models.Model):
     def __str__(self):
         return self.name
 
-
 class ItemQuerySet(models.QuerySet):
     def latest(self):
         return self.order_by("-date", "-updated_at")
 
-
 class Item(models.Model):
-    title = models.CharField(max_length=255, db_index=True)
+    title = models.CharField(max_length=255)
     collections = models.ManyToManyField(Collection, related_name="items", blank=True)
     creators = models.ManyToManyField(Creator, related_name="items", blank=True)
     subjects = models.ManyToManyField(Subject, related_name="items", blank=True)
@@ -99,7 +99,7 @@ class Item(models.Model):
         null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(31)]
     )
     files = models.ManyToManyField(File, related_name="items", blank=True)
-    date = models.DateField(null=True, blank=True, editable=False, db_index=True)
+    date = models.DateField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     history = HistoricalRecords()
@@ -110,8 +110,9 @@ class Item(models.Model):
         ordering = ["-date", "title"]
         indexes = [
             Index(fields=["date"]),
-            Index(fields=["title"]),
+            Index(fields=["title", "date"]),
             Index(fields=["updated_at"]),
+            GinIndex(fields=["languages"]),
         ]
         constraints = [
             CheckConstraint(check=Q(month__isnull=True) | Q(year__isnull=False), name="month_requires_year"),
@@ -134,6 +135,8 @@ class Item(models.Model):
                 raise ValidationError("Invalid day for the given month/year.")
 
     def save(self, *args, **kwargs):
+        if not self.languages:
+            self.languages = ["en"]
         if self.year:
             m = self.month if self.month else 1
             d = self.day if self.day else 1
@@ -146,14 +149,13 @@ class Item(models.Model):
     def __str__(self):
         return self.title
 
-
 class FileStorage(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name="storages")
     storage_name = models.CharField(max_length=100)
     path = models.CharField(max_length=1024)
     is_primary = models.BooleanField(default=False)
-    sha1 = models.CharField(max_length=40, blank=True)
-    sha256 = models.CharField(max_length=64, blank=True)
+    sha1 = models.CharField(max_length=40, blank=True, null=True)
+    sha256 = models.CharField(max_length=64, blank=True, null=True)
     extra = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -162,6 +164,7 @@ class FileStorage(models.Model):
     class Meta:
         ordering = ["-is_primary", "-updated_at"]
         indexes = [
+            Index(fields=["file", "storage_name"]),
             Index(fields=["file", "path"]),
             Index(fields=["storage_name"]),
             Index(fields=["updated_at"]),
@@ -174,7 +177,6 @@ class FileStorage(models.Model):
     def __str__(self):
         return f"{self.file.name} @ {self.storage_name}"
 
-
 class Song(Item):
     history = HistoricalRecords()
 
@@ -182,7 +184,6 @@ class Song(Item):
         proxy = False
         verbose_name = "Song"
         verbose_name_plural = "Songs"
-
 
 class Book(Item):
     history = HistoricalRecords()
