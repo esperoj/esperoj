@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from simple_history.models import HistoricalRecords
 import datetime
 
+
 class Creator(models.Model):
     name = models.CharField(max_length=100, db_index=True)
     description = models.TextField(blank=True)
@@ -17,6 +18,7 @@ class Creator(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Subject(models.Model):
     name = models.CharField(max_length=100, db_index=True)
@@ -32,6 +34,7 @@ class Subject(models.Model):
     def __str__(self):
         return self.name
 
+
 class Collection(models.Model):
     name = models.CharField(max_length=100, db_index=True)
     description = models.TextField(blank=True)
@@ -45,6 +48,7 @@ class Collection(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class File(models.Model):
     name = models.CharField(max_length=512, db_index=True)
@@ -75,9 +79,11 @@ class File(models.Model):
     def __str__(self):
         return self.name
 
+
 class ItemQuerySet(models.QuerySet):
     def latest(self):
         return self.order_by("-date", "-updated_at")
+
 
 class Item(models.Model):
     title = models.CharField(max_length=255, db_index=True)
@@ -86,8 +92,12 @@ class Item(models.Model):
     subjects = models.ManyToManyField(Subject, related_name="items", blank=True)
     languages = models.JSONField(default=list, blank=True)
     year = models.PositiveSmallIntegerField(null=True, blank=True)
-    month = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(12)])
-    day = models.PositiveSmallIntegerField(null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(31)])
+    month = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
+    day = models.PositiveSmallIntegerField(
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(31)]
+    )
     files = models.ManyToManyField(File, related_name="items", blank=True)
     date = models.DateField(null=True, blank=True, editable=False, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -136,6 +146,7 @@ class Item(models.Model):
     def __str__(self):
         return self.title
 
+
 class FileStorage(models.Model):
     file = models.ForeignKey(File, on_delete=models.CASCADE, related_name="storages")
     storage_name = models.CharField(max_length=100)
@@ -162,7 +173,8 @@ class FileStorage(models.Model):
 
     def __str__(self):
         return f"{self.file.name} @ {self.storage_name}"
-    
+
+
 class Song(Item):
     history = HistoricalRecords()
 
@@ -170,6 +182,7 @@ class Song(Item):
         proxy = False
         verbose_name = "Song"
         verbose_name_plural = "Songs"
+
 
 class Book(Item):
     history = HistoricalRecords()

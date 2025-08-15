@@ -14,20 +14,24 @@ LANG_CHOICES = [
     ("zh", "Chinese"),
 ]
 
+
 class CreatorAdmin(SimpleHistoryAdmin):
     search_fields = ("name",)
     list_display = ("name", "created_at", "updated_at")
     ordering = ("name",)
+
 
 class SubjectAdmin(SimpleHistoryAdmin):
     search_fields = ("name",)
     list_display = ("name", "created_at", "updated_at")
     ordering = ("name",)
 
+
 class CollectionAdmin(SimpleHistoryAdmin):
     search_fields = ("name",)
     list_display = ("name", "created_at", "updated_at")
     ordering = ("name",)
+
 
 class FileStorageInline(admin.TabularInline):
     model = FileStorage
@@ -37,15 +41,25 @@ class FileStorageInline(admin.TabularInline):
     readonly_fields = ("updated_at",)
     show_change_link = True
 
+
 class FileAdminForm(forms.ModelForm):
     class Meta:
         model = File
         fields = "__all__"
 
+
 class FileAdmin(SimpleHistoryAdmin):
     form = FileAdminForm
     inlines = (FileStorageInline,)
-    list_display = ("name", "size", "mime_type", "linked_song_count", "linked_book_count", "primary_storage_link", "updated_at")
+    list_display = (
+        "name",
+        "size",
+        "mime_type",
+        "linked_song_count",
+        "linked_book_count",
+        "primary_storage_link",
+        "updated_at",
+    )
     search_fields = ("name", "sha1", "sha256", "path")
     list_filter = ("mime_type",)
     readonly_fields = ("created_at", "updated_at")
@@ -63,6 +77,7 @@ class FileAdmin(SimpleHistoryAdmin):
             return "-"
         url = f"/admin/{primary._meta.app_label}/{primary._meta.model_name}/{primary.pk}/change/"
         return format_html('<a href="{}">{}: {}</a>', url, primary.storage_name, primary.path)
+
     primary_storage_link.short_description = "Primary Storage"
 
     def linked_song_count(self, obj):
@@ -70,6 +85,7 @@ class FileAdmin(SimpleHistoryAdmin):
         qurl = f"/admin/{app}/song/?files__id__exact={obj.pk}"
         count = Song.objects.filter(files__id=obj.pk).count()
         return format_html('<a href="{}">Songs: {}</a>', qurl, count)
+
     linked_song_count.short_description = "Songs"
 
     def linked_book_count(self, obj):
@@ -77,7 +93,9 @@ class FileAdmin(SimpleHistoryAdmin):
         qurl = f"/admin/{app}/book/?files__id__exact={obj.pk}"
         count = Book.objects.filter(files__id=obj.pk).count()
         return format_html('<a href="{}">Books: {}</a>', qurl, count)
+
     linked_book_count.short_description = "Books"
+
 
 class BaseItemForm(forms.ModelForm):
     languages = forms.MultipleChoiceField(choices=LANG_CHOICES, required=False, widget=forms.SelectMultiple)
@@ -96,6 +114,7 @@ class BaseItemForm(forms.ModelForm):
     def clean_languages(self):
         data = self.cleaned_data.get("languages", [])
         return [str(x).lower() for x in data]
+
 
 class BaseItemAdmin(SimpleHistoryAdmin):
     form = BaseItemForm
@@ -117,13 +136,17 @@ class BaseItemAdmin(SimpleHistoryAdmin):
         if not obj.languages:
             return "-"
         return ", ".join([str(x).upper() for x in obj.languages])
+
     languages_display.short_description = "Languages"
+
 
 class SongAdmin(BaseItemAdmin):
     pass
 
+
 class BookAdmin(BaseItemAdmin):
     pass
+
 
 admin.site.register(Creator, CreatorAdmin)
 admin.site.register(Subject, SubjectAdmin)
