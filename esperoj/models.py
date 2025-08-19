@@ -4,6 +4,7 @@ from django.contrib.postgres.indexes import GinIndex
 from django.core.validators import MinValueValidator, MaxValueValidator
 from simple_history.models import HistoricalRecords
 import datetime
+from django.core.exceptions import ValidationError
 
 class Creator(models.Model):
     name = models.CharField(max_length=100)
@@ -99,6 +100,8 @@ class Item(models.Model):
         null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(31)]
     )
     files = models.ManyToManyField(File, related_name="items", blank=True)
+    www = models.URLField(blank=True, null=True)
+
     date = models.DateField(null=True, blank=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -131,7 +134,58 @@ class Item(models.Model):
         if self.day:
             try:
                 datetime.date(self.year, self.month, self.day)
-            except Exception:
+            except ValueError:
+                raise ValidationError("Invalid day for the given month/year.")
+
+    def save(self, *args, **kwargs):
+        if not self.languages:
+            self.languages = ["en"]
+        if self.year:
+            m = self.month if self.month else 1
+            d = self.day if self.day else 1
+            self.date = datetime.date(self.year, m, d)
+        else:
+            self.date = None
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.title
+
+
+    date = models.DateField(null=True, blank=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    objects = ItemQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-date", "title"]
+        indexes = [
+            Index(fields=["date"]),
+            Index(fields=["title", "date"]),
+            Index(fields=["updated_at"]),
+            GinIndex(fields=["languages"]),
+        ]
+        constraints = [
+            CheckConstraint(check=Q(month__isnull=True) | Q(year__isnull=False), name="month_requires_year"),
+            CheckConstraint(check=Q(day__isnull=True) | Q(month__isnull=False), name="day_requires_month"),
+            CheckConstraint(check=Q(month__isnull=True) | (Q(month__gte=1) & Q(month__lte=12)), name="month_range"),
+            CheckConstraint(check=Q(day__isnull=True) | (Q(day__gte=1) & Q(day__lte=31)), name="day_range"),
+        ]
+
+    def clean(self):
+        if self.month and not self.year:
+            raise ValidationError("Month cannot exist without year.")
+        if self.day and not self.month:
+            raise ValidationError("Day cannot exist without month.")
+        if self.month and (self.month < 1 or self.month > 12):
+            raise ValidationError("Month must be between 1 and 12.")
+        if self.day:
+            try:
+                datetime.date(self.year, self.month, self.day)
+            except ValueError:
                 raise ValidationError("Invalid day for the given month/year.")
 
     def save(self, *args, **kwargs):

@@ -71,6 +71,7 @@ class FileAdmin(SimpleHistoryAdmin):
     )
     autocomplete_fields = ()
 
+    @admin.display(description="Primary Storage")
     def primary_storage_link(self, obj):
         primary = obj.get_primary_storage()
         if not primary:
@@ -78,27 +79,36 @@ class FileAdmin(SimpleHistoryAdmin):
         url = f"/admin/{primary._meta.app_label}/{primary._meta.model_name}/{primary.pk}/change/"
         return format_html('<a href="{}">{}: {}</a>', url, primary.storage_name, primary.path)
 
-    primary_storage_link.short_description = "Primary Storage"
-
+    @admin.display(description="Songs")
     def linked_song_count(self, obj):
         app = obj._meta.app_label
         qurl = f"/admin/{app}/song/?files__id__exact={obj.pk}"
         count = Song.objects.filter(files__id=obj.pk).count()
         return format_html('<a href="{}">Songs: {}</a>', qurl, count)
 
-    linked_song_count.short_description = "Songs"
-
+    @admin.display(description="Books")
     def linked_book_count(self, obj):
         app = obj._meta.app_label
         qurl = f"/admin/{app}/book/?files__id__exact={obj.pk}"
         count = Book.objects.filter(files__id=obj.pk).count()
         return format_html('<a href="{}">Books: {}</a>', qurl, count)
 
-    linked_book_count.short_description = "Books"
+
+class LanguageWidget(forms.SelectMultiple):
+    template_name = "admin/widgets/languages.html"
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context["widget"]["choices"] = [
+            {"value": choice[0], "label": choice[1]} for choice in self.choices
+        ]
+        return context
 
 
 class BaseItemForm(forms.ModelForm):
-    languages = forms.MultipleChoiceField(choices=LANG_CHOICES, required=False, widget=forms.SelectMultiple)
+    languages = forms.MultipleChoiceField(
+        choices=LANG_CHOICES, required=False, widget=LanguageWidget
+    )
 
     class Meta:
         model = Item
@@ -118,26 +128,40 @@ class BaseItemForm(forms.ModelForm):
 
 class BaseItemAdmin(SimpleHistoryAdmin):
     form = BaseItemForm
-    list_display = ("title", "date", "languages_display", "created_at", "updated_at")
-    search_fields = ("title", "creators__name", "subjects__name", "collections__name")
+    list_display = ("title", "date", "www", "languages_display", "created_at", "updated_at")
+    search_fields = ("title", "creators__name", "subjects__name", "collections__name", "www")
     list_filter = ("collections", "creators", "subjects", "date")
-    filter_horizontal = ("collections", "creators", "subjects")
     readonly_fields = ("created_at", "updated_at", "date")
     ordering = ("-date", "title")
     fieldsets = (
-        (None, {"fields": ("title",)}),
-        ("Relations", {"fields": ("collections", "creators", "subjects", "files")}),
-        ("Languages & Date", {"fields": ("languages", "year", "month", "day", "date")}),
+        (None, {"fields": (("title", "languages"), "www")}),
+        (
+            "Relations",
+            {
+                "fields": (
+                    ("collections", "creators"),
+                    ("subjects", "files"),
+                )
+            },
+        ),
+        (
+            "Details",
+            {
+                "fields": (
+                    ("year", "month", "day"),
+                    "date",
+                )
+            },
+        ),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
-    autocomplete_fields = ("files",)
+    autocomplete_fields = ("collections", "creators", "subjects", "files")
 
+    @admin.display(description="Languages")
     def languages_display(self, obj):
         if not obj.languages:
             return "-"
         return ", ".join([str(x).upper() for x in obj.languages])
-
-    languages_display.short_description = "Languages"
 
 
 class SongAdmin(BaseItemAdmin):
