@@ -88,6 +88,7 @@ class ItemQuerySet(models.QuerySet):
 
 class Item(models.Model):
     title = models.CharField(max_length=255)
+    identifier = models.SlugField(max_length=255, unique=True, null=False, blank=False)
     collections = models.ManyToManyField(Collection, related_name="items", blank=True)
     creators = models.ManyToManyField(Creator, related_name="items", blank=True)
     subjects = models.ManyToManyField(Subject, related_name="items", blank=True)

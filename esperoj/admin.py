@@ -129,12 +129,13 @@ class BaseItemForm(forms.ModelForm):
 class BaseItemAdmin(SimpleHistoryAdmin):
     form = BaseItemForm
     list_display = ("title", "date", "www", "languages_display", "created_at", "updated_at")
-    search_fields = ("title", "creators__name", "subjects__name", "collections__name", "www")
+    search_fields = ("title", "creators__name", "subjectss__name", "collections__name", "www")
     list_filter = ("collections", "creators", "subjects", "date")
     readonly_fields = ("created_at", "updated_at", "date")
     ordering = ("-date", "title")
+    prepopulated_fields = {"identifier": ("title",)}
     fieldsets = (
-        (None, {"fields": (("title", "languages"), "www")}),
+        (None, {"fields": (("title", "identifier"), "www")}),
         (
             "Relations",
             {
@@ -149,7 +150,7 @@ class BaseItemAdmin(SimpleHistoryAdmin):
             {
                 "fields": (
                     ("year", "month", "day"),
-                    "date",
+                    (("date", "languages"))
                 )
             },
         ),
