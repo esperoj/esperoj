@@ -19,19 +19,20 @@ class CreatorAdmin(SimpleHistoryAdmin):
     search_fields = ("name",)
     list_display = ("name", "created_at", "updated_at")
     ordering = ("name",)
-
+    prepopulated_fields = {"identifier": ("name",)}
 
 class SubjectAdmin(SimpleHistoryAdmin):
     search_fields = ("name",)
     list_display = ("name", "created_at", "updated_at")
     ordering = ("name",)
+    prepopulated_fields = {"identifier": ("name",)}
 
 
 class CollectionAdmin(SimpleHistoryAdmin):
     search_fields = ("name",)
     list_display = ("name", "created_at", "updated_at")
     ordering = ("name",)
-
+    prepopulated_fields = {"identifier": ("name",)}
 
 class FileStorageInline(admin.TabularInline):
     model = FileStorage

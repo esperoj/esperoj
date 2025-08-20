@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 
 class Creator(models.Model):
     name = models.CharField(max_length=100)
+    identifier = models.SlugField(max_length=255, unique=True, null=False, blank=False)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -15,13 +16,14 @@ class Creator(models.Model):
 
     class Meta:
         ordering = ["name"]
-        indexes = [Index(fields=["name"])]
+        indexes = [Index(fields=["name"]), Index(fields=["identifier"]),]
 
     def __str__(self):
         return self.name
 
 class Subject(models.Model):
     name = models.CharField(max_length=100)
+    identifier = models.SlugField(max_length=255, unique=True, null=False, blank=False)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -29,13 +31,14 @@ class Subject(models.Model):
 
     class Meta:
         ordering = ["name"]
-        indexes = [Index(fields=["name"])]
+        indexes = [Index(fields=["name"]), Index(fields=["identifier"]),]
 
     def __str__(self):
         return self.name
 
 class Collection(models.Model):
     name = models.CharField(max_length=100)
+    identifier = models.SlugField(max_length=255, unique=True, null=False, blank=False)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -43,7 +46,7 @@ class Collection(models.Model):
 
     class Meta:
         ordering = ["name"]
-        indexes = [Index(fields=["name"])]
+        indexes = [Index(fields=["name"]), Index(fields=["identifier"]),]
 
     def __str__(self):
         return self.name
@@ -87,7 +90,7 @@ class ItemQuerySet(models.QuerySet):
         return self.order_by("-date", "-updated_at")
 
 class Item(models.Model):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, null=False, blank=False)
     identifier = models.SlugField(max_length=255, unique=True, null=False, blank=False)
     collections = models.ManyToManyField(Collection, related_name="items", blank=True)
     creators = models.ManyToManyField(Creator, related_name="items", blank=True)
@@ -110,10 +113,11 @@ class Item(models.Model):
 
     objects = ItemQuerySet.as_manager()
 
-    class Meta:
+    class Meta: # pyright: ignore[reportRedeclaration]
         ordering = ["-date", "title"]
         indexes = [
             Index(fields=["date"]),
+            Index(fields=["identifier"]),
             Index(fields=["title", "date"]),
             Index(fields=["updated_at"]),
             GinIndex(fields=["languages"]),
@@ -125,7 +129,7 @@ class Item(models.Model):
             CheckConstraint(check=Q(day__isnull=True) | (Q(day__gte=1) & Q(day__lte=31)), name="day_range"),
         ]
 
-    def clean(self):
+    def clean(self): # pyright: ignore[reportRedeclaration]
         if self.month and not self.year:
             raise ValidationError("Month cannot exist without year.")
         if self.day and not self.month:
@@ -138,7 +142,7 @@ class Item(models.Model):
             except ValueError:
                 raise ValidationError("Invalid day for the given month/year.")
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs): # pyright: ignore[reportRedeclaration]
         if not self.languages:
             self.languages = ["en"]
         if self.year:
@@ -150,7 +154,7 @@ class Item(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
-    def __str__(self):
+    def __str__(self): # pyright: ignore[reportRedeclaration]
         return self.title
 
 
