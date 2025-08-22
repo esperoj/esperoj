@@ -2,7 +2,19 @@ from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from simple_history.admin import SimpleHistoryAdmin
-from .models import Creator, Subject, Collection, File, FileStorage, Item, Song, Book
+from .models import (
+    Creator,
+    Subject,
+    Collection,
+    File,
+    Song,
+    Book,
+    LocalStorage,
+    S3Storage,
+    GCSStorage,
+    AzureStorage,
+    OtherStorage,
+)
 
 LANG_CHOICES = [
     ("en", "English"),
