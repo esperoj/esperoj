@@ -40,25 +40,17 @@ class Creator(BaseModel):
     def __str__(self):
         primary_name = self.names.filter(language=settings.LANGUAGE_CODE).first()
         return (
-            primary_name.name
-            if primary_name
-            else (self.names.first().name if self.names.exists() else self.identifier)
+            primary_name.name if primary_name else (self.names.first().name if self.names.exists() else self.identifier)
         )
 
 
 class CreatorName(BaseName):
-    creator = models.ForeignKey(
-        Creator, on_delete=models.CASCADE, related_name="names"
-    )
+    creator = models.ForeignKey(Creator, on_delete=models.CASCADE, related_name="names")
 
     class Meta(BaseName.Meta):
         verbose_name = "Creator Name"
         verbose_name_plural = "Creator Names"
-        constraints = [
-            UniqueConstraint(
-                fields=["creator", "language"], name="unique_name_per_lang_for_creator"
-            )
-        ]
+        constraints = [UniqueConstraint(fields=["creator", "language"], name="unique_name_per_lang_for_creator")]
         db_table = "creator_name"
 
 
@@ -78,9 +70,7 @@ class Artist(BaseModel):
     def __str__(self):
         primary_name = self.names.filter(language=settings.LANGUAGE_CODE).first()
         return (
-            primary_name.name
-            if primary_name
-            else (self.names.first().name if self.names.exists() else self.identifier)
+            primary_name.name if primary_name else (self.names.first().name if self.names.exists() else self.identifier)
         )
 
 
@@ -90,11 +80,7 @@ class ArtistName(BaseName):
     class Meta(BaseName.Meta):
         verbose_name = "Artist Name"
         verbose_name_plural = "Artist Names"
-        constraints = [
-            UniqueConstraint(
-                fields=["artist", "language"], name="unique_name_per_lang_for_artist"
-            )
-        ]
+        constraints = [UniqueConstraint(fields=["artist", "language"], name="unique_name_per_lang_for_artist")]
         db_table = "artist_name"
 
 
@@ -114,9 +100,7 @@ class Author(BaseModel):
     def __str__(self):
         primary_name = self.names.filter(language=settings.LANGUAGE_CODE).first()
         return (
-            primary_name.name
-            if primary_name
-            else (self.names.first().name if self.names.exists() else self.identifier)
+            primary_name.name if primary_name else (self.names.first().name if self.names.exists() else self.identifier)
         )
 
 
@@ -126,11 +110,7 @@ class AuthorName(BaseName):
     class Meta(BaseName.Meta):
         verbose_name = "Author Name"
         verbose_name_plural = "Author Names"
-        constraints = [
-            UniqueConstraint(
-                fields=["author", "language"], name="unique_name_per_lang_for_author"
-            )
-        ]
+        constraints = [UniqueConstraint(fields=["author", "language"], name="unique_name_per_lang_for_author")]
         db_table = "author_name"
 
 
@@ -150,9 +130,7 @@ class Subject(BaseModel):
     def __str__(self):
         primary_name = self.names.filter(language=settings.LANGUAGE_CODE).first()
         return (
-            primary_name.name
-            if primary_name
-            else (self.names.first().name if self.names.exists() else self.identifier)
+            primary_name.name if primary_name else (self.names.first().name if self.names.exists() else self.identifier)
         )
 
 
@@ -162,11 +140,7 @@ class SubjectName(BaseName):
     class Meta(BaseName.Meta):
         verbose_name = "Subject Name"
         verbose_name_plural = "Subject Names"
-        constraints = [
-            UniqueConstraint(
-                fields=["subject", "language"], name="unique_name_per_lang_for_subject"
-            )
-        ]
+        constraints = [UniqueConstraint(fields=["subject", "language"], name="unique_name_per_lang_for_subject")]
         db_table = "subject_name"
 
 
@@ -186,16 +160,12 @@ class Collection(BaseModel):
     def __str__(self):
         primary_name = self.names.filter(language=settings.LANGUAGE_CODE).first()
         return (
-            primary_name.name
-            if primary_name
-            else (self.names.first().name if self.names.exists() else self.identifier)
+            primary_name.name if primary_name else (self.names.first().name if self.names.exists() else self.identifier)
         )
 
 
 class CollectionName(BaseName):
-    collection = models.ForeignKey(
-        Collection, on_delete=models.CASCADE, related_name="names"
-    )
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name="names")
 
     class Meta(BaseName.Meta):
         verbose_name = "Collection Name"

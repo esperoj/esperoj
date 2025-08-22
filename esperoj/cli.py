@@ -1,5 +1,4 @@
 import click
-from esperoj.models import Song  # Django models
 
 
 @click.group()

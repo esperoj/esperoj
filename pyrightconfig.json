@@ -1,0 +1,7 @@
+{
+    "include": ["**/*.py"],
+    "exclude": ["venv", "**/migrations/*.py", "**/*.pyi"],
+    "pythonVersion": "3.11", // Adjust to your Python version
+    "typeCheckingMode": "basic", // Can be "strict" for more rigorous checks
+    "reportMissingStubs": "none" // Suppress warnings for missing stubs if desired
+}

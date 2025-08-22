@@ -1,10 +1,15 @@
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Q, Index, UniqueConstraint
+from django.db.models import Q, UniqueConstraint
+from typing import TYPE_CHECKING
 
 from .base import BaseModel
 from .entities import BaseName
+
+if TYPE_CHECKING:
+    from django.db.models import Manager
+    from .storage import BaseStorage
 
 
 class File(BaseModel):
@@ -13,12 +18,9 @@ class File(BaseModel):
     path = models.CharField(max_length=1024)
     size = models.PositiveBigIntegerField(validators=[MinValueValidator(0)])
     mime_type = models.CharField(max_length=255, blank=True, null=True, default=None)
-    sha1 = models.CharField(
-        max_length=40, blank=True, null=True, default=None, db_index=True
-    )
-    sha256 = models.CharField(
-        max_length=64, blank=True, null=True, default=None, db_index=True
-    )
+    sha1 = models.CharField(max_length=40, blank=True, null=True, default=None, db_index=True)
+    sha256 = models.CharField(max_length=64, blank=True, null=True, default=None, db_index=True)
+    storages: Manager[BaseStorage]
 
     class Meta:
         ordering = ["path"]
@@ -46,11 +48,7 @@ class File(BaseModel):
 
     def __str__(self):
         primary_name = self.names.filter(language=settings.LANGUAGE_CODE).first()
-        return (
-            primary_name.name
-            if primary_name
-            else (self.names.first().name if self.names.exists() else self.path)
-        )
+        return primary_name.name if primary_name else (self.names.first().name if self.names.exists() else self.path)
 
 
 class FileName(BaseName):
@@ -59,9 +57,5 @@ class FileName(BaseName):
     class Meta(BaseName.Meta):
         verbose_name = "File Name"
         verbose_name_plural = "File Names"
-        constraints = [
-            UniqueConstraint(
-                fields=["file", "language"], name="unique_name_per_lang_for_file"
-            )
-        ]
+        constraints = [UniqueConstraint(fields=["file", "language"], name="unique_name_per_lang_for_file")]
         db_table = "file_name"

@@ -9,11 +9,6 @@ from .models import (
     File,
     Song,
     Book,
-    LocalStorage,
-    S3Storage,
-    GCSStorage,
-    AzureStorage,
-    OtherStorage,
 )
 
 LANG_CHOICES = [
@@ -33,6 +28,7 @@ class CreatorAdmin(SimpleHistoryAdmin):
     ordering = ("name",)
     prepopulated_fields = {"identifier": ("name",)}
 
+
 class SubjectAdmin(SimpleHistoryAdmin):
     search_fields = ("name",)
     list_display = ("name", "created_at", "updated_at")
@@ -45,6 +41,7 @@ class CollectionAdmin(SimpleHistoryAdmin):
     list_display = ("name", "created_at", "updated_at")
     ordering = ("name",)
     prepopulated_fields = {"identifier": ("name",)}
+
 
 class FileStorageInline(admin.TabularInline):
     model = FileStorage
@@ -112,16 +109,12 @@ class LanguageWidget(forms.SelectMultiple):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        context["widget"]["choices"] = [
-            {"value": choice[0], "label": choice[1]} for choice in self.choices
-        ]
+        context["widget"]["choices"] = [{"value": choice[0], "label": choice[1]} for choice in self.choices]
         return context
 
 
 class BaseItemForm(forms.ModelForm):
-    languages = forms.MultipleChoiceField(
-        choices=LANG_CHOICES, required=False, widget=LanguageWidget
-    )
+    languages = forms.MultipleChoiceField(choices=LANG_CHOICES, required=False, widget=LanguageWidget)
 
     class Meta:
         model = Item
@@ -160,12 +153,7 @@ class BaseItemAdmin(SimpleHistoryAdmin):
         ),
         (
             "Details",
-            {
-                "fields": (
-                    ("year", "month", "day"),
-                    (("date", "languages"))
-                )
-            },
+            {"fields": (("year", "month", "day"), (("date", "languages")))},
         ),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )

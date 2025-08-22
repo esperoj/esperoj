@@ -1,4 +1,6 @@
-import os, sys, inspect
+import os
+import sys
+import inspect
 import django
 from esperoj.cli import cli_group
 

@@ -119,9 +119,7 @@ class Item(BaseModel):
             try:
                 datetime.date(self.year, self.month, self.day)
             except ValueError:
-                raise ValidationError(
-                    f"Invalid day '{self.day}' for the given month and year."
-                )
+                raise ValidationError(f"Invalid day '{self.day}' for the given month and year.")
 
     def _update_date_field(self):
         """Constructs the 'date' field from year, month, and day."""
