@@ -19,7 +19,8 @@ dependencies = [
   "internetarchive>=5.4.0",
   "fsspec",
   "psycopg2-binary",
-  "requests"
+  "requests",
+  "uuid-utils"
 ]
 
 [project.optional-dependencies]

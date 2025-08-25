@@ -1,6 +1,6 @@
 from .base import BaseModel
 from .entities import (
-    Creator,
+    Person,
     Artist,
     Author,
     Subject,
@@ -24,7 +24,7 @@ from .storage import (
 
 __all__ = [
     "BaseModel",
-    "Creator",
+    "Person",
     "Artist",
     "Author",
     "Subject",

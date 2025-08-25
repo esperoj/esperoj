@@ -123,3 +123,14 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+REPLICA_TYPES = [
+        ('primary', 'Primary Fast Replica'),
+        ('backup', 'Secondary Replica'),
+        ('archive', 'Archive Replica')
+    ]
+STORAGE_CHOICES = [
+        ('fast_ssd_storage', 'Fast SSD'),
+        ('s3_archive_storage', 'S3 Archive'),
+    ]

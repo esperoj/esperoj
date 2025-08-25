@@ -3,17 +3,15 @@ from typing import TYPE_CHECKING
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q, UniqueConstraint
-
+from django.conf import settings
 from .base import BaseModel
 
 if TYPE_CHECKING:
-    from .storage import BaseStorage
     from .items import Item
 
 
 class File(BaseModel):
     """
-
     Represents a digital file's intrinsic metadata and a user-defined name.
     """
     name = models.CharField(
@@ -42,7 +40,7 @@ class File(BaseModel):
     )
 
     # --- Type hints for reverse relationships ---
-    storages: models.Manager["BaseStorage"]
+    replicas: models.Manager["FileReplica"]
     items: models.Manager["Item"]
 
     class Meta:
@@ -60,10 +58,51 @@ class File(BaseModel):
         """Returns the user-defined name as the string representation."""
         return self.name
 
-    def get_primary_storage(self) -> "BaseStorage | None":
-        """Retrieves the primary storage location for this file, if one exists."""
-        return self.storages.filter(is_primary=True).first()
+class FileReplica(BaseModel):
+    """A specific, complete copy of the LogicalFile."""
+    file = models.ForeignKey(File, on_delete=models.CASCADE, related_name='replicas')
+    replica_type = models.CharField(max_length=50, choices=settings.REPLICA_TYPES)
+    storage_name = models.CharField(max_length=50, choices=settings.STORAGE_CHOICES)
 
-    def get_latest_storage(self) -> "BaseStorage | None":
-        """Retrieves the most recently updated storage location for this file."""
-        return self.storages.order_by("-updated_at").first()
+    class Meta:
+        db_table = "file_replica"
+
+    def __str__(self):
+        return f"{self.file.name} ({self.replica_type})"
+
+class FileBlock(BaseModel):
+    """An individual chunk of a specific FileReplica."""
+
+    replica = models.ForeignKey(FileReplica, on_delete=models.CASCADE, related_name='blocks')
+    block_order = models.PositiveIntegerField()
+    file_path = models.CharField(
+        max_length=1024,
+        help_text="Path for the file.",
+    )
+    size = models.PositiveBigIntegerField(
+        validators=[MinValueValidator(0)],
+        help_text="File size in bytes.",
+    )
+    mime_type = models.CharField(max_length=255, blank=True, null=True, default=None)
+
+    # --- Checksums ---
+    md5 = models.CharField(
+        max_length=32, blank=True, null=True, default=None, db_index=True,
+        help_text="MD5 hash of the file.",
+    )
+    sha1 = models.CharField(
+        max_length=40, blank=True, null=True, default=None, db_index=True,
+        help_text="SHA1 hash of the file.",
+    )
+    sha256 = models.CharField(
+        max_length=64, blank=True, null=True, default=None, db_index=True,
+        help_text="SHA256 hash of the file.",
+    )
+
+    class Meta:
+        unique_together = ('replica', 'block_order')
+        ordering = ['block_order']
+        db_table = "file_block"
+
+    def __str__(self):
+        return f"Block {self.block_order} for {self.replica}"
