@@ -1,178 +1,211 @@
 import datetime
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import Q, Index, CheckConstraint
-from django.contrib.postgres.indexes import GinIndex
+from django.db.models import CheckConstraint, Index, Q
 
 from .base import BaseModel
-from .entities import Artist, Author, Collection, Subject
-from .files import File
+from .entities import Person
 
 
-class LocalizedTitle(BaseModel):
+class ItemType(models.TextChoices):
+    """All objects a person can contribute to are a type of Item."""
+
+    MUSICAL_WORK = "MUSICAL_WORK", "Musical Work"
+    RECORDING = "RECORDING", "Recording"
+    BOOK = "BOOK", "Book"
+
+
+class ContributionRole(models.TextChoices):
+    """A single, unified list of all possible contribution roles."""
+
+    COMPOSER = "COMPOSER", "Composer"
+    LYRICIST = "LYRICIST", "Lyricist"
+    AUTHOR = "AUTHOR", "Author"
+    EDITOR = "EDITOR", "Editor"
+    TRANSLATOR = "TRANSLATOR", "Translator"
+    ARTIST = "ARTIST", "Artist"  # The performer
+    PRODUCER = "PRODUCER", "Producer"
+    ENGINEER = "ENGINEER", "Engineer"
+
+
+class Contribution(BaseModel):
     """
-    A normalized, language-specific title for an Item.
-    An item can have multiple titles in the same language.
+    The single, definitive through model connecting a Person to an Item.
     """
 
-    item = models.ForeignKey("Item", on_delete=models.CASCADE, related_name="titles")
-    language = models.CharField(
-        max_length=10,
-        default=settings.LANGUAGE_CODE,
-        help_text="Language code (e.g., 'en', 'es', 'fr')",
-    )
-    title = models.CharField(max_length=255)
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name="contributions")
+    item = models.ForeignKey("Item", on_delete=models.CASCADE, related_name="contributions")
+    role = models.CharField(max_length=20, choices=ContributionRole.choices)
 
     class Meta:
-        ordering = ["language", "title"]
-        verbose_name = "Localized Title"
-        verbose_name_plural = "Localized Titles"
-        indexes = [Index(fields=["item", "language"])]
-        db_table = "localized_title"
-
-    def __str__(self):
-        return f'"{self.title}" ({self.language})'
-
-
-class WebLink(BaseModel):
-    """A normalized URL associated with an Item."""
-
-    item = models.ForeignKey("Item", on_delete=models.CASCADE, related_name="weblinks")
-    url = models.URLField(max_length=2048, validators=[URLValidator()])
-    description = models.CharField(max_length=255, blank=True, default="")
-
-    class Meta:
-        ordering = ["-created_at"]
-        verbose_name = "Web Link"
-        verbose_name_plural = "Web Links"
-        db_table = "weblink"
-
-    def __str__(self):
-        return self.url
-
-
-class ItemQuerySet(models.QuerySet):
-    def latest(self):
-        return self.order_by("-date", "-updated_at")
+        unique_together = [["person", "item", "role"]]
+        ordering = ["role"]
+        verbose_name = "Contribution"
+        verbose_name_plural = "Contributions"
 
 
 class Item(BaseModel):
-    """An abstract base model for any content item, like a song, book, or video."""
+    """
+    The single, concrete base model for ALL cataloged objects.
+    """
 
     identifier = models.SlugField(max_length=255, unique=True)
-    collections = models.ManyToManyField(Collection, related_name="items", blank=True)
-    subjects = models.ManyToManyField(Subject, related_name="items", blank=True)
-    languages = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="A cached list of language codes from associated titles.",
+    item_type = models.CharField(max_length=20, choices=ItemType.choices, editable=False)
+    people = models.ManyToManyField(Person, through=Contribution, related_name="items", blank=True)
+    # --- Date Fields ---
+    year = models.IntegerField(
+        null=True, blank=True, help_text="Use a negative number for BC years (e.g., -44 for 44 BC)."
     )
-    year = models.PositiveSmallIntegerField(null=True, blank=True, default=None)
     month = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        default=None,
-        validators=[MinValueValidator(1), MaxValueValidator(12)],
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
     day = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        default=None,
-        validators=[MinValueValidator(1), MaxValueValidator(31)],
+        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(31)]
     )
-    files = models.ManyToManyField(File, related_name="items", blank=True)
     date = models.DateField(null=True, blank=True, editable=False)
-
-    objects = ItemQuerySet.as_manager()
 
     class Meta:
         ordering = ["-date"]
-        verbose_name = "Item"
-        verbose_name_plural = "Items"
         indexes = [
             Index(fields=["-date"]),
             Index(fields=["identifier"]),
-            Index(fields=["updated_at"]),
-            GinIndex(fields=["languages"]),
+            Index(fields=["item_type"]),
         ]
         constraints = [
-            CheckConstraint(
-                condition=Q(month__isnull=True) | Q(year__isnull=False),
-                name="month_requires_year",
-            ),
-            CheckConstraint(
-                condition=Q(day__isnull=True) | Q(month__isnull=False),
-                name="day_requires_month",
-            ),
+            CheckConstraint(condition=Q(month__isnull=True) | Q(year__isnull=False), name="month_requires_year"),  # type: ignore
+            CheckConstraint(condition=Q(day__isnull=True) | Q(month__isnull=False), name="day_requires_month"),  # type: ignore
         ]
-        db_table = "item"
-
-    def clean(self):
-        if self.month and not self.year:
-            raise ValidationError("Month cannot be set without a year.")
-        if self.day and not self.month:
-            raise ValidationError("Day cannot be set without a month.")
-        if self.day and self.year and self.month:
-            try:
-                datetime.date(self.year, self.month, self.day)
-            except ValueError:
-                raise ValidationError(f"Invalid day '{self.day}' for the given month and year.")
-
-    def _update_date_field(self):
-        """Constructs the 'date' field from year, month, and day."""
-        if self.year:
-            month = self.month or 1
-            day = self.day or 1
-            self.date = datetime.date(self.year, month, day)
-        else:
-            self.date = None
-
-    def save(self, *args, **kwargs):
-        self._update_date_field()
-        self.full_clean()
-        super().save(*args, **kwargs)
 
     def __str__(self):
-        primary_title = self.titles.filter(language=settings.LANGUAGE_CODE).first()
-        return (
-            primary_title.title
-            if primary_title
-            else (self.titles.first().title if self.titles.exists() else self.identifier)
-        )
+        return self.identifier
 
+    def clean(self):
+        """Validation logic that the database cannot handle, like invalid dates."""
+        super().clean()
+        if self.year and self.month and self.day:
+            try:
+                # This validates that the date is real (e.g., not February 30th)
+                datetime.date(self.year, self.month, self.day)
+            except ValueError as e:
+                raise ValidationError({"day": f"Invalid date: {e}"})
 
-class Song(Item):
-    """A song item, with a specific relationship to Artists."""
-
-    artists = models.ManyToManyField(Artist, related_name="songs", blank=True)
+    def get_people_by_role(self, role: ContributionRole) -> models.QuerySet[Person]:
+        """Helper to get people for a specific role."""
+        return self.people.filter(contributions__role=role, contributions__item=self)
 
     @property
-    def creators(self):
-        """Returns the artists for this song, providing a consistent API with other item types."""
-        return self.artists
+    def creators(self) -> models.QuerySet[Person]:
+        """Subclasses MUST override this to define their creator roles."""
+        raise NotImplementedError(f"{self.__class__.__name__} must implement the 'creators' property.")
+
+    @property
+    def contributors(self) -> models.QuerySet[Person]:
+        """Contributors are all people who are not creators."""
+        creator_pks = self.creators.values_list("pk", flat=True)
+        return self.people.exclude(pk__in=creator_pks)
+
+
+@receiver(pre_save)
+def update_item_date(sender, instance, **kwargs):
+    """
+    Automatically sets the denormalized 'date' field before saving an Item.
+    This signal runs for Item and all its subclasses.
+    """
+    if isinstance(instance, Item):
+        if instance.year and instance.year > 0:
+            # Use 1 for month/day if they are not provided
+            month = instance.month or 1
+            day = instance.day or 1
+            try:
+                instance.date = datetime.date(instance.year, month, day)
+            except ValueError:
+                # Handles cases like month=2, day=30
+                instance.date = None
+        else:
+            # Handles BC years or years where no date should be set
+            instance.date = None
+
+
+class MusicalWork(Item):
+    """An abstract musical composition, modeled as an Item."""
 
     class Meta:
-        verbose_name = "Song"
-        verbose_name_plural = "Songs"
-        db_table = "song"
+        verbose_name = "Musical Work"
+        verbose_name_plural = "Musical Works"
+
+    def save(self, *args, **kwargs):
+        self.item_type = ItemType.MUSICAL_WORK
+        super().save(*args, **kwargs)
+
+    @property
+    def creators(self) -> models.QuerySet[Person]:
+        """For a MusicalWork, creators are Composers and Lyricists."""
+        return self.people.filter(
+            contributions__item=self, contributions__role__in=[ContributionRole.COMPOSER, ContributionRole.LYRICIST]
+        )
+
+    @property
+    def composers(self) -> models.QuerySet[Person]:
+        return self.get_people_by_role(ContributionRole.COMPOSER)
+
+    @property
+    def lyricists(self) -> models.QuerySet[Person]:
+        return self.get_people_by_role(ContributionRole.LYRICIST)
+
+
+class Recording(Item):
+    """A specific recorded performance, modeled as an Item."""
+
+    work = models.ForeignKey(
+        Item, on_delete=models.PROTECT, related_name="recordings", limit_choices_to={"item_type": ItemType.MUSICAL_WORK}
+    )
+
+    class Meta:
+        verbose_name = "Recording"
+        verbose_name_plural = "Recordings"
+
+    def save(self, *args, **kwargs):
+        self.item_type = ItemType.RECORDING
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if self.work and self.work.item_type != ItemType.MUSICAL_WORK:
+            raise ValidationError("A recording can only be linked to a Musical Work.")
+
+    @property
+    def creators(self) -> models.QuerySet[Person]:
+        """For a Recording, the creators are the performing Artists."""
+        return self.get_people_by_role(ContributionRole.ARTIST)
+
+    @property
+    def artists(self):
+        return self.creators
 
 
 class Book(Item):
-    """A book item, with a specific relationship to Authors and ISBN fields."""
+    """A book, modeled as an Item."""
 
-    authors = models.ManyToManyField(Author, related_name="books", blank=True)
-    isbn_10 = models.CharField(max_length=10, null=True, blank=True)
-    isbn_13 = models.CharField(max_length=13, null=True, blank=True)
-
-    @property
-    def creators(self):
-        """Returns the authors for this book, providing a consistent API with other item types."""
-        return self.authors
+    isbn_10 = models.CharField(max_length=10, blank=True)
+    isbn_13 = models.CharField(max_length=13, blank=True)
 
     class Meta:
         verbose_name = "Book"
         verbose_name_plural = "Books"
-        db_table = "book"
+
+    def save(self, *args, **kwargs):
+        self.item_type = ItemType.BOOK
+        super().save(*args, **kwargs)
+
+    @property
+    def creators(self) -> models.QuerySet[Person]:
+        """For a Book, the creators are the Authors."""
+        return self.get_people_by_role(ContributionRole.AUTHOR)
+
+    @property
+    def authors(self):
+        return self.creators

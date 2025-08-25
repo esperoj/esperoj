@@ -3,7 +3,7 @@ from simple_history.models import HistoricalRecords
 
 
 class BaseModel(models.Model):
-    """An abstract base model providing self-updating created_at and updated_at fields."""
+    """An abstract base model."""
 
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     updated_at = models.DateTimeField(auto_now=True, editable=False)

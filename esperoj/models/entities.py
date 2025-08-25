@@ -1,12 +1,13 @@
 from django.conf import settings
 from django.db import models
-from django.db.models import UniqueConstraint, Index, When, Case
+from django.db.models import Index
 from .base import BaseModel
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from django.db.models import Manager
+    from .items import Item
 
 
 class Person(BaseModel):
@@ -70,6 +71,7 @@ class Subject(BaseModel):
     name = models.CharField(max_length=512)
     identifier = models.SlugField(max_length=255, unique=True)
     description = models.TextField(blank=True, default="")
+    items: Manager[Item]
 
     class Meta:
         ordering = ["identifier"]
@@ -91,6 +93,7 @@ class Collection(BaseModel):
     name = models.CharField(max_length=512)
     identifier = models.SlugField(max_length=255, unique=True)
     description = models.TextField(blank=True, default="")
+    items: Manager[Item]
 
     class Meta:
         ordering = ["identifier"]
