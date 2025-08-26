@@ -181,7 +181,10 @@ class Role(BaseModel):
         Person, on_delete=models.CASCADE, related_name="roles", help_text="The person associated with this role."
     )
     item = models.ForeignKey(
-        "esperoj.Item", on_delete=models.CASCADE, related_name="roles", help_text="The item to which this role pertains."
+        "esperoj.Item",
+        on_delete=models.CASCADE,
+        related_name="roles",
+        help_text="The item to which this role pertains.",
     )
     name = models.CharField(
         max_length=50,

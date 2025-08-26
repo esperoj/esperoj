@@ -16,11 +16,12 @@ dependencies = [
   "click",
   "django>=5.2,<5.3",
   "django-simple-history",
+  "django-select2",
   "internetarchive>=5.4.0",
   "fsspec",
   "psycopg2-binary",
   "requests",
-  "uuid-utils"
+  "uuid-utils",
 ]
 
 [project.optional-dependencies]

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "esperoj",
     "simple_history",
+    "django_select2",
 ]
 
 MIDDLEWARE = [

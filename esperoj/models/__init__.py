@@ -1,5 +1,5 @@
 from .base import BaseModel
-from .entities import Collection, Person, Subject, Role
+from .entities import Collection, Person, Subject, Role, ItemRoleName
 from .files import File, FileBlock, FileReplica
 from .items import Book, Item, ItemType, Song
 
@@ -16,4 +16,5 @@ __all__ = [
     "Song",
     "Book",
     "Role",
+    "ItemRoleName",
 ]

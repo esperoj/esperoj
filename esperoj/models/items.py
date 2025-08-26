@@ -43,6 +43,7 @@ class Item(BaseModel):
         identifier: A unique, URL-friendly slug for the item.
         item_type: The type of the item (e.g., Book, Song).
         description: A free-text description of the item.
+        languages: A JSONField storing a list of languages associated with the item.
         people: A many-to-many relationship to all people who contributed.
         files: A reverse many-to-many relationship to associated File objects.
         year: The year of the item's creation or publication.
@@ -63,6 +64,11 @@ class Item(BaseModel):
         help_text="The type of this item, set automatically by the subclass.",
     )
     description = models.TextField(blank=True, null=True, help_text="A free-text description of the item.")
+    languages = models.JSONField(
+        blank=True,
+        default=list,
+        help_text="A list of languages associated with this item (e.g., ['en', 'fr']).",
+    )
 
     # --- Relationships ---
     # Using the Role model from entities.py as the through table
@@ -128,6 +134,10 @@ class Item(BaseModel):
             except ValueError as e:
                 raise ValidationError({"day": f"Invalid date: {e}"})
 
+    def _get_people_display_string(self, queryset: "QuerySet[Person]") -> str:
+        """Helper method to format a queryset of people into a display string."""
+        return ", ".join(person.authorized_name for person in queryset.distinct())
+
     def get_people_by_role(self, role: Union[ItemRoleName, str]) -> "QuerySet[Person]":
         """Returns a queryset of people with a specific role for this item.
 
@@ -147,10 +157,20 @@ class Item(BaseModel):
         raise NotImplementedError(f"{self.__class__.__name__} must implement the 'creators' property.")
 
     @property
+    def display_creators(self) -> str:
+        """Returns a comma-separated string of primary creators."""
+        return self._get_people_display_string(self.creators)
+
+    @property
     def contributors(self) -> "QuerySet[Person]":
         """Returns all people who contributed but are not primary creators."""
         creator_pks = self.creators.values_list("pk", flat=True)
         return self.people.exclude(pk__in=creator_pks)
+
+    @property
+    def display_contributors(self) -> str:
+        """Returns a comma-separated string of secondary contributors."""
+        return self._get_people_display_string(self.contributors)
 
 
 @receiver(pre_save, sender=Item)
@@ -191,9 +211,7 @@ class Song(Item):
     @property
     def creators(self) -> "QuerySet[Person]":
         """For a Song, primary creators are Composers, Lyricists, and Artists."""
-        return self.people.filter(
-            roles__item=self, roles__name__in=[ItemRoleName.COMPOSER, ItemRoleName.LYRICIST, ItemRoleName.ARTIST]
-        )
+        return self.people.filter(roles__item=self, roles__name__in=[ItemRoleName.ARTIST])
 
     @property
     def composers(self) -> "QuerySet[Person]":
@@ -201,14 +219,29 @@ class Song(Item):
         return self.get_people_by_role(ItemRoleName.COMPOSER)
 
     @property
+    def display_composers(self) -> str:
+        """Returns a comma-separated string of composers."""
+        return self._get_people_display_string(self.composers)
+
+    @property
     def lyricists(self) -> "QuerySet[Person]":
         """Returns all people credited as lyricists for this song."""
         return self.get_people_by_role(ItemRoleName.LYRICIST)
 
     @property
+    def display_lyricists(self) -> str:
+        """Returns a comma-separated string of lyricists."""
+        return self._get_people_display_string(self.lyricists)
+
+    @property
     def artists(self) -> "QuerySet[Person]":
         """Returns all performing artists for this song."""
         return self.get_people_by_role(ItemRoleName.ARTIST)
+
+    @property
+    def display_artists(self) -> str:
+        """Returns a comma-separated string of artists."""
+        return self._get_people_display_string(self.artists)
 
 
 class Book(Item):
@@ -244,3 +277,8 @@ class Book(Item):
     def authors(self) -> "QuerySet[Person]":
         """Returns all authors for this book."""
         return self.creators
+
+    @property
+    def display_authors(self) -> str:
+        """Returns a comma-separated string of authors."""
+        return self._get_people_display_string(self.authors)
