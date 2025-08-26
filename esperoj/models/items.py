@@ -1,5 +1,5 @@
 import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -9,72 +9,18 @@ from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
 from .base import BaseModel
-from .entities import Person
+from .entities import Person, Role, ItemRoleName
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
+    from .files import File  # Added for File model type hinting
 
 
 class ItemType(models.TextChoices):
     """Enumeration for the type of a cataloged Item."""
 
-    MUSICAL_WORK = "MUSICAL_WORK", "Musical Work"
-    RECORDING = "RECORDING", "Recording"
+    SONG = "SONG", "Song"
     BOOK = "BOOK", "Book"
-
-
-class ContributionRole(models.TextChoices):
-    """A unified list of all possible roles a Person can have in relation to an Item."""
-
-    # Musical Roles
-    COMPOSER = "COMPOSER", "Composer"
-    LYRICIST = "LYRICIST", "Lyricist"
-    ARTIST = "ARTIST", "Artist"  # The performer of a recording
-    PRODUCER = "PRODUCER", "Producer"
-    ENGINEER = "ENGINEER", "Engineer"
-
-    # Literary Roles
-    AUTHOR = "AUTHOR", "Author"
-    EDITOR = "EDITOR", "Editor"
-    TRANSLATOR = "TRANSLATOR", "Translator"
-
-
-class Contribution(BaseModel):
-    """A through model connecting a Person to an Item with a specific role.
-
-    This model represents a single contribution, defining who did what for a
-    given catalog item.
-
-    Attributes:
-        person: The person who made the contribution.
-        item: The item that the person contributed to.
-        role: The role the person had in the contribution.
-    """
-    person = models.ForeignKey(
-        Person, on_delete=models.CASCADE, related_name="contributions",
-        help_text="The person making the contribution."
-    )
-    item = models.ForeignKey(
-        "Item", on_delete=models.CASCADE, related_name="contributions",
-        help_text="The item being contributed to."
-    )
-    role = models.CharField(
-        max_length=20, choices=ContributionRole.choices,
-        help_text="The role of the person in this contribution."
-    )
-
-    class Meta:
-        db_table = "contribution"
-        unique_together = [["person", "item", "role"]]
-        ordering = ["item", "role"]
-        verbose_name = "Contribution"
-        verbose_name_plural = "Contributions"
-        indexes = [
-            Index(fields=["person", "item", "role"]),
-        ]
-
-    def __str__(self):
-        return f"{self.person} as {self.role} for {self.item}"
 
 
 class ItemManager(models.Manager):
@@ -89,56 +35,64 @@ class Item(BaseModel):
     """The concrete base model for all cataloged objects in the system.
 
     This model uses multi-table inheritance, where each subclass (like Book or
-    Recording) gets its own table with a one-to-one link to this base Item
+    Song) gets its own table with a one-to-one link to this base Item
     table.
 
     Attributes:
         title: The main title or name of the item.
         identifier: A unique, URL-friendly slug for the item.
-        item_type: The type of the item (e.g., Book, Recording).
+        item_type: The type of the item (e.g., Book, Song).
         description: A free-text description of the item.
         people: A many-to-many relationship to all people who contributed.
+        files: A reverse many-to-many relationship to associated File objects.
         year: The year of the item's creation or publication.
         month: The month of the item's creation or publication.
         day: The day of the item's creation or publication.
         date: A denormalized DateField for sorting and filtering.
     """
+
     # --- Core Information ---
-    title = models.CharField(
-        max_length=255, help_text="The main title or name of the item."
-    )
+    title = models.CharField(max_length=255, help_text="The main title or name of the item.")
     identifier = models.SlugField(
-        max_length=255, unique=True, help_text="A unique, URL-friendly slug for the item."
+        max_length=255, unique=True, help_text="A unique, human-readable identifier for this item."
     )
     item_type = models.CharField(
-        max_length=20, choices=ItemType.choices, editable=False,
-        help_text="The type of this item, set automatically by the subclass."
+        max_length=20,
+        choices=ItemType.choices,
+        editable=False,
+        help_text="The type of this item, set automatically by the subclass.",
     )
-    description = models.TextField(
-        blank=True, null=True, help_text="A free-text description of the item."
-    )
+    description = models.TextField(blank=True, null=True, help_text="A free-text description of the item.")
 
     # --- Relationships ---
+    # Using the Role model from entities.py as the through table
     people = models.ManyToManyField(
-        Person, through=Contribution, related_name="items", blank=True,
-        help_text="All people who contributed to this item."
+        Person, through=Role, related_name="items", blank=True, help_text="All people who contributed to this item."
     )
+    # Type hint for the reverse relationship to File objects
+    files: "models.Manager[File]"
 
     # --- Date Fields ---
     year = models.IntegerField(
         null=True, blank=True, help_text="The year of publication or creation. Use a negative number for BC years."
     )
     month = models.PositiveSmallIntegerField(
-        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(12)],
-        help_text="The month of publication or creation (1-12)."
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(12)],
+        help_text="The month of publication or creation (1-12).",
     )
     day = models.PositiveSmallIntegerField(
-        null=True, blank=True, validators=[MinValueValidator(1), MaxValueValidator(31)],
-        help_text="The day of publication or creation (1-31)."
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(31)],
+        help_text="The day of publication or creation (1-31).",
     )
     date = models.DateField(
-        null=True, blank=True, editable=False,
-        help_text="A denormalized date field, automatically set from year, month, and day for sorting."
+        null=True,
+        blank=True,
+        editable=False,
+        help_text="A denormalized date field, automatically set from year, month, and day for sorting.",
     )
 
     # --- Manager ---
@@ -152,17 +106,17 @@ class Item(BaseModel):
         indexes = [
             Index(fields=["-date", "identifier"]),
             Index(fields=["identifier"]),
-            Index(fields=["title"]), # Added index for title
+            Index(fields=["title"]),
             Index(fields=["item_type"]),
         ]
         constraints = [
-            CheckConstraint(condition=Q(month__isnull=True) | Q(year__isnull=False), name="month_requires_year"), # type: ignore
-            CheckConstraint(condition=Q(day__isnull=True) | Q(month__isnull=False), name="day_requires_month"), # type: ignore
+            CheckConstraint(condition=Q(month__isnull=True) | Q(year__isnull=False), name="month_requires_year"),  # type: ignore
+            CheckConstraint(condition=Q(day__isnull=True) | Q(month__isnull=False), name="day_requires_month"),  # type: ignore
         ]
 
     def __str__(self):
         """Returns the item's title."""
-        return self.title # Changed to return title
+        return self.title
 
     def clean(self):
         """Performs model validation that cannot be handled by the database."""
@@ -174,16 +128,21 @@ class Item(BaseModel):
             except ValueError as e:
                 raise ValidationError({"day": f"Invalid date: {e}"})
 
-    def get_people_by_role(self, role: ContributionRole) -> "QuerySet[Person]":
-        """Returns a queryset of people with a specific contribution role."""
-        return self.people.filter(contributions__role=role, contributions__item=self)
+    def get_people_by_role(self, role: Union[ItemRoleName, str]) -> "QuerySet[Person]":
+        """Returns a queryset of people with a specific role for this item.
+
+        The 'roles' lookup refers to the related_name on the ForeignKey 'person'
+        and 'item' in the Role model, allowing filtering through the
+        Many-to-Many relationship.
+        """
+        return self.people.filter(roles__name=role, roles__item=self)
 
     @property
     def creators(self) -> "QuerySet[Person]":
         """Abstract property for primary creators.
 
-        Subclasses MUST override this property to define which contribution
-        roles are considered primary creators for that item type.
+        Subclasses MUST override this property to define which roles
+        are considered primary creators for that item type.
         """
         raise NotImplementedError(f"{self.__class__.__name__} must implement the 'creators' property.")
 
@@ -211,72 +170,45 @@ def update_item_date(sender, instance, **kwargs):
             instance.date = None
 
 
-class MusicalWork(Item):
-    """An abstract musical composition or work.
+class Song(Item):
+    """A musical composition and/or recording.
 
-    This represents the song itself (music and lyrics), distinct from any
-    particular performance or recording of it.
+    This model merges the concepts of a MusicalWork and a Recording into a single
+    entity. It represents both the abstract song (music and lyrics) and its
+    recorded performance.
     """
 
     class Meta:
-        db_table = "musical_work"
-        verbose_name = "Musical Work"
-        verbose_name_plural = "Musical Works"
+        db_table = "song"
+        verbose_name = "Song"
+        verbose_name_plural = "Songs"
 
     def save(self, *args, **kwargs):
         """Sets the item_type before saving."""
-        self.item_type = ItemType.MUSICAL_WORK
+        self.item_type = ItemType.SONG
         super().save(*args, **kwargs)
 
     @property
     def creators(self) -> "QuerySet[Person]":
-        """For a MusicalWork, creators are Composers and Lyricists."""
+        """For a Song, primary creators are Composers, Lyricists, and Artists."""
         return self.people.filter(
-            contributions__item=self,
-            contributions__role__in=[ContributionRole.COMPOSER, ContributionRole.LYRICIST]
+            roles__item=self, roles__name__in=[ItemRoleName.COMPOSER, ItemRoleName.LYRICIST, ItemRoleName.ARTIST]
         )
 
     @property
     def composers(self) -> "QuerySet[Person]":
-        """Returns all people credited as composers for this work."""
-        return self.get_people_by_role(ContributionRole.COMPOSER)
+        """Returns all people credited as composers for this song."""
+        return self.get_people_by_role(ItemRoleName.COMPOSER)
 
     @property
     def lyricists(self) -> "QuerySet[Person]":
-        """Returns all people credited as lyricists for this work."""
-        return self.get_people_by_role(ContributionRole.LYRICIST)
-
-
-class Recording(Item):
-    """A specific recorded performance of a MusicalWork.
-
-    Attributes:
-        work: The MusicalWork that this is a recording of.
-    """
-    work = models.ForeignKey(
-        MusicalWork, on_delete=models.PROTECT, related_name="recordings",
-        help_text="The musical work that was performed in this recording."
-    )
-
-    class Meta:
-        db_table = "recording"
-        verbose_name = "Recording"
-        verbose_name_plural = "Recordings"
-
-    def save(self, *args, **kwargs):
-        """Sets the item_type before saving."""
-        self.item_type = ItemType.RECORDING
-        super().save(*args, **kwargs)
-
-    @property
-    def creators(self) -> "QuerySet[Person]":
-        """For a Recording, the primary creators are the performing Artists."""
-        return self.get_people_by_role(ContributionRole.ARTIST)
+        """Returns all people credited as lyricists for this song."""
+        return self.get_people_by_role(ItemRoleName.LYRICIST)
 
     @property
     def artists(self) -> "QuerySet[Person]":
-        """Returns all performing artists for this recording."""
-        return self.creators
+        """Returns all performing artists for this song."""
+        return self.get_people_by_role(ItemRoleName.ARTIST)
 
 
 class Book(Item):
@@ -287,17 +219,11 @@ class Book(Item):
         isbn_10: The 10-digit International Standard Book Number.
         isbn_13: The 13-digit International Standard Book Number.
     """
+
     # --- Book Details ---
-    subtitle = models.CharField(
-        max_length=255, blank=True, null=True,
-        help_text="The subtitle of the book, if any."
-    )
-    isbn_10 = models.CharField(
-        max_length=10, blank=True, help_text="The 10-digit ISBN."
-    )
-    isbn_13 = models.CharField(
-        max_length=13, blank=True, help_text="The 13-digit ISBN."
-    )
+    subtitle = models.CharField(max_length=255, blank=True, null=True, help_text="The subtitle of the book, if any.")
+    isbn_10 = models.CharField(max_length=10, blank=True, help_text="The 10-digit ISBN.")
+    isbn_13 = models.CharField(max_length=13, blank=True, help_text="The 13-digit ISBN.")
 
     class Meta:
         db_table = "book"
@@ -312,7 +238,7 @@ class Book(Item):
     @property
     def creators(self) -> "QuerySet[Person]":
         """For a Book, the primary creators are the Authors."""
-        return self.get_people_by_role(ContributionRole.AUTHOR)
+        return self.get_people_by_role(ItemRoleName.AUTHOR)
 
     @property
     def authors(self) -> "QuerySet[Person]":

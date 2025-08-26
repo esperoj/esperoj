@@ -1,15 +1,7 @@
 from .base import BaseModel
-from .entities import Collection, Person, Subject
+from .entities import Collection, Person, Subject, Role
 from .files import File, FileBlock, FileReplica
-from .items import (
-    Book,
-    Contribution,
-    ContributionRole,
-    Item,
-    ItemType,
-    MusicalWork,
-    Recording,
-)
+from .items import Book, Item, ItemType, Song
 
 __all__ = [
     "BaseModel",
@@ -21,9 +13,7 @@ __all__ = [
     "FileBlock",
     "Item",
     "ItemType",
-    "Contribution",
-    "ContributionRole",
-    "MusicalWork",
-    "Recording",
+    "Song",
     "Book",
+    "Role",
 ]

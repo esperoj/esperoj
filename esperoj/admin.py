@@ -4,14 +4,14 @@ from simple_history.admin import SimpleHistoryAdmin
 from .models import (
     Book,
     Collection,
-    Contribution,
     File,
     FileBlock,
     FileReplica,
-    MusicalWork,
+    # Item,  # Removed as Item is not directly registered and its Admin is not SimpleHistoryAdmin
     Person,
-    Recording,
+    Song,
     Subject,
+    Role,
 )
 
 
@@ -99,8 +99,8 @@ class FileAdmin(SimpleHistoryAdmin):
     readonly_fields = ("created_at", "updated_at")
     ordering = ("name", "-updated_at")
     fieldsets = (
-        (None, {"fields": ("name", "size", "mime_type")}),
-        ("Hashes", {"fields": ("md5", "sha1", "sha256")}),
+        (None, {"fields": (("name", "path"), "size", "mime_type")}),
+        ("Hashes", {"fields": (("md5", "sha1"), "sha256")}),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
     )
 
@@ -126,25 +126,29 @@ class FileBlockAdmin(SimpleHistoryAdmin):
     autocomplete_fields = ("replica",)
 
 
-class ContributionInline(admin.TabularInline):
-    """Inline for Contributions within Item-related admins."""
+class RoleInline(admin.TabularInline):
+    """Inline for managing Person roles for an Item."""
 
-    model = Contribution
+    model = Role
+    fk_name = "item"  # Explicitly define the foreign key linking Role to Item
     extra = 1
     autocomplete_fields = ("person",)
+    fields = ("person", "name", "created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
 
 
-class ItemAdmin(SimpleHistoryAdmin):
+class ItemAdmin(admin.ModelAdmin):
     """Base admin configuration for models inheriting from Item."""
 
-    inlines = (ContributionInline,)
+    inlines = (RoleInline,)
     list_display = ("title", "identifier", "item_type", "date", "created_at", "updated_at")
     list_filter = ("item_type", "date")
     search_fields = ("title", "identifier", "description", "people__authorized_name")
     readonly_fields = ("created_at", "updated_at", "date")
     ordering = ("-date", "identifier")
+    prepopulated_fields = {"identifier": ("title",)}
     fieldsets = (
-        (None, {"fields": ("title", "identifier", "description")}),
+        (None, {"fields": (("title", "identifier"), "description")}),
         (
             "Date Information",
             {"fields": (("year", "month", "day"), "date")},
@@ -153,36 +157,24 @@ class ItemAdmin(SimpleHistoryAdmin):
     )
 
 
-@admin.register(MusicalWork)
-class MusicalWorkAdmin(ItemAdmin):
-    """Admin configuration for the MusicalWork model."""
+@admin.register(Song)
+class SongAdmin(SimpleHistoryAdmin, ItemAdmin):
+    """Admin configuration for the Song model."""
 
+    # Song does not introduce new fields beyond Item, so inheriting ItemAdmin's
+    # fieldsets and list_display is sufficient. prepopulated_fields are also
+    # inherited from ItemAdmin.
     pass
 
 
-@admin.register(Recording)
-class RecordingAdmin(ItemAdmin):
-    """Admin configuration for the Recording model."""
-
-    fieldsets = (
-        (None, {"fields": ("title", "identifier", "description")}),  # Added 'title'
-        ("Recording Details", {"fields": ("work",)}),
-        (
-            "Date Information",
-            {"fields": (("year", "month", "day"), "date")},
-        ),
-        ("Timestamps", {"fields": ("created_at", "updated_at")}),
-    )
-    autocomplete_fields = ("work",)
-
-
 @admin.register(Book)
-class BookAdmin(ItemAdmin):
+class BookAdmin(SimpleHistoryAdmin, ItemAdmin):
     """Admin configuration for the Book model."""
 
+    # prepopulated_fields are inherited from ItemAdmin
     fieldsets = (
-        (None, {"fields": ("title", "identifier", "description")}),  # Added 'title'
-        ("Book Details", {"fields": ("subtitle", "isbn_10", "isbn_13")}),
+        (None, {"fields": (("title", "identifier"), "description")}),
+        ("Book Details", {"fields": ("subtitle", ("isbn_10", "isbn_13"))}),
         (
             "Date Information",
             {"fields": (("year", "month", "day"), "date")},

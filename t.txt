@@ -1,0 +1,64 @@
+Traceback (most recent call last):
+  File "/home/esperoj/repos/esperoj/./manage.py", line 23, in <module>
+    main()
+    ~~~~^^
+  File "/home/esperoj/repos/esperoj/./manage.py", line 19, in main
+    execute_from_command_line(sys.argv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/core/management/__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+    ~~~~~~~~~~~~~~~^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/core/management/__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/core/management/base.py", line 416, in run_from_argv
+    self.execute(*args, **cmd_options)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/core/management/base.py", line 457, in execute
+    self.check(**check_kwargs)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/core/management/base.py", line 492, in check
+    all_issues = checks.run_checks(
+        app_configs=app_configs,
+    ...<2 lines>...
+        databases=databases,
+    )
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/core/checks/registry.py", line 89, in run_checks
+    new_errors = check(app_configs=app_configs, databases=databases)
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/checks.py", line 52, in check_admin_app
+    errors.extend(site.check(app_configs))
+                  ~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/sites.py", line 90, in check
+    errors.extend(modeladmin.check())
+                  ~~~~~~~~~~~~~~~~^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 151, in check
+    return self.checks_class().check(self, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/checks.py", line 809, in check
+    *self._check_inlines(admin_obj),
+     ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/checks.py", line 846, in _check_inlines
+    return list(
+        chain.from_iterable(
+    ...<2 lines>...
+        )
+    )
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/checks.py", line 848, in <genexpr>
+    self._check_inlines_item(obj, item, "inlines[%d]" % index)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/checks.py", line 889, in _check_inlines_item
+    return inline(obj.model, obj.admin_site).check()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/options.py", line 151, in check
+    return self.checks_class().check(self, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/checks.py", line 1245, in check
+    *self._check_relation(inline_obj, parent_model),
+     ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/contrib/admin/checks.py", line 1286, in _check_relation
+    _get_foreign_key(parent_model, obj.model, fk_name=obj.fk_name)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/esperoj/repos/esperoj/.venv/lib/python3.13/site-packages/django/forms/models.py", line 1253, in _get_foreign_key
+    f.remote_field.model._meta.proxy
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute '_meta'

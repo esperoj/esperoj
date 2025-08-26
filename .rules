@@ -1,14 +1,43 @@
-Please follow those rules:
+Please follow these comprehensive guidelines to ensure high-quality, maintainable, and robust code:
 
-- Use explicit db_table in all applicable models in esperoj app.
-- Create index in Meta class for common queries.
-- Use Google style docstring and make sure it will pass the linter test.
-- Use best practices.
-- Separate of concerns to better refactor later on.
-- Add comments like section headers to separate similar fields in large model. Like all relationships in one blocks.
-- Create manager for common query on models.
-- Create common access function for model especially those that has deep nested relationships. For example, prefetch and fetch related fields. I don't want to remember all related fields.
-- Use type hints for related models set.
-- Add help text to all model fields.
-- Add contraint to databases if applicable.
-- Change field type to sensiable max_length.
+- **1. Code Structure & Readability**
+    - Adhere strictly to PEP 8 for consistent code style and formatting.
+    - Maintain a clear separation of concerns across application layers (e.g., models, services, views) to improve modularity, testability, and refactoring efforts.
+    - Organize model fields into logical sections using clear comments (e.g., 'Core Fields', 'Relationship Fields', 'Timestamp Fields') for improved readability, especially in large models.
+    - Write concise functions and methods that adhere to the Single Responsibility Principle.
+
+- **2. Database & ORM Best Practices**
+    - Explicitly define `db_table` for all models in the `esperoj` application to ensure consistent naming and prevent unexpected behavior.
+    - Define appropriate database indexes within the `Meta` class of models for columns frequently used in queries to optimize performance.
+    - Enforce data integrity by adding appropriate database constraints (e.g., `UniqueConstraint`, `CheckConstraint`) where applicable.
+    - Assign appropriate `max_length` values to `CharField` instances, balancing storage efficiency with practical requirements.
+    - Implement custom model managers for encapsulating common query logic, promoting reusability and cleaner code.
+    - Provide helper methods or manager functions for models with deep or frequently accessed relationships to simplify data retrieval (e.g., by automatically using `select_related` or `prefetch_related`) and reduce the need to remember all related fields.
+    - Actively prevent N+1 query problems by consistently using `select_related` and `prefetch_related` where necessary.
+
+- **3. Application Logic & Design**
+    - Implement robust input validation at all entry points (e.g., forms, serializers, views) to prevent invalid or malicious data from being processed.
+    - Handle errors gracefully, providing meaningful feedback to users and detailed logging for debugging purposes.
+    - Utilize asynchronous tasks (e.g., Celery) for long-running operations to prevent blocking the main request cycle and improve responsiveness.
+
+- **4. Performance & Scalability**
+    - Implement caching strategies (e.g., per-view caching, object caching) for frequently accessed, static, or computationally expensive data.
+    - Optimize database queries by carefully considering filters, joins, and the amount of data retrieved to minimize execution time.
+    - Monitor application performance (using APM tools) and proactively address bottlenecks.
+
+- **5. Security**
+    - Implement robust authentication and authorization mechanisms (e.g., role-based access control, Django permissions) for all protected resources.
+    - Sanitize and escape all user-generated content before rendering to prevent Cross-Site Scripting (XSS) vulnerabilities.
+    - Store sensitive configuration data (e.g., API keys, database credentials) securely using environment variables or dedicated secret management tools.
+    - Regularly update dependencies to patch known security vulnerabilities.
+
+- **6. Testing**
+    - Write comprehensive unit, integration, and end-to-end tests for all critical components and business logic.
+    - Strive for high test coverage, focusing on edge cases, error conditions, and failure scenarios.
+    - Ensure tests are independent, fast, and repeatable.
+
+- **7. Documentation & Tooling**
+    - Adhere to Google style docstrings for all modules, classes, functions, and methods, ensuring they are clear, concise, and pass linter tests for consistency and readability.
+    - Include `help_text` for all model fields to provide clear descriptions, especially useful for admin interfaces or API documentation.
+    - Use type hints extensively throughout the codebase (including for related model sets) for improved readability, maintainability, and static analysis.
+    - Maintain up-to-date documentation for API endpoints, project setup, and key architectural decisions.
