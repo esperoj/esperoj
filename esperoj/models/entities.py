@@ -1,9 +1,9 @@
-from django.conf import settings
+from typing import TYPE_CHECKING
+
 from django.db import models
 from django.db.models import Index
-from .base import BaseModel
 
-from typing import TYPE_CHECKING
+from .base import BaseModel
 
 if TYPE_CHECKING:
     from django.db.models import Manager
@@ -11,12 +11,25 @@ if TYPE_CHECKING:
 
 
 class Person(BaseModel):
-    """
-    Represents a person, modeled for flexibility and archival standards.
-    Stores a full authoritative name for display and a separate, structured
-    name for sorting and indexing.
+    """Represents a person, such as an author, artist, or composer.
+
+    This model is designed for flexibility, storing both a display-friendly
+    authorized name and a separate, structured name for sorting and indexing,
+    following archival standards.
+
+    Attributes:
+        authorized_name: The full, authoritative name for display.
+        sort_name: The name in an inverted order for sorting.
+        identifier: A unique, URL-friendly slug for the person.
+        birth_date: The person's date of birth.
+        death_date: The person's date of death.
+        biographical_note: A brief description or biography.
+        wikipedia_link: A URL to the person's Wikipedia page.
+        items: A reverse relation to the items this person contributed to.
+        contributions: A reverse relation to the contribution details.
     """
 
+    # --- Core Information ---
     authorized_name = models.CharField(
         max_length=512, help_text="The full, authoritative name in direct order (e.g., 'Dr. Martin Luther King, Jr.')."
     )
@@ -28,13 +41,23 @@ class Person(BaseModel):
     identifier = models.SlugField(
         max_length=255, unique=True, help_text="A unique, human-readable identifier for this person."
     )
-    birth_date = models.DateField(null=True, blank=True)
-    death_date = models.DateField(null=True, blank=True)
+
+    # --- Biographical Details ---
+    birth_date = models.DateField(
+        null=True, blank=True, help_text="The person's date of birth."
+    )
+    death_date = models.DateField(
+        null=True, blank=True, help_text="The person's date of death."
+    )
     biographical_note = models.TextField(
         blank=True, default="", help_text="A brief description or biographical information about the person."
     )
+    wikipedia_link = models.CharField(
+        max_length=255, blank=True, null=True, help_text="A link to the person's Wikipedia page."
+    )
 
     class Meta:
+        db_table = "person"
         ordering = ["sort_name"]
         verbose_name = "Person"
         verbose_name_plural = "People"
@@ -43,17 +66,13 @@ class Person(BaseModel):
             Index(fields=["sort_name"]),
             Index(fields=["authorized_name"]),
         ]
-        db_table = "person"
 
     def __str__(self):
-        """The string representation is always the authoritative display name."""
+        """Returns the person's authoritative name."""
         return self.authorized_name
 
     def save(self, *args, **kwargs):
-        """
-        Automatically generates the sort_name from the authorized_name
-        if the sort_name is not provided manually.
-        """
+        """Automatically generates sort_name if it's not provided."""
         if not self.sort_name and self.authorized_name:
             name_parts = self.authorized_name.split()
             if len(name_parts) > 1:
@@ -66,44 +85,76 @@ class Person(BaseModel):
 
 
 class Subject(BaseModel):
-    """A subject, topic, or keyword used for categorization."""
+    """A subject, topic, or keyword used for categorization.
 
-    name = models.CharField(max_length=512)
-    identifier = models.SlugField(max_length=255, unique=True)
-    description = models.TextField(blank=True, default="")
-    items: Manager[Item]
+    Attributes:
+        name: The name of the subject.
+        identifier: A unique, URL-friendly slug for the subject.
+        description: A detailed description of the subject.
+        items: A reverse relation to items categorized under this subject.
+    """
+
+    name = models.CharField(
+        max_length=512, help_text="The name of the subject or topic."
+    )
+    identifier = models.SlugField(
+        max_length=255, unique=True, help_text="A unique, URL-friendly slug for the subject."
+    )
+    description = models.TextField(
+        blank=True, default="", help_text="A detailed description of the subject."
+    )
+
+    # --- Type hints for reverse relationships ---
+    items: "Manager[Item]"
 
     class Meta:
-        ordering = ["identifier"]
+        db_table = "subject"
+        ordering = ["name"]
         verbose_name = "Subject"
         verbose_name_plural = "Subjects"
         indexes = [
             Index(fields=["identifier"]),
             Index(fields=["name"]),
         ]
-        db_table = "subject"
 
     def __str__(self):
+        """Returns the subject's name."""
         return self.name
 
 
 class Collection(BaseModel):
-    """A collection that groups multiple Items."""
+    """A collection that groups multiple related Items.
 
-    name = models.CharField(max_length=512)
-    identifier = models.SlugField(max_length=255, unique=True)
-    description = models.TextField(blank=True, default="")
-    items: Manager[Item]
+    Attributes:
+        name: The name of the collection.
+        identifier: A unique, URL-friendly slug for the collection.
+        description: A detailed description of the collection's scope.
+        items: A reverse relation to items within this collection.
+    """
+
+    name = models.CharField(
+        max_length=512, help_text="The name of the collection."
+    )
+    identifier = models.SlugField(
+        max_length=255, unique=True, help_text="A unique, URL-friendly slug for the collection."
+    )
+    description = models.TextField(
+        blank=True, default="", help_text="A detailed description of the collection's scope and contents."
+    )
+
+    # --- Type hints for reverse relationships ---
+    items: "Manager[Item]"
 
     class Meta:
-        ordering = ["identifier"]
+        db_table = "collection"
+        ordering = ["name"]
         verbose_name = "Collection"
         verbose_name_plural = "Collections"
         indexes = [
             Index(fields=["identifier"]),
             Index(fields=["name"]),
         ]
-        db_table = "collection"
 
     def __str__(self):
+        """Returns the collection's name."""
         return self.name

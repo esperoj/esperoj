@@ -34,3 +34,18 @@ release:
 	@export VERSION=$$(python scripts/get_version.py); \
 	git tag -a "v$${VERSION}" -m "Release version $${VERSION}"; \
 	git push origin "v$${VERSION}"
+
+.PHONY: fresh_db
+fresh_db:
+	@echo "Deleting migration files..."
+	@find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+	@find . -path "*/migrations/*.pyc"  -delete
+	@echo "Deleting database..."
+	@rm -f db.sqlite3
+	@echo "Creating new migrations..."
+	@python manage.py makemigrations
+	@echo "Applying migrations..."
+	@python manage.py migrate
+	@echo "Creating superuser..."
+	@echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', 'pass')" | python manage.py shell
+	@echo "Done!"

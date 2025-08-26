@@ -1,0 +1,14 @@
+Please follow those rules:
+
+- Use explicit db_table in all applicable models in esperoj app.
+- Create index in Meta class for common queries.
+- Use Google style docstring and make sure it will pass the linter test.
+- Use best practices.
+- Separate of concerns to better refactor later on.
+- Add comments like section headers to separate similar fields in large model. Like all relationships in one blocks.
+- Create manager for common query on models.
+- Create common access function for model especially those that has deep nested relationships. For example, prefetch and fetch related fields. I don't want to remember all related fields.
+- Use type hints for related models set.
+- Add help text to all model fields.
+- Add contraint to databases if applicable.
+- Change field type to sensiable max_length.
