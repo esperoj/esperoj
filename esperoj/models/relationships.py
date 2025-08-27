@@ -13,10 +13,6 @@ from django.db.models import Index, Manager
 
 from .base import BaseModel
 
-if TYPE_CHECKING:
-    from .core import Person
-    from .items import Item
-
 
 class ItemRoleName(models.TextChoices):
     """
