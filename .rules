@@ -14,7 +14,10 @@ Please follow these comprehensive guidelines to ensure high-quality, maintainabl
     - Implement custom model managers for encapsulating common query logic, promoting reusability and cleaner code.
     - Provide helper methods or manager functions for models with deep or frequently accessed relationships to simplify data retrieval (e.g., by automatically using `select_related` or `prefetch_related`) and reduce the need to remember all related fields.
     - Actively prevent N+1 query problems by consistently using `select_related` and `prefetch_related` where necessary.
-
+    - Use Django's built-in features (e.g., `annotate`, `aggregate`) to perform complex queries efficiently at the database level rather than in application code.
+    - Leverage database transactions (e.g., `transaction.atomic()`) to ensure data consistency during complex operations involving multiple related changes.
+    - Avoid raw SQL queries unless absolutely necessary; prefer Django ORM methods for better maintainability and security.
+    - Naming fields should be consistent and descriptive, avoiding ambiguous abbreviations.
 - **3. Application Logic & Design**
     - Implement robust input validation at all entry points (e.g., forms, serializers, views) to prevent invalid or malicious data from being processed.
     - Handle errors gracefully, providing meaningful feedback to users and detailed logging for debugging purposes.
