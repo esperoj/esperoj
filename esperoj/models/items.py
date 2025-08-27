@@ -223,8 +223,10 @@ class Item(BaseModel):
         """Performs model validation that cannot be handled by the database."""
         super().clean()
 
-        # Validate that the date components form a valid date
-        if self.year and self.month and self.day:
+        # Validate that the date components form a valid date, only if the year is non-negative.
+        # Negative years are allowed for historical or speculative contexts and do not form a 'valid'
+        # datetime.date object, so this validation is skipped for them.
+        if self.year is not None and self.month is not None and self.day is not None and self.year >= 0:
             try:
                 datetime.date(self.year, self.month, self.day)
             except ValueError as e:

@@ -5,14 +5,52 @@ This module contains admin classes for catalogued items including the base
 Item model and specific item types like Song and Book.
 """
 
+import typing
+
 from django.contrib import admin
 from django.db import models
 from django.http import HttpRequest
 from django_select2.forms import Select2Widget, Select2MultipleWidget
+from django import forms  # Import django.forms for custom form fields
 
 from ..models import Item, Song, Book
 from .base import StandardModelAdmin, LanguagesFormFieldMixin, AdminDisplayHelperMixin
 from .relationships import RoleInline
+
+_Choices = list[tuple[str, str]]
+
+
+# Custom Form for ItemAdmin to handle the languages field with Select2MultipleWidget
+class ItemAdminForm(forms.ModelForm):
+    # This field will be dynamically populated with choices by the ModelAdmin's get_form method.
+    base_fields: typing.Dict[str, forms.Field]
+    languages = forms.MultipleChoiceField(
+        required=False,  # Make it not required, matching JSONField common usage
+        choices=[],  # Will be overridden in Admin's get_form
+        widget=Select2MultipleWidget(
+            attrs={
+                "data-placeholder": "Select languages...",
+                "data-allow-clear": "true",  # Allow clearing all selections
+                # For server-side autocomplete with many choices, you might add:
+                # "data-ajax--url": "/admin/your_app/item/language_autocomplete/",
+                # However, for typical language lists, client-side filtering on a pre-defined list is common
+                # when choices are provided directly.
+            }
+        ),
+        help_text="Select multiple languages associated with this item.",
+    )
+
+    class Meta:
+        model = Item
+        fields = "__all__"  # Include all model fields
+
+    # Override clean_languages to ensure it returns a list, which MultipleChoiceField already does.
+    # This is mainly to ensure the data is in the expected format for JSONField.
+    def clean_languages(self):
+        data = self.cleaned_data["languages"]
+        # The Select2MultipleWidget for MultipleChoiceField will return a list.
+        # Ensure that if no selection, it's an empty list, not None.
+        return data if data is not None else []
 
 
 class ItemExternalReferenceInline(admin.TabularInline):
@@ -41,6 +79,9 @@ class ItemExternalReferenceInline(admin.TabularInline):
 @admin.register(Item)
 class ItemAdmin(StandardModelAdmin, LanguagesFormFieldMixin, AdminDisplayHelperMixin):
     """Base admin configuration for the Item model."""
+
+    # Assign the custom form
+    form = ItemAdminForm
 
     # List display configuration
     list_display = (
@@ -91,7 +132,7 @@ class ItemAdmin(StandardModelAdmin, LanguagesFormFieldMixin, AdminDisplayHelperM
                     ("title", "subtitle"),
                     "identifier",
                     "description",
-                    "languages",
+                    "languages",  # This field is now handled by the custom form
                 )
             },
         ),
@@ -168,12 +209,66 @@ class ItemAdmin(StandardModelAdmin, LanguagesFormFieldMixin, AdminDisplayHelperM
             .prefetch_related("people", "roles__person", "subjects", "collections", "files", "external_references")
         )
 
+    # Override get_form to pass language choices to the custom form
+    def get_form(self, request, obj=None, **kwargs) -> typing.Type[ItemAdminForm]:
+        """
+        Dynamically sets the choices for the 'languages' field on the form class.
+        """
+        form_class_base = super().get_form(request, obj, **kwargs)
+
+        # Cast the form class to inform Pyright of its specific type.
+        form_class = typing.cast(typing.Type[ItemAdminForm], form_class_base)
+
+        # Declare the expected type of the choices variable.
+        choices: _Choices
+
+        language_choices_method = getattr(self, "get_language_choices", None)
+
+        if callable(language_choices_method):
+            # Call the dynamic method.
+            result = language_choices_method()
+
+            # Use an assertion. This is a runtime check that also proves to
+            # Pyright that 'result' is a list, satisfying the type checker.
+            assert isinstance(result, list), f"get_language_choices must return a list, but got {type(result).__name__}"
+
+            # Now, Pyright knows `result` is a list, and the assignment is safe.
+            choices = result
+        else:
+            # The fallback list already has the correct type.
+            choices = [
+                ("en", "English"),
+                ("es", "Spanish"),
+                ("fr", "French"),
+                ("de", "German"),
+                ("it", "Italian"),
+                ("zh", "Chinese"),
+                ("ja", "Japanese"),
+                ("ar", "Arabic"),
+                ("ru", "Russian"),
+                ("pt", "Portuguese"),
+                ("ko", "Korean"),
+                ("hi", "Hindi"),
+                ("pl", "Polish"),
+                ("nl", "Dutch"),
+                ("sv", "Swedish"),
+                ("el", "Greek"),
+                ("he", "Hebrew"),
+                ("id", "Indonesian"),
+                ("tr", "Turkish"),
+                ("uk", "Ukrainian"),
+            ]
+
+        # The assignment is now fully type-safe.
+        form_class.base_fields["languages"].choices = choices
+
+        return form_class
+
     def save_model(self, request, obj, form, change):
         """Custom save logic for Item model."""
-        # Ensure languages is a list
-        if obj.languages and not isinstance(obj.languages, list):
-            obj.languages = [obj.languages] if isinstance(obj.languages, str) else []
-
+        # The custom form `ItemAdminForm` handles the cleaning and saving of
+        # the 'languages' field to ensure it's a list for the JSONField.
+        # The explicit conversion logic from the original `save_model` is now redundant.
         super().save_model(request, obj, form, change)
 
     # Actions
