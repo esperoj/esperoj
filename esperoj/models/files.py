@@ -9,15 +9,94 @@ across different storage systems, and file blocks for large files.
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Index, Q, UniqueConstraint, Manager
-from django.core.exceptions import ValidationError
+from django.db.models import Index, Manager, Q, UniqueConstraint
 
 from .base import BaseModel
 
 if TYPE_CHECKING:
     from .items import Item
+
+
+# --- Mixins ---
+
+
+class ChecksumMixin(models.Model):
+    """
+    A mixin for models that need checksum fields (MD5, SHA1, SHA256).
+
+    Provides checksum fields, validation logic, and a helper property
+    to get the primary checksum.
+    """
+
+    # --- Checksums ---
+    md5 = models.CharField(
+        max_length=32,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="The MD5 hash of the content.",
+    )
+    sha1 = models.CharField(
+        max_length=40,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="The SHA1 hash of the content.",
+    )
+    sha256 = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        db_index=True,
+        help_text="The SHA256 hash of the content.",
+    )
+
+    class Meta:
+        abstract = True
+
+    def clean(self) -> None:
+        """Performs model validation for checksums."""
+        super().clean()
+
+        if self.md5 and len(self.md5) != 32:
+            raise ValidationError({"md5": "MD5 hash must be exactly 32 characters."})
+
+        if self.sha1 and len(self.sha1) != 40:
+            raise ValidationError({"sha1": "SHA1 hash must be exactly 40 characters."})
+
+        if self.sha256 and len(self.sha256) != 64:
+            raise ValidationError({"sha256": "SHA256 hash must be exactly 64 characters."})
+
+    @property
+    def primary_checksum(self) -> str:
+        """Returns the best available checksum (preferring SHA256, then SHA1, then MD5)."""
+        return self.sha256 or self.sha1 or self.md5
+
+
+class DisplaySizeMixin(models.Model):
+    """A mixin for models with a size field needing human-readable display."""
+
+    size = models.PositiveBigIntegerField(
+        validators=[MinValueValidator(0)],
+        db_index=True,
+        help_text="The size in bytes.",
+    )
+
+    class Meta:
+        abstract = True
+
+    @property
+    def display_size(self) -> str:
+        """Returns a human-readable file size."""
+        current_size = self.size
+        for unit in ["B", "KB", "MB", "GB", "TB", "PB"]:
+            if current_size < 1024.0:
+                return f"{current_size:.1f} {unit}"
+            current_size /= 1024.0
+        return f"{current_size:.1f} PB"
 
 
 class FileManager(Manager):
@@ -40,7 +119,7 @@ class FileManager(Manager):
             queryset = queryset.filter(size__lte=max_size)
         return queryset
 
-    def large_files(self, threshold_mb=100):
+    def large_files(self, threshold_mb=200):
         """Returns files larger than the specified threshold in MB."""
         threshold_bytes = threshold_mb * 1024 * 1024
         return self.filter(size__gte=threshold_bytes)
@@ -59,7 +138,7 @@ class FileManager(Manager):
         return self.filter(**lookup)
 
 
-class File(BaseModel):
+class File(BaseModel, DisplaySizeMixin, ChecksumMixin):
     """
     Represents the intrinsic metadata of a single digital file.
 
@@ -78,7 +157,10 @@ class File(BaseModel):
         sha1: The SHA1 checksum of the file.
         sha256: The SHA256 checksum of the file.
         file_format: Additional format information beyond MIME type.
-        compression: Information about file compression if applicable.
+
+    Related Models:
+        esperoj.FileReplica: Physical copies of this file.
+        esperoj.Item: Catalog items associated with this file.
 
     Reverse Relations:
         replicas: All physical copies of this file.
@@ -103,11 +185,6 @@ class File(BaseModel):
         default="",
         help_text="The original filename when first ingested into the system.",
     )
-    size = models.PositiveBigIntegerField(
-        validators=[MinValueValidator(0)],
-        db_index=True,
-        help_text="The total size of the file in bytes.",
-    )
     mime_type = models.CharField(
         max_length=255,
         blank=True,
@@ -123,38 +200,9 @@ class File(BaseModel):
         default="",
         help_text="Additional format information (e.g., 'FLAC', 'PDF/A-1b', 'TIFF').",
     )
-    compression = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-        help_text="Compression information if applicable (e.g., 'gzip', 'lossless', 'lossy').",
-    )
-
-    # --- Checksums ---
-    md5 = models.CharField(
-        max_length=32,
-        blank=True,
-        default="",
-        db_index=True,
-        help_text="The MD5 hash of the file content.",
-    )
-    sha1 = models.CharField(
-        max_length=40,
-        blank=True,
-        default="",
-        db_index=True,
-        help_text="The SHA1 hash of the file content.",
-    )
-    sha256 = models.CharField(
-        max_length=64,
-        blank=True,
-        default="",
-        db_index=True,
-        help_text="The SHA256 hash of the file content.",
-    )
 
     # --- Type hints for reverse relationships ---
-    replicas: "Manager[FileReplica]"
+    replicas: "Manager['FileReplica']"
     items: "Manager[Item]"
 
     objects = FileManager()
@@ -188,34 +236,9 @@ class File(BaseModel):
         """Performs model validation."""
         super().clean()
 
-        # Validate checksums are properly formatted
-        if self.md5 and len(self.md5) != 32:
-            raise ValidationError({"md5": "MD5 hash must be exactly 32 characters."})
-
-        if self.sha1 and len(self.sha1) != 40:
-            raise ValidationError({"sha1": "SHA1 hash must be exactly 40 characters."})
-
-        if self.sha256 and len(self.sha256) != 64:
-            raise ValidationError({"sha256": "SHA256 hash must be exactly 64 characters."})
-
         # Validate that at least one checksum is provided
-        if not any([self.md5, self.sha1, self.sha256]):
+        if not self.primary_checksum:
             raise ValidationError("At least one checksum (MD5, SHA1, or SHA256) must be provided.")
-
-    @property
-    def display_size(self) -> str:
-        """Returns a human-readable file size."""
-        size = self.size
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if size < 1024.0:
-                return f"{size:.1f} {unit}"
-            size /= 1024.0
-        return f"{size:.1f} PB"
-
-    @property
-    def primary_checksum(self) -> str:
-        """Returns the best available checksum (preferring SHA256, then SHA1, then MD5)."""
-        return self.sha256 or self.sha1 or self.md5
 
     @property
     def has_replicas(self) -> bool:
@@ -289,7 +312,7 @@ class FileReplica(BaseModel):
     Represents a specific, complete physical copy of a File.
 
     This model tracks where a file is stored and its state within that
-    storage. A single File can have multiple replicas across different
+    storage. A single File can have multiple physical copies (replicas) across different
     storage backends for redundancy and access purposes.
 
     Attributes:
@@ -300,6 +323,10 @@ class FileReplica(BaseModel):
         is_active: Whether this replica is currently available.
         last_verified: When this replica was last verified for integrity.
         verification_status: The result of the last verification check.
+
+    Related Models:
+        esperoj.File: The logical file this is a replica of.
+        esperoj.FileBlock: The blocks that constitute this replica.
 
     Reverse Relations:
         blocks: The blocks that constitute this replica (for large files).
@@ -353,6 +380,9 @@ class FileReplica(BaseModel):
         help_text="The result of the last verification check.",
     )
 
+    # --- Type hints for reverse relationships ---
+    blocks: "Manager['FileBlock']"
+
     objects = FileReplicaManager()
 
     class Meta:
@@ -396,7 +426,6 @@ class FileReplica(BaseModel):
         from django.utils import timezone
         import datetime
 
-        # Consider overdue after 90 days
         cutoff = timezone.now() - datetime.timedelta(days=90)
         return self.last_verified < cutoff
 
@@ -427,7 +456,7 @@ class FileBlockManager(Manager):
         return self.filter(models.Q(size=0) | models.Q(sha256="") | models.Q(file_path=""))
 
 
-class FileBlock(BaseModel):
+class FileBlock(BaseModel, DisplaySizeMixin, ChecksumMixin):
     """
     Represents an individual chunk or part of a FileReplica.
 
@@ -445,6 +474,9 @@ class FileBlock(BaseModel):
         sha1: The SHA1 checksum of this block.
         sha256: The SHA256 checksum of this block.
         is_last_block: Whether this is the final block in the sequence.
+
+    Related Models:
+        esperoj.FileReplica: The replica this block is a part of.
     """
 
     # --- Relationships ---
@@ -463,10 +495,6 @@ class FileBlock(BaseModel):
         max_length=1024,
         help_text="The full path or key of this block within the storage backend.",
     )
-    size = models.PositiveBigIntegerField(
-        validators=[MinValueValidator(0)],
-        help_text="The size of this individual block in bytes.",
-    )
     mime_type = models.CharField(
         max_length=255,
         blank=True,
@@ -476,29 +504,6 @@ class FileBlock(BaseModel):
     is_last_block = models.BooleanField(
         default=False,
         help_text="Whether this is the final block in the sequence.",
-    )
-
-    # --- Checksums ---
-    md5 = models.CharField(
-        max_length=32,
-        blank=True,
-        default="",
-        db_index=True,
-        help_text="The MD5 hash of the block's content.",
-    )
-    sha1 = models.CharField(
-        max_length=40,
-        blank=True,
-        default="",
-        db_index=True,
-        help_text="The SHA1 hash of the block's content.",
-    )
-    sha256 = models.CharField(
-        max_length=64,
-        blank=True,
-        default="",
-        db_index=True,
-        help_text="The SHA256 hash of the block's content.",
     )
 
     objects = FileBlockManager()
@@ -524,31 +529,5 @@ class FileBlock(BaseModel):
         """Performs model validation."""
         super().clean()
 
-        # Validate that block_order is non-negative
         if self.block_order < 0:
             raise ValidationError({"block_order": "Block order must be non-negative."})
-
-        # Validate checksums format if provided
-        if self.md5 and len(self.md5) != 32:
-            raise ValidationError({"md5": "MD5 hash must be exactly 32 characters."})
-
-        if self.sha1 and len(self.sha1) != 40:
-            raise ValidationError({"sha1": "SHA1 hash must be exactly 40 characters."})
-
-        if self.sha256 and len(self.sha256) != 64:
-            raise ValidationError({"sha256": "SHA256 hash must be exactly 64 characters."})
-
-    @property
-    def display_size(self) -> str:
-        """Returns a human-readable block size."""
-        size = self.size
-        for unit in ["B", "KB", "MB", "GB"]:
-            if size < 1024.0:
-                return f"{size:.1f} {unit}"
-            size /= 1024.0
-        return f"{size:.1f} TB"
-
-    @property
-    def primary_checksum(self) -> str:
-        """Returns the best available checksum for this block."""
-        return self.sha256 or self.sha1 or self.md5

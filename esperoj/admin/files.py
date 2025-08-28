@@ -101,7 +101,7 @@ class FileAdmin(StandardModelAdmin, AdminDisplayHelperMixin):
                     ("name", "path"),
                     "original_filename",
                     ("size", "mime_type"),
-                    ("file_format", "compression"),
+                    ("file_format",),
                 )
             },
         ),

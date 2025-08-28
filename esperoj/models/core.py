@@ -14,8 +14,8 @@ from django.db.models import Index, Manager
 from .base import BaseModel
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet
-    from .items import Item  # Moved from within Subject and Collection classes
+    from .items import Item
+    from .relationships import Role, PersonExternalReference
 
 
 class PersonManager(Manager):
@@ -63,13 +63,11 @@ class Person(BaseModel):
     # --- Core Information ---
     authorized_name = models.CharField(
         max_length=512,
-        db_index=True,
         help_text="The full, authoritative name in direct order (e.g., 'Dr. Martin Luther King, Jr.').",
     )
     sort_name = models.CharField(
         max_length=512,
         blank=True,
-        db_index=True,
         help_text="Name in inverted order for sorting (e.g., 'King, Martin Luther, Jr.'). "
         "Automatically generated if left blank.",
     )
@@ -97,7 +95,9 @@ class Person(BaseModel):
     )
 
     # --- Type hints for reverse relationships ---
-    # These will be populated by Django's ORM
+    items: "Manager[Item]"
+    roles: "Manager[Role]"
+    external_references: "Manager[PersonExternalReference]"
 
     objects = PersonManager()
 
@@ -122,7 +122,6 @@ class Person(BaseModel):
         """Performs model validation."""
         super().clean()
 
-        # Ensure death date is not before birth date
         if self.birth_date and self.death_date and self.death_date < self.birth_date:
             from django.core.exceptions import ValidationError
 
@@ -191,7 +190,6 @@ class Subject(BaseModel):
     # --- Core Information ---
     name = models.CharField(
         max_length=512,
-        db_index=True,
         help_text="The name of the subject or topic.",
     )
     identifier = models.SlugField(
@@ -206,11 +204,8 @@ class Subject(BaseModel):
     )
 
     # --- Type hints for reverse relationships ---
-    # These will be populated by Django's ORM
-    if TYPE_CHECKING:
-        # from .items import Item # Moved to top-level TYPE_CHECKING block
-        pass  # No explicit import here needed now
-    items: "QuerySet[Item]"
+
+    items: "Manager[Item]"
 
     objects = SubjectManager()
 
@@ -265,7 +260,6 @@ class Collection(BaseModel):
     # --- Core Information ---
     name = models.CharField(
         max_length=512,
-        db_index=True,
         help_text="The name of the collection.",
     )
     identifier = models.SlugField(
@@ -280,11 +274,7 @@ class Collection(BaseModel):
     )
 
     # --- Type hints for reverse relationships ---
-    # These will be populated by Django's ORM
-    if TYPE_CHECKING:
-        # from .items import Item # Moved to top-level TYPE_CHECKING block
-        pass  # No explicit import here needed now
-    items: "QuerySet[Item]"
+    items: "Manager[Item]"
 
     objects = CollectionManager()
 

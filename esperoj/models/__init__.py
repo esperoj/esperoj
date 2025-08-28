@@ -5,11 +5,9 @@ This module provides a clean interface for importing all models while
 organizing them into logical groups to avoid circular dependencies.
 """
 
-# Import from core entities first (no dependencies)
 from .base import BaseModel
 from .core import Person, Subject, Collection
 
-# Import relationships (depends on core)
 from .relationships import (
     Role,
     ItemRoleName,
@@ -18,10 +16,8 @@ from .relationships import (
     ItemExternalReference,
 )
 
-# Import files (standalone)
 from .files import File, FileReplica, FileBlock
 
-# Import items (depends on core and relationships)
 from .items import Item, ItemType, Song, Book
 
 __all__ = [
