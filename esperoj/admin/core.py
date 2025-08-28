@@ -7,8 +7,6 @@ Person, Subject, and Collection.
 
 from django.contrib import admin
 from django.db import models
-from django.http import HttpRequest
-from django_select2.forms import Select2Widget
 
 from ..models import Person, Subject, Collection
 from .base import StandardModelAdmin, TabularInlineAdmin, AdminDisplayHelperMixin
@@ -79,7 +77,6 @@ class PersonAdmin(StandardModelAdmin, AdminDisplayHelperMixin):
                 "fields": (
                     ("birth_date", "death_date"),
                     "biographical_note",
-                    "wikipedia_link",
                 ),
                 "classes": ("wide",),
             },

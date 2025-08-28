@@ -6,8 +6,6 @@ and file blocks in the digital preservation system.
 """
 
 from django.contrib import admin
-from django.db import models
-from django.http import HttpRequest
 from django_select2.forms import Select2Widget
 
 from ..models import File, FileReplica, FileBlock

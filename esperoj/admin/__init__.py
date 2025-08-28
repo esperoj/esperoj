@@ -7,7 +7,7 @@ admin submodules, providing a clean interface for Django's admin system.
 
 # Import all admin classes to register them with Django admin
 from .core import PersonAdmin, SubjectAdmin, CollectionAdmin
-from .relationships import RoleAdmin, PersonExternalReferenceAdmin, ItemExternalReferenceAdmin
+from .relationships import RoleAdmin, ItemRelationshipAdmin, PersonExternalReferenceAdmin, ItemExternalReferenceAdmin
 from .files import FileAdmin, FileReplicaAdmin, FileBlockAdmin
 from .items import ItemAdmin, SongAdmin, BookAdmin
 
@@ -22,6 +22,7 @@ __all__ = [
     "CollectionAdmin",
     # Relationships
     "RoleAdmin",
+    "ItemRelationshipAdmin",
     "PersonExternalReferenceAdmin",
     "ItemExternalReferenceAdmin",
     # Files

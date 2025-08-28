@@ -43,3 +43,15 @@ Please follow these comprehensive guidelines to ensure high-quality, maintainabl
     - Include `help_text` for all model fields to provide clear descriptions, especially useful for admin interfaces or API documentation.
     - Use type hints extensively throughout the codebase for improved readability, maintainability, and static analysis.
     - Maintain up-to-date documentation for API endpoints, project setup, and key architectural decisions.
+
+- **8. Version Control & Collaboration**
+    - Write clear, concise, and descriptive commit messages that follow a consistent style guide.
+    - Use feature branches for new features and bug fixes, and ensure pull requests are reviewed by peers before merging.
+
+- **9. Logging & Monitoring**
+    - Implement structured logging with appropriate log levels (DEBUG, INFO, WARNING, ERROR, CRITICAL) to facilitate debugging and monitoring.
+    - Set up monitoring and alerting for critical application metrics and error rates.
+
+- **10. AI Agent Specific Guidelines**
+    - Actively utilize Python 3.11+ language features, including native type hints (e.g., `dict`, `list`), as explicit `from typing` imports are not required for these types in this project.
+    - Validate all changes by executing the diagnostic agent tool and ensuring successful completion of all associated tests.

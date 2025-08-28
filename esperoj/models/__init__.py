@@ -11,6 +11,8 @@ from .core import Person, Subject, Collection
 from .relationships import (
     Role,
     ItemRoleName,
+    ItemRelationship,
+    ItemRelationshipType,
     ExternalReferenceType,
     PersonExternalReference,
     ItemExternalReference,
@@ -30,6 +32,8 @@ __all__ = [
     # Relationships
     "Role",
     "ItemRoleName",
+    "ItemRelationship",
+    "ItemRelationshipType",
     "ExternalReferenceType",
     "PersonExternalReference",
     "ItemExternalReference",

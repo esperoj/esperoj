@@ -19,9 +19,8 @@ from .base import BaseModel
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
-    from .core import Person, Subject, Collection
-    from .files import File
-    from .relationships import Role, ItemExternalReference, ItemRoleName
+    from .core import Person
+    from .relationships import Role, ItemExternalReference, ItemRoleName, ItemRelationship
 
 
 class ItemType(models.TextChoices):
@@ -194,6 +193,8 @@ class Item(BaseModel):
     # --- Type hints for reverse relationships ---
     roles: "Manager[Role]"
     external_references: "Manager[ItemExternalReference]"
+    outgoing_relationships: "Manager[ItemRelationship]"
+    incoming_relationships: "Manager[ItemRelationship]"
 
     objects = ItemManager()
 
@@ -334,6 +335,97 @@ class Item(BaseModel):
     def get_file_count(self) -> int:
         """Returns the number of files associated with this item."""
         return self.files.count()
+
+    def get_related_items(self, relationship_type: str | None = None) -> "QuerySet[Item]":
+        """
+        Returns items related to this item through any relationship.
+
+        Args:
+            relationship_type: Optional filter by relationship type
+        """
+        filters = models.Q()
+
+        if relationship_type:
+            filters = models.Q(
+                models.Q(
+                    incoming_relationships__from_item=self, incoming_relationships__relationship_type=relationship_type
+                )
+                | models.Q(
+                    outgoing_relationships__to_item=self, outgoing_relationships__relationship_type=relationship_type
+                )
+            )
+        else:
+            filters = models.Q(
+                models.Q(incoming_relationships__from_item=self) | models.Q(outgoing_relationships__to_item=self)
+            )
+
+        related_items = Item.objects.filter(filters).distinct()
+        return related_items
+
+    def get_parent_items(self) -> "QuerySet[Item]":
+        """Returns items that this item is part of."""
+        from .relationships import ItemRelationshipType
+
+        return Item.objects.filter(
+            incoming_relationships__from_item=self,
+            incoming_relationships__relationship_type=ItemRelationshipType.PART_OF,
+        ).distinct()
+
+    def get_child_items(self) -> "QuerySet[Item]":
+        """Returns items that are part of this item."""
+        from .relationships import ItemRelationshipType
+
+        return Item.objects.filter(
+            incoming_relationships__from_item=self,
+            incoming_relationships__relationship_type=ItemRelationshipType.CONTAINS,
+        ).distinct()
+
+    def get_sequential_items(self, direction: str = "both") -> "QuerySet[Item]":
+        """
+        Returns items in a sequence with this item.
+
+        Args:
+            direction: "both", "next", or "previous"
+        """
+        from .relationships import ItemRelationshipType
+
+        if direction == "next":
+            return Item.objects.filter(
+                incoming_relationships__from_item=self,
+                incoming_relationships__relationship_type__in=[
+                    ItemRelationshipType.SEQUEL_TO,
+                    ItemRelationshipType.FOLLOWS,
+                ],
+            ).distinct()
+        elif direction == "previous":
+            return Item.objects.filter(
+                outgoing_relationships__to_item=self,
+                outgoing_relationships__relationship_type__in=[
+                    ItemRelationshipType.SEQUEL_TO,
+                    ItemRelationshipType.FOLLOWS,
+                ],
+            ).distinct()
+        else:  # both
+            return Item.objects.filter(
+                models.Q(
+                    incoming_relationships__from_item=self,
+                    incoming_relationships__relationship_type__in=[
+                        ItemRelationshipType.SEQUEL_TO,
+                        ItemRelationshipType.FOLLOWS,
+                        ItemRelationshipType.PREQUEL_TO,
+                        ItemRelationshipType.PRECEDES,
+                    ],
+                )
+                | models.Q(
+                    outgoing_relationships__to_item=self,
+                    outgoing_relationships__relationship_type__in=[
+                        ItemRelationshipType.SEQUEL_TO,
+                        ItemRelationshipType.FOLLOWS,
+                        ItemRelationshipType.PREQUEL_TO,
+                        ItemRelationshipType.PRECEDES,
+                    ],
+                )
+            ).distinct()
 
 
 @receiver(pre_save, sender=Item)

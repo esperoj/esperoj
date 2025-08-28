@@ -6,12 +6,46 @@ including roles that people play in items, external references, and related
 enumerations. This separation helps avoid circular dependencies.
 """
 
-from typing import TYPE_CHECKING
-
 from django.db import models
 from django.db.models import Index, Manager
 
 from .base import BaseModel
+
+
+class ItemRelationshipType(models.TextChoices):
+    """
+    Types of relationships that can exist between Items.
+
+    This enum defines the vocabulary of relationships that can connect
+    items to each other in the collection.
+    """
+
+    # --- Hierarchical Relationships ---
+    PART_OF = "PART_OF", "Part of"
+    CONTAINS = "CONTAINS", "Contains"
+
+    # --- Version Relationships ---
+    VERSION_OF = "VERSION_OF", "Version of"
+    EDITION_OF = "EDITION_OF", "Edition of"
+    REVISION_OF = "REVISION_OF", "Revision of"
+
+    # --- Creative Relationships ---
+    TRANSLATION_OF = "TRANSLATION_OF", "Translation of"
+    ADAPTATION_OF = "ADAPTATION_OF", "Adaptation of"
+    DERIVATIVE_OF = "DERIVATIVE_OF", "Derivative of"
+    INSPIRED_BY = "INSPIRED_BY", "Inspired by"
+
+    # --- Sequential Relationships ---
+    SEQUEL_TO = "SEQUEL_TO", "Sequel to"
+    PREQUEL_TO = "PREQUEL_TO", "Prequel to"
+    FOLLOWS = "FOLLOWS", "Follows"
+    PRECEDES = "PRECEDES", "Precedes"
+
+    # --- General Relationships ---
+    RELATED_TO = "RELATED_TO", "Related to"
+    SIMILAR_TO = "SIMILAR_TO", "Similar to"
+    REFERENCES = "REFERENCES", "References"
+    REFERENCED_BY = "REFERENCED_BY", "Referenced by"
 
 
 class ItemRoleName(models.TextChoices):
@@ -308,6 +342,160 @@ class PersonExternalReference(AbstractExternalReference):
         indexes = AbstractExternalReference.Meta.indexes + [
             Index(fields=["person", "type"]),
         ]
+
+
+class ItemRelationshipManager(Manager):
+    """Custom manager for the ItemRelationship model providing common query methods."""
+
+    def for_item(self, item):
+        """Returns all relationships where the item is either source or target."""
+        return self.filter(models.Q(from_item=item) | models.Q(to_item=item)).select_related("from_item", "to_item")
+
+    def outgoing_for_item(self, item):
+        """Returns relationships where the item is the source."""
+        return self.filter(from_item=item).select_related("to_item")
+
+    def incoming_for_item(self, item):
+        """Returns relationships where the item is the target."""
+        return self.filter(to_item=item).select_related("from_item")
+
+    def by_type(self, relationship_type):
+        """Returns relationships of a specific type."""
+        return self.filter(relationship_type=relationship_type).select_related("from_item", "to_item")
+
+    def hierarchical(self):
+        """Returns hierarchical relationships (part_of, contains)."""
+        return self.filter(
+            relationship_type__in=[
+                ItemRelationshipType.PART_OF,
+                ItemRelationshipType.CONTAINS,
+            ]
+        ).select_related("from_item", "to_item")
+
+
+class ItemRelationship(BaseModel):
+    """
+    Represents a directed relationship between two Items.
+
+    This model allows items to be connected to each other through various
+    types of relationships such as hierarchical (part of), sequential
+    (sequel to), or creative (translation of) relationships.
+
+    Attributes:
+        from_item: The source item in the relationship.
+        to_item: The target item in the relationship.
+        relationship_type: The type of relationship between the items.
+        order: The order of this relationship among others of the same type.
+        notes: Optional notes about this specific relationship.
+    """
+
+    # --- Relationships ---
+    from_item = models.ForeignKey(
+        "esperoj.Item",
+        on_delete=models.CASCADE,
+        related_name="outgoing_relationships",
+        help_text="The source item in this relationship.",
+    )
+    to_item = models.ForeignKey(
+        "esperoj.Item",
+        on_delete=models.CASCADE,
+        related_name="incoming_relationships",
+        help_text="The target item in this relationship.",
+    )
+
+    # --- Relationship Details ---
+    relationship_type = models.CharField(
+        max_length=50,
+        choices=ItemRelationshipType.choices,
+        help_text="The type of relationship between the items.",
+    )
+    order = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="The order of this relationship among others of the same type (1 = first, 2 = second, etc.).",
+    )
+    notes = models.TextField(
+        blank=True,
+        default="",
+        help_text="Optional notes about this specific relationship.",
+    )
+
+    objects = ItemRelationshipManager()
+
+    class Meta:
+        db_table = "item_relationship"
+        unique_together = ("from_item", "to_item", "relationship_type")
+        ordering = ["from_item", "relationship_type", "order", "to_item"]
+        verbose_name = "Item Relationship"
+        verbose_name_plural = "Item Relationships"
+        indexes = [
+            Index(fields=["from_item", "relationship_type", "order"]),
+            Index(fields=["to_item", "relationship_type"]),
+            Index(fields=["relationship_type"]),
+        ]
+
+    def __str__(self) -> str:
+        """Returns a string representing the relationship."""
+        choices_dict: dict[str, str] = {choice[0]: choice[1] for choice in ItemRelationshipType.choices}
+        display_name = choices_dict.get(self.relationship_type, self.relationship_type)
+        return f"{self.from_item.title} {display_name.lower()} {self.to_item.title}"
+
+    def clean(self) -> None:
+        """Performs model validation."""
+        super().clean()
+
+        # Prevent self-references
+        if hasattr(self, "from_item") and hasattr(self, "to_item") and self.from_item == self.to_item:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError("An item cannot have a relationship with itself.")
+
+        # Ensure order is positive
+        if self.order < 1:
+            from django.core.exceptions import ValidationError
+
+            raise ValidationError({"order": "Order must be 1 or greater."})
+
+    @property
+    def is_hierarchical(self) -> bool:
+        """Returns True if this is a hierarchical relationship."""
+        return self.relationship_type in [
+            ItemRelationshipType.PART_OF,
+            ItemRelationshipType.CONTAINS,
+        ]
+
+    @property
+    def is_sequential(self) -> bool:
+        """Returns True if this is a sequential relationship."""
+        return self.relationship_type in [
+            ItemRelationshipType.SEQUEL_TO,
+            ItemRelationshipType.PREQUEL_TO,
+            ItemRelationshipType.FOLLOWS,
+            ItemRelationshipType.PRECEDES,
+        ]
+
+    @property
+    def is_creative(self) -> bool:
+        """Returns True if this is a creative relationship."""
+        return self.relationship_type in [
+            ItemRelationshipType.TRANSLATION_OF,
+            ItemRelationshipType.ADAPTATION_OF,
+            ItemRelationshipType.DERIVATIVE_OF,
+            ItemRelationshipType.INSPIRED_BY,
+        ]
+
+    def get_inverse_relationship_type(self) -> str:
+        """Returns the inverse relationship type if applicable."""
+        inverse_map = {
+            ItemRelationshipType.PART_OF.value: ItemRelationshipType.CONTAINS.value,
+            ItemRelationshipType.CONTAINS.value: ItemRelationshipType.PART_OF.value,
+            ItemRelationshipType.SEQUEL_TO.value: ItemRelationshipType.PREQUEL_TO.value,
+            ItemRelationshipType.PREQUEL_TO.value: ItemRelationshipType.SEQUEL_TO.value,
+            ItemRelationshipType.FOLLOWS.value: ItemRelationshipType.PRECEDES.value,
+            ItemRelationshipType.PRECEDES.value: ItemRelationshipType.FOLLOWS.value,
+            ItemRelationshipType.REFERENCES.value: ItemRelationshipType.REFERENCED_BY.value,
+            ItemRelationshipType.REFERENCED_BY.value: ItemRelationshipType.REFERENCES.value,
+        }
+        return inverse_map.get(self.relationship_type, ItemRelationshipType.RELATED_TO.value)
 
 
 class ItemExternalReference(AbstractExternalReference):

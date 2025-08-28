@@ -8,7 +8,7 @@ between entities, including roles and external references.
 from django.contrib import admin
 from django_select2.forms import Select2Widget
 
-from ..models import Role, PersonExternalReference, ItemExternalReference
+from ..models import Role, PersonExternalReference, ItemExternalReference, ItemRelationship
 from .base import StandardModelAdmin, TabularInlineAdmin, AdminDisplayHelperMixin
 
 
@@ -250,6 +250,155 @@ class PersonExternalReferenceAdmin(StandardModelAdmin):
         self.message_user(request, f"Successfully marked {updated} references as inactive.")
 
     actions = ["mark_verified", "mark_inactive"]
+
+
+class ItemRelationshipInline(TabularInlineAdmin):
+    """Inline admin for managing Item relationships."""
+
+    model = ItemRelationship
+    fk_name = "from_item"
+    fields = ("to_item", "relationship_type", "order", "notes", "created_at", "updated_at")
+    readonly_fields = ("created_at", "updated_at")
+    autocomplete_fields = ("to_item",)
+    select2_choice_fields = ["relationship_type"]
+    extra = 0
+
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        """Apply Select2Widget to the 'relationship_type' field."""
+        if db_field.name == "relationship_type":
+            kwargs["widget"] = Select2Widget(
+                attrs={
+                    "data-placeholder": "Select relationship type...",
+                    "data-allow-clear": "false",
+                }
+            )
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
+
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related("from_item", "to_item")
+
+
+@admin.register(ItemRelationship)
+class ItemRelationshipAdmin(StandardModelAdmin, AdminDisplayHelperMixin):
+    """Admin configuration for the ItemRelationship model."""
+
+    # List display configuration
+    list_display = (
+        "from_item",
+        "relationship_type",
+        "to_item",
+        "order",
+        "admin_display_is_hierarchical",
+        "admin_display_is_sequential",
+        "created_at",
+        "updated_at",
+    )
+
+    list_filter = (
+        "relationship_type",
+        "order",
+        "created_at",
+        "updated_at",
+    )
+
+    search_fields = (
+        "from_item__title",
+        "from_item__identifier",
+        "to_item__title",
+        "to_item__identifier",
+        "relationship_type",
+    )
+
+    ordering = ("from_item", "relationship_type", "order", "to_item")
+
+    # Form configuration
+    autocomplete_fields = ("from_item", "to_item")
+    select2_choice_fields = ["relationship_type"]
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    ("from_item", "to_item"),
+                    ("relationship_type", "order"),
+                    "notes",
+                )
+            },
+        ),
+        (
+            "Timestamps",
+            {
+                "fields": ("created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    readonly_fields = ("created_at", "updated_at")
+
+    # Custom admin display methods
+    admin_display_is_hierarchical = AdminDisplayHelperMixin.make_boolean_display_method(
+        "is_hierarchical", "Hierarchical", "📁", "—"
+    )
+    admin_display_is_sequential = AdminDisplayHelperMixin.make_boolean_display_method(
+        "is_sequential", "Sequential", "📚", "—"
+    )
+
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        """Apply Select2Widget to choice fields."""
+        if db_field.name == "relationship_type":
+            kwargs["widget"] = Select2Widget(
+                attrs={
+                    "data-placeholder": "Select relationship type...",
+                    "data-allow-clear": "false",
+                }
+            )
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
+
+    def get_queryset(self, request):
+        """Optimize queryset with select_related."""
+        return super().get_queryset(request).select_related("from_item", "to_item")
+
+    def save_model(self, request, obj, form, change):
+        """Custom save logic for ItemRelationship model."""
+        # Ensure order is at least 1
+        if obj.order is None or obj.order < 1:
+            obj.order = 1
+
+        super().save_model(request, obj, form, change)
+
+    # Actions
+    @admin.action(description="Create inverse relationships for selected items")
+    def create_inverse_relationships(self, request, queryset):
+        """Create inverse relationships for selected item relationships."""
+        created = 0
+        for relationship in queryset:
+            inverse_type = relationship.get_inverse_relationship_type()
+
+            # Only create inverse if it doesn't already exist and has a meaningful inverse
+            if inverse_type != "RELATED_TO":
+                inverse_exists = ItemRelationship.objects.filter(
+                    from_item=relationship.to_item, to_item=relationship.from_item, relationship_type=inverse_type
+                ).exists()
+
+                if not inverse_exists:
+                    ItemRelationship.objects.create(
+                        from_item=relationship.to_item,
+                        to_item=relationship.from_item,
+                        relationship_type=inverse_type,
+                        order=relationship.order,
+                        notes=f"Inverse of: {relationship.notes}" if relationship.notes else "",
+                    )
+                    created += 1
+
+        if created > 0:
+            self.message_user(request, f"Successfully created {created} inverse relationships.")
+        else:
+            self.message_user(request, "No inverse relationships were created.", level="WARNING")
+
+    actions = ["create_inverse_relationships"]
 
 
 @admin.register(ItemExternalReference)

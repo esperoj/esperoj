@@ -5,8 +5,6 @@ This module contains common utilities, mixins, and helper functions used
 across multiple admin classes to promote code reuse and consistency.
 """
 
-from typing import Any, Dict, List, Optional, Type
-
 from django import forms
 from django.contrib import admin
 from django.db import models
@@ -222,7 +220,7 @@ class StandardModelAdmin(SimpleHistoryAdmin):
             readonly.insert(0, "id")
         return tuple(readonly)
 
-    def get_search_fields(self, request: HttpRequest) -> List[str]:
+    def get_search_fields(self, request: HttpRequest) -> list[str]:
         """Returns optimized search fields."""
         search_fields = list(super().get_search_fields(request))
 

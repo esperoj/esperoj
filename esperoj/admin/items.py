@@ -8,14 +8,12 @@ Item model and specific item types like Song and Book.
 import typing
 
 from django.contrib import admin
-from django.db import models
-from django.http import HttpRequest
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from django import forms  # Import django.forms for custom form fields
 
 from ..models import Item, Song, Book
 from .base import StandardModelAdmin, LanguagesFormFieldMixin, AdminDisplayHelperMixin
-from .relationships import RoleInline
+from .relationships import RoleInline, ItemRelationshipInline
 
 _Choices = list[tuple[str, str]]
 
@@ -178,7 +176,7 @@ class ItemAdmin(StandardModelAdmin, LanguagesFormFieldMixin, AdminDisplayHelperM
     readonly_fields = ("created_at", "updated_at", "date")
 
     # Inlines
-    inlines = [RoleInline, ItemExternalReferenceInline]
+    inlines = [RoleInline, ItemRelationshipInline, ItemExternalReferenceInline]
 
     # Filter horizontal for better M2M widget
     filter_horizontal = ("subjects", "collections", "files")
