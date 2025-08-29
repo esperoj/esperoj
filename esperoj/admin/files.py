@@ -8,6 +8,7 @@ and file blocks in the digital preservation system.
 from django.contrib import admin
 from django_select2.forms import Select2Widget
 
+from esperoj.constants import ReplicaType, StorageName
 from ..models import File, FileReplica, FileBlock
 from .base import StandardModelAdmin, TabularInlineAdmin, AdminDisplayHelperMixin
 
@@ -32,13 +33,24 @@ class FileReplicaInline(TabularInlineAdmin):
 
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         """Apply Select2Widget to choice fields."""
-        if db_field.name in ["replica_type", "storage_name"]:
+        if db_field.name == "replica_type":
             kwargs["widget"] = Select2Widget(
                 attrs={
                     "data-placeholder": f"Select {db_field.verbose_name.lower()}...",
                     "data-allow-clear": "true" if db_field.blank else "false",
                 }
             )
+            if "choices" not in kwargs:
+                kwargs["choices"] = ReplicaType.choices
+        elif db_field.name == "storage_name":
+            kwargs["widget"] = Select2Widget(
+                attrs={
+                    "data-placeholder": f"Select {db_field.verbose_name.lower()}...",
+                    "data-allow-clear": "true" if db_field.blank else "false",
+                }
+            )
+            if "choices" not in kwargs:
+                kwargs["choices"] = StorageName.choices
         return super().formfield_for_choice_field(db_field, request, **kwargs)
 
 
@@ -246,7 +258,26 @@ class FileReplicaAdmin(StandardModelAdmin, AdminDisplayHelperMixin):
 
     def formfield_for_choice_field(self, db_field, request, **kwargs):
         """Apply Select2Widget to choice fields."""
-        if db_field.name in ["replica_type", "storage_name", "verification_status"]:
+        if db_field.name == "replica_type":
+            kwargs["widget"] = Select2Widget(
+                attrs={
+                    "data-placeholder": f"Select {db_field.verbose_name.lower()}...",
+                    "data-allow-clear": "true" if db_field.blank else "false",
+                }
+            )
+            # Ensure choices are explicitly set from the constant if not already present
+            if "choices" not in kwargs:
+                kwargs["choices"] = ReplicaType.choices
+        elif db_field.name == "storage_name":
+            kwargs["widget"] = Select2Widget(
+                attrs={
+                    "data-placeholder": f"Select {db_field.verbose_name.lower()}...",
+                    "data-allow-clear": "true" if db_field.blank else "false",
+                }
+            )
+            if "choices" not in kwargs:
+                kwargs["choices"] = StorageName.choices
+        elif db_field.name == "verification_status":
             kwargs["widget"] = Select2Widget(
                 attrs={
                     "data-placeholder": f"Select {db_field.verbose_name.lower()}...",

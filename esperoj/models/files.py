@@ -8,11 +8,12 @@ across different storage systems, and file blocks for large files.
 
 from typing import TYPE_CHECKING
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Index, Manager, Q, UniqueConstraint
+
+from esperoj.constants import ReplicaType, StorageName
 
 from .base import BaseModel
 
@@ -343,12 +344,12 @@ class FileReplica(BaseModel):
     # --- Replica Details ---
     replica_type = models.CharField(
         max_length=50,
-        choices=getattr(settings, "REPLICA_TYPES", []),
+        choices=ReplicaType.choices,
         help_text="The role or type of this replica (e.g., 'original', 'access_copy', 'preservation').",
     )
     storage_name = models.CharField(
         max_length=50,
-        choices=getattr(settings, "STORAGE_CHOICES", []),
+        choices=StorageName.choices,
         help_text="The configured storage backend where this replica is located.",
     )
     storage_path = models.CharField(

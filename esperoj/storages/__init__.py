@@ -1,9 +1,10 @@
 """
-This module contains custom storage backends for the esperoj application,
-including fsspec-compatible file systems.
+This module contains custom storage backends for the esperoj application.
+Individual storage backends are defined in their respective modules.
+The configured EsperojFileSystem instance is managed through the `config` module.
 """
 
-from .catbox import CatboxFileSystem
-from .esperoj import EsperojFileSystem
+# Individual file systems are now configured and accessed via esperoj.esperoj.storages.config.esperoj_fs
+# No direct exports from here.
 
-__all__ = ["CatboxFileSystem", "EsperojFileSystem"]
+__all__ = []

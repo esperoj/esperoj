@@ -54,5 +54,9 @@ Please follow these comprehensive guidelines to ensure high-quality, maintainabl
     - Set up monitoring and alerting for critical application metrics and error rates.
 
 - **10. AI Agent Specific Guidelines**
-    - Actively utilize Python 3.11+ language features, including native type hints (e.g., `dict`, `list`), as explicit `from typing` imports are not required for these types in this project.
+    - Actively utilize Python 3.11+ language features, including native type hints (e.g., `dict`, `list`). Don't use `Dict`, `List` from `typing` module.
     - Validate all changes by executing the diagnostic agent tool and ensuring successful completion of all associated tests.
+    - If there is troubles with editing files, just do it again assuming the AI agent faces rate limit.
+# Project Specific
+
+- The package name is esperoj, so don't use `import like import esperoj.esperoj`. use `import esperoj`
