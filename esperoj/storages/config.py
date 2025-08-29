@@ -35,6 +35,11 @@ def configure_esperoj_filesystem() -> EsperojFileSystem:
         ESPEROJ_PRIMARY_STORAGES (str): Comma-separated list of storage names to be used as primary.
         ESPEROJ_BACKUP_STORAGES (str): Comma-separated list of storage names to be used as backup.
         ESPEROJ_ARCHIVE_STORAGES (str): Comma-separated list of storage names to be used as archive.
+        ESPEROJ_REPLICA_<TYPE>_BACKENDS (str): Comma-separated list of storage names to be used for a specific replica type.
+                                               (e.g., "ESPEROJ_REPLICA_ORIGINAL_BACKENDS=catbox,s3")
+        ESPEROJ_DEFAULT_REPLICA_TYPES_FOR_WRITE (str): Comma-separated list of `ReplicaType` values
+                                                       to be used as default for write operations.
+                                                       (e.g., "ESPEROJ_DEFAULT_REPLICA_TYPES_FOR_WRITE=original,access")
 
     Returns:
         EsperojFileSystem: An instantiated EsperojFileSystem with configured backends.
@@ -149,6 +154,36 @@ def configure_esperoj_filesystem() -> EsperojFileSystem:
         else:
             logger.debug("No specific backends defined for replica type '%s' via %s.", rt.value, env_var_name)
 
+    # Configure default replica types for write operations
+    default_replica_types_for_write_str = os.getenv("ESPEROJ_DEFAULT_REPLICA_TYPES_FOR_WRITE")
+    default_replica_types_for_write: list[str] = []  # Initialize as empty list
+
+    if default_replica_types_for_write_str:
+        parsed_replica_types = [rt.strip() for rt in default_replica_types_for_write_str.split(",") if rt.strip()]
+
+        # Get all valid ReplicaType values for validation
+        all_valid_replica_values = [rt.value for rt in ReplicaType]
+
+        valid_replica_types = [rt for rt in parsed_replica_types if rt in all_valid_replica_values]
+
+        if len(valid_replica_types) != len(parsed_replica_types):
+            invalid_types = set(parsed_replica_types) - set(valid_replica_types)
+            logger.warning(
+                "Invalid replica types found in ESPEROJ_DEFAULT_REPLICA_TYPES_FOR_WRITE: %s. These will be ignored.",
+                ", ".join(invalid_types),
+            )
+        default_replica_types_for_write = valid_replica_types
+        if not default_replica_types_for_write:
+            logger.warning(
+                "ESPEROJ_DEFAULT_REPLICA_TYPES_FOR_WRITE was set but contained no valid replica types. Will use EsperojFileSystem's internal default (ORIGINAL, ACCESS)."
+            )
+        else:
+            logger.info("Default replica types for write operations configured: %s", default_replica_types_for_write)
+    else:  # This else statement belongs to the 'if default_replica_types_for_write_str:' check
+        logger.info(
+            "ESPEROJ_DEFAULT_REPLICA_TYPES_FOR_WRITE not set. Will use EsperojFileSystem's internal default (ORIGINAL, ACCESS)."
+        )
+
     return EsperojFileSystem(
         filesystems=configured_filesystems,
         default_storage=default_storage_name,
@@ -156,6 +191,7 @@ def configure_esperoj_filesystem() -> EsperojFileSystem:
         backup_storages=backup_storages_filtered,
         archive_storages=archive_storages_filtered,
         replica_type_backend_mapping=replica_type_backend_mapping,
+        default_replica_types_for_write=default_replica_types_for_write,
     )
 
 

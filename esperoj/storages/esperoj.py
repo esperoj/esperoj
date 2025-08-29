@@ -52,6 +52,7 @@ class EsperojFile(io.BytesIO):
         path: str,
         mode: str = "wb",
         replica_types: list[str] | None = None,
+        **kwargs,
     ):
         """
         Initializes the EsperojFile.
@@ -61,7 +62,11 @@ class EsperojFile(io.BytesIO):
             path: The logical path of the file within the file system.
             mode: The file mode (only 'wb' is supported for writing).
             replica_types: A list of ReplicaType values (e.g., ['original', 'access_copy'])
-                           to upload this file to. If None, defaults to ORIGINAL and ACCESS.
+                           to upload this file to. If None, it will use the
+                           `default_replica_types_for_write` configured on the EsperojFileSystem.
+            **kwargs: Arbitrary keyword arguments to be passed to the underlying
+                      storage backend's `open` method during upload (e.g., `metadata`
+                      for Internet Archive).
         """
         if mode != "wb":
             raise ValueError("EsperojFile only supports write-binary ('wb') mode.")
@@ -70,6 +75,7 @@ class EsperojFile(io.BytesIO):
         self.fs = fs
         self.path = path
         self.replica_types = replica_types
+        self.backend_kwargs = kwargs  # Store kwargs to pass to backend open calls
         self.file_content: bytes | None = None
         self.checksums: dict[str, str] | None = None
         self.uploaded_storage_paths: dict[str, str] = {}
@@ -80,11 +86,23 @@ class EsperojFile(io.BytesIO):
         return self.getbuffer().nbytes
 
     def _upload_replica_to_backend(
-        self, file_instance: File, replica_type_value: str, backend_name: str, file_obj: BinaryIO
+        self,
+        file_instance: File,
+        replica_type_value: str,
+        backend_name: str,
+        file_obj: BinaryIO,
+        **backend_kwargs,
     ) -> str | None:
         """
         Helper to upload content to a single backend and create a FileReplica record.
         Returns the storage_path_on_backend if successful, None otherwise.
+
+        Args:
+            file_instance: The database File object to link the replica to.
+            replica_type_value: The string value of the ReplicaType (e.g., 'original').
+            backend_name: The name of the storage backend (e.g., 'catbox').
+            file_obj: The file-like object containing the content to upload.
+            **backend_kwargs: Additional keyword arguments to pass to the backend's `open` method.
         """
         backend_fs = self.fs.filesystems.get(backend_name)
         if not backend_fs:
@@ -98,7 +116,8 @@ class EsperojFile(io.BytesIO):
 
         storage_path_on_backend = self.path  # Default to logical path
         try:
-            with cast(BinaryIO, backend_fs.open(self.path, "wb")) as f:
+            # Pass additional backend_kwargs to the underlying fsspec backend's open method
+            with cast(BinaryIO, backend_fs.open(self.path, "wb", **backend_kwargs)) as f:
                 file_obj.seek(0)  # Ensure we read from the beginning
                 while True:
                     chunk = file_obj.read(self.DEFAULT_CHUNK_SIZE)
@@ -180,8 +199,21 @@ class EsperojFile(io.BytesIO):
         )
         return file_instance
 
-    def _upload_replicas(self, file_instance: File, target_replica_types_for_upload: list[str]) -> list[str]:
-        """Uploads content to target backends and creates FileReplica records."""
+    def _upload_replicas(
+        self, file_instance: File, target_replica_types_for_upload: list[str], **backend_kwargs
+    ) -> list[str]:
+        """
+        Uploads content to target backends and creates FileReplica records.
+
+        Args:
+            file_instance: The database File object to link the replicas to.
+            target_replica_types_for_upload: A list of ReplicaType values (str) for which
+                                             replicas should be created.
+            **backend_kwargs: Additional keyword arguments to pass to `_upload_replica_to_backend`,
+                              which will then pass them to the backend's `open` method.
+        Returns:
+            A list of strings indicating successful uploads (e.g., "catbox (original)").
+        """
         successful_uploads = []
         for replica_type_value in target_replica_types_for_upload:
             backend_names_for_replica_type = self.fs.replica_type_backend_mapping.get(replica_type_value)
@@ -195,7 +227,9 @@ class EsperojFile(io.BytesIO):
                 continue
 
             for backend_name in backend_names_for_replica_type:
-                storage_path = self._upload_replica_to_backend(file_instance, replica_type_value, backend_name, self)
+                storage_path = self._upload_replica_to_backend(
+                    file_instance, replica_type_value, backend_name, self, **backend_kwargs
+                )
                 if storage_path:
                     self.uploaded_storage_paths[backend_name] = storage_path
                     successful_uploads.append(f"{backend_name} ({replica_type_value})")
@@ -214,15 +248,25 @@ class EsperojFile(io.BytesIO):
             super().close()
             return
 
-        target_replica_types_for_upload = self.replica_types or [ReplicaType.ORIGINAL.value, ReplicaType.ACCESS.value]
-        if self.replica_types is None:
-            logger.debug("No replica_types specified for %s, defaulting to ORIGINAL and ACCESS.", self.path)
-
+        self.file_content = self.getvalue()  # Store content for checksums
         self.checksums = self._calculate_and_store_checksums()
+
+        # Determine the target replica types for this upload.
+        # Prioritize instance-specific `replica_types`, then fall back to file system defaults.
+        target_replica_types_for_upload = self.replica_types or self.fs.default_replica_types_for_write
+        if not self.replica_types:
+            logger.debug(
+                "No replica_types specified for %s, defaulting to file system's defaults: %s.",
+                self.path,
+                target_replica_types_for_upload,
+            )
 
         with transaction.atomic():
             file_instance = self._create_or_update_file_metadata(size, self.checksums)
-            successful_uploads = self._upload_replicas(file_instance, target_replica_types_for_upload)
+            # Pass stored backend_kwargs to _upload_replicas
+            successful_uploads = self._upload_replicas(
+                file_instance, target_replica_types_for_upload, **self.backend_kwargs
+            )
 
             if not successful_uploads:
                 logger.critical(
@@ -256,6 +300,7 @@ class EsperojFileSystem(AbstractFileSystem):
         backup_storages: list[str],
         archive_storages: list[str],
         replica_type_backend_mapping: dict[str, list[str]],
+        default_replica_types_for_write: list[str] | None = None,
         **storage_options,
     ):
         """
@@ -272,6 +317,10 @@ class EsperojFileSystem(AbstractFileSystem):
             replica_type_backend_mapping: A dictionary mapping ReplicaType values (str)
                                           to a list of storage backend names (str) where
                                           replicas of that type should be stored.
+            default_replica_types_for_write: A list of ReplicaType values (str) that
+                                             should be used by default when writing files
+                                             if not explicitly specified in the `_open` call.
+                                             If None, defaults to [ReplicaType.ORIGINAL.value].
             **storage_options: Additional options passed to the superclass.
         """
         super().__init__(**storage_options)
@@ -286,14 +335,18 @@ class EsperojFileSystem(AbstractFileSystem):
         self.backup_storages = backup_storages
         self.archive_storages = archive_storages
         self.replica_type_backend_mapping = replica_type_backend_mapping
+        self.default_replica_types_for_write = default_replica_types_for_write or [
+            ReplicaType.ORIGINAL.value
+        ]  # Default to original
 
         logger.info(
-            "EsperojFileSystem initialized. Backends: %s, Default: %s, Primary for Reads: %s, Backup for Reads: %s, Archive for Reads: %s, Replica Type Mappings: %s",
+            "EsperojFileSystem initialized. Backends: %s, Default: %s, Primary for Reads: %s, Backup for Reads: %s, Archive for Reads: %s, Default Write Replica Types: %s, Replica Type Mappings: %s",
             list(self.filesystems.keys()),
             self.default_storage,
             self.primary_storages,
             self.backup_storages,
             self.archive_storages,
+            self.default_replica_types_for_write,
             self.replica_type_backend_mapping,
         )
 
@@ -382,6 +435,7 @@ class EsperojFileSystem(AbstractFileSystem):
         storage_name: str | None = None,
         replica_types: list[str] | None = None,
         encoding: str | None = None,
+        **kwargs,  # Add **kwargs to capture additional options
     ):
         path = cast(str, self._strip_protocol(path))
 
@@ -392,6 +446,7 @@ class EsperojFileSystem(AbstractFileSystem):
                 storage_name=storage_name,
                 replica_types=replica_types,
                 encoding=encoding,
+                **kwargs,  # Pass kwargs through
             )
             return io.TextIOWrapper(
                 BufferedReader(binary_stream),
@@ -453,8 +508,10 @@ class EsperojFileSystem(AbstractFileSystem):
             )
 
         elif mode == "wb":
-            # Pass replica_types to EsperojFile for write operations
-            return EsperojFile(self, path, mode=mode, replica_types=replica_types)
+            # Extract replica_types from kwargs if provided, otherwise it will be None.
+            # EsperojFile will then use EsperojFileSystem's default if its own is None.
+            write_replica_types = kwargs.pop("replica_types", replica_types)
+            return EsperojFile(self, path, mode=mode, replica_types=write_replica_types, **kwargs)
 
         else:
             raise NotImplementedError(f"Mode '{mode}' is not supported.")
@@ -483,7 +540,7 @@ class EsperojFileSystem(AbstractFileSystem):
         path = cast(str, self._strip_protocol(path))
         return self.isfile(path) or self.isdir(path)
 
-    def mkdir(self, path: str) -> None:
+    def mkdir(self, path: str) -> None:  # noqa: ARG002
         # Directories are virtual and exist implicitly if they contain files.
         # This method is a no-op but is required for fsspec compliance.
         pass
