@@ -5,6 +5,7 @@ Please follow these comprehensive guidelines to ensure high-quality, maintainabl
     - Maintain a clear separation of concerns across application layers (e.g., models, services, views) to improve modularity, testability, and refactoring efforts.
     - Organize model fields into logical sections using clear comments (e.g., 'Core Fields', 'Relationship Fields', 'Timestamp Fields') for improved readability.
     - Write concise functions and methods that adhere to the Single Responsibility Principle.
+    - Reduce duplication by putting common query into manager and reused in other places like storages, admin, and especially services.
 
 - **2. Database & ORM Best Practices**
     - Explicitly define `db_table` for all models to ensure consistent naming and prevent unexpected behavior.

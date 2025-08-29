@@ -15,7 +15,7 @@ import fsspec
 from django.db import transaction
 
 from esperoj.models import File, FileReplica
-from esperoj.storage.fsspec_backends.catbox import CatboxFileSystem  # noqa: F401, pylint: disable=unused-import
+from esperoj.storage.catbox import CatboxFileSystem  # noqa: F401, pylint: disable=unused-import
 
 logger = logging.getLogger(__name__)
 
