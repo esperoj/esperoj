@@ -201,6 +201,7 @@ class File(BaseModel, DisplaySizeMixin, ChecksumMixin):
         default="",
         help_text="Additional format information (e.g., 'FLAC', 'PDF/A-1b', 'TIFF').",
     )
+    additional_data = models.JSONField(blank=True, null=True, help_text="Additional metadata for the file.")
 
     # --- Type hints for reverse relationships ---
     replicas: "Manager['FileReplica']"

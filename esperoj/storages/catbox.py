@@ -6,7 +6,8 @@ that interacts with a simple file hosting service (like Catbox.moe).
 
 The file system supports opening files for reading and writing (`_open`).
 Writing a file involves uploading it to the external service. Reading a file
-streams it directly from the external service's URL.
+streams it directly from the external service's URL. File deletion is
+supported if a `userhash` is provided.
 """
 
 import io
@@ -24,7 +25,8 @@ class CatboxFile(io.BytesIO):
     A file-like object for handling uploads to the Catbox service.
 
     This class buffers the written content in memory. When the file is closed,
-    it uploads the content to the Catbox service.
+    it uploads the content to the Catbox service using the userhash provided
+    by the `CatboxFileSystem` instance.
     """
 
     def __init__(self, fs: "CatboxFileSystem", path: str, mode: str = "wb", **kwargs):
@@ -46,6 +48,9 @@ class CatboxFile(io.BytesIO):
     def close(self):
         """
         Finalizes the file by uploading its content.
+
+        If a `userhash` is present in the filesystem instance, it is used for
+        the upload, enabling future deletion.
         """
         self.seek(0)
         file_content = self.getvalue()
@@ -61,7 +66,7 @@ class CatboxFile(io.BytesIO):
             # The filename is taken from the last part of the path
             filename = self.path.split("/")[-1]
             files = {"fileToUpload": (filename, file_content)}
-            data = {"reqtype": "fileupload", "userhash": ""}  # userhash can be empty for anonymous uploads
+            data = {"reqtype": "fileupload", "userhash": self.fs.userhash or ""}
             response = requests.post(self.fs.api_url, files=files, data=data, timeout=300)
             response.raise_for_status()
             self.storage_url = response.text
@@ -78,15 +83,24 @@ class CatboxFileSystem(AbstractFileSystem):
     An fsspec-compatible file system for a Catbox-like service.
 
     This file system is designed to be a storage backend. It does not handle
-    metadata or directory listings, as that is the responsibility of a
-    higher-level file system like `EsperojFileSystem`.
+    metadata or directory listings. It supports anonymous uploads, and if a
+    `userhash` is provided, it can also delete files.
     """
 
     protocol = "catbox"
 
-    def __init__(self, api_url: str | None = None, **storage_options):
+    def __init__(self, api_url: str | None = None, userhash: str | None = None, **storage_options):
+        """
+        Initializes the CatboxFileSystem.
+
+        Args:
+            api_url: The API endpoint for the Catbox service.
+            userhash: The user hash for authenticated actions like deletion.
+            **storage_options: Additional options for the parent class.
+        """
         super().__init__(**storage_options)
         self.api_url = api_url or "https://catbox.moe/user/api.php"
+        self.userhash = userhash
 
     def _open(self, path, mode="rb", **kwargs):
         """
@@ -125,14 +139,27 @@ class CatboxFileSystem(AbstractFileSystem):
 
     def rm(self, path, **kwargs):
         """
-        Placeholder for removing a file.
+        Removes a file from the Catbox service.
 
-        The Catbox.moe API does not support file deletion for anonymous uploads.
-        This method is a no-op.
+        This operation requires a `userhash` to have been provided during
+        filesystem initialization. If no `userhash` is available, a warning
+        is logged and the file is orphaned.
         """
-        logger.warning(
-            "File deletion is not supported by the Catbox backend for path/URL: %s. "
-            "The file will be orphaned on the storage.",
-            path,
-        )
-        pass
+        if not self.userhash:
+            logger.warning(
+                "File deletion is not supported without a userhash. The file will be orphaned on the storage: %s.",
+                path,
+            )
+            return
+
+        path = cast(str, self._strip_protocol(path))
+        filename = path.split("/")[-1]
+
+        try:
+            data = {"reqtype": "deletefiles", "userhash": self.userhash, "files": filename}
+            response = requests.post(self.api_url, data=data, timeout=60)
+            response.raise_for_status()
+            logger.info("Successfully requested deletion of %s from Catbox.", path)
+        except requests.RequestException as e:
+            logger.error("Failed to delete file %s from Catbox service: %s", path, e)
+            raise IOError(f"File deletion failed: {e}") from e

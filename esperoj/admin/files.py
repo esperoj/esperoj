@@ -126,6 +126,13 @@ class FileAdmin(StandardModelAdmin, AdminDisplayHelperMixin):
             },
         ),
         (
+            "Additional Data",
+            {
+                "fields": ("additional_data",),
+                "classes": ("collapse",),
+            },
+        ),
+        (
             "Timestamps",
             {
                 "fields": ("created_at", "updated_at"),
