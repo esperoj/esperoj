@@ -11,6 +11,7 @@ import logging
 from fsspec.spec import AbstractFileSystem
 from esperoj.storages.esperoj import EsperojFileSystem
 from esperoj.storages.catbox import CatboxFileSystem
+from esperoj.storages.internet_archive import InternetArchiveFileSystem
 from esperoj.constants import StorageName, ReplicaType
 
 logger = logging.getLogger(__name__)
@@ -53,6 +54,26 @@ def configure_esperoj_filesystem() -> EsperojFileSystem:
         logger.info("Catbox storage backend '%s' configured with URL: %s.", StorageName.CATBOX.value, catbox_api_url)
     else:
         logger.info("Catbox storage backend is disabled via ESPEROJ_CATBOX_ENABLED.")
+
+    # --- Internet Archive Configuration ---
+    ia_enabled = os.getenv("ESPEROJ_IA_ENABLED", "false").lower() == "true"
+    if ia_enabled:
+        ia_access_key = os.getenv("IA_ACCESS_KEY")
+        ia_secret_key = os.getenv("IA_SECRET_KEY")
+        ia_collection = os.getenv("IA_COLLECTION", "test_collection")
+
+        if ia_access_key and ia_secret_key:
+            ia_fs = InternetArchiveFileSystem(
+                access_key=ia_access_key, secret_key=ia_secret_key, collection=ia_collection
+            )
+            configured_filesystems[StorageName.INTERNET_ARCHIVE.value] = ia_fs
+            logger.info("Internet Archive storage backend '%s' configured.", StorageName.INTERNET_ARCHIVE.value)
+        else:
+            logger.warning(
+                "Internet Archive storage is enabled but IA_ACCESS_KEY or IA_SECRET_KEY are missing. Backend will not be available."
+            )
+    else:
+        logger.info("Internet Archive storage backend is disabled via ESPEROJ_IA_ENABLED.")
 
     # Add other storage backends here as needed (e.g., S3, local, GCS)
     local_enabled = os.getenv("ESPEROJ_LOCAL_ENABLED", "false").lower() == "true"

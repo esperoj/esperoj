@@ -31,6 +31,7 @@ class StorageName(models.TextChoices):
 
     LOCAL_DEFAULT = "local_default", "Local Default Storage"
     CATBOX = "catbox", "Catbox.moe"
+    INTERNET_ARCHIVE = "internet_archive", "Internet Archive"
     # Add other storage names as they are implemented, e.g.:
     # S3_PRIMARY = "s3_primary", "AWS S3 Primary"
     # GCS_ARCHIVE = "gcs_archive", "Google Cloud Storage Archive"

@@ -574,7 +574,8 @@ class EsperojFileSystem(AbstractFileSystem):
                     # Catbox (and similar URL-based) backends will have `mv` as a no-op at the backend level
                     # so their storage_path (URL) does not change, only the logical path in Esperoj's metadata.
                     if replica.storage_name not in [
-                        StorageName.CATBOX.value
+                        StorageName.CATBOX.value,
+                        StorageName.INTERNET_ARCHIVE.value,
                     ]:  # Explicitly list URL-based backends here
                         new_storage_path = replica.storage_path.replace(path1, path2, 1)
                         try:
@@ -651,7 +652,8 @@ class EsperojFileSystem(AbstractFileSystem):
 
                     new_storage_path_for_backend = replica.storage_path
                     if replica.storage_name not in [
-                        StorageName.CATBOX.value
+                        StorageName.CATBOX.value,
+                        StorageName.INTERNET_ARCHIVE.value,
                     ]:  # Explicitly list URL-based backends here
                         new_storage_path_for_backend = replica.storage_path.replace(path1, path2, 1)
                         try:
@@ -673,10 +675,11 @@ class EsperojFileSystem(AbstractFileSystem):
                             raise IOError(f"Backend copy failed for {replica.storage_name}: {e}") from e
                     else:
                         logger.warning(
-                            "Copy operation for Catbox backend means referencing the same URL. "
-                            "No new file will be uploaded to Catbox. A new replica record will point to the original URL."
+                            "Copy operation for URL-based backends (like Catbox or Internet Archive) means "
+                            "referencing the same URL. No new file will be uploaded to these backends. "
+                            "A new replica record will point to the original URL."
                         )
-                        # For Catbox, the backend_fs.cp (if it existed) would be a no-op,
+                        # For URL-based backends, the backend_fs.cp (if it existed) would be a no-op,
                         # so we simply point the new replica to the existing URL.
 
                     FileReplica.objects.update_or_create(
