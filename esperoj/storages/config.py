@@ -204,7 +204,4 @@ def configure_esperoj_filesystem() -> EsperojFileSystem:
     )
 
 
-# Instantiate the EsperojFileSystem once for application-wide use
-esperoj_fs = configure_esperoj_filesystem()
-
-__all__ = ["esperoj_fs", "configure_esperoj_filesystem"]
+__all__ = ["configure_esperoj_filesystem"]

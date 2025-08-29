@@ -40,34 +40,34 @@ manage = ./manage.py
 
 run: setup
 	@echo "Starting Django development server..."
-	$(manage) runserver
+	$(VENV_DIR)/bin/python $(manage) runserver
 
 run_plus: setup
 	@echo "Starting Django development server with django-extensions (runserver_plus)..."
-	$(manage) runserver_plus
+	$(VENV_DIR)/bin/python $(manage) runserver_plus
 
 shell: setup
 	@echo "Opening Django shell..."
-	$(manage) shell
+	$(VENV_DIR)/bin/python $(manage) shell
 
 shell_plus: setup
 	@echo "Opening Django shell_plus with django-extensions..."
-	$(manage) shell_plus
+	$(VENV_DIR)/bin/python $(manage) shell_plus
 
 makemigrations: setup
 	@echo "Creating new migrations..."
-	$(manage) makemigrations esperoj
+	$(VENV_DIR)/bin/python $(manage) makemigrations esperoj
 
 migrate: setup
 	@echo "Applying database migrations..."
-	$(manage) migrate
+	$(VENV_DIR)/bin/python $(manage) migrate
 
 fresh_db: clean-migrations clean-db setup makemigrations migrate createsuperuser
 	@echo "Fresh database setup complete."
 
 createsuperuser: setup
 	@echo "Creating superuser 'admin' with password 'pass' and email 'admin@example.com'..."
-	@echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', 'pass')" | $(manage) shell
+	@echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', 'pass')" | $(VENV_DIR)/bin/python $(manage) shell
 	@echo "Superuser created."
 
 # ------------------------------------------------------------------------------

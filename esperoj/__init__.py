@@ -7,8 +7,10 @@ and a central `EsperojFileSystem` that manages file metadata and replicas
 across these backends.
 """
 
-from .storages import CatboxFileSystem
-from .storages import EsperojFileSystem
-from .storages.config import esperoj_fs
+# Define default_app_config for Django to discover the AppConfig
+default_app_config = "esperoj.apps.EsperojAppConfig"
 
-__all__ = ["CatboxFileSystem", "EsperojFileSystem", "esperoj_fs"]
+# esperoj_fs will be configured in EsperojAppConfig.ready()
+# We don't import it here to avoid AppRegistryNotReady errors.
+
+__all__ = []
