@@ -1,62 +1,75 @@
-Please follow these comprehensive guidelines to ensure high-quality, maintainable, and robust code:
+### **I. General Software Engineering Best Practices**
 
-- **1. Code Structure & Readability**
-    - Adhere strictly to PEP 8 for consistent code style and formatting.
-    - Maintain a clear separation of concerns across application layers (e.g., models, services, views) to improve modularity, testability, and refactoring efforts.
-    - Organize model fields into logical sections using clear comments (e.g., 'Core Fields', 'Relationship Fields', 'Timestamp Fields') for improved readability.
-    - Write concise functions and methods that adhere to the Single Responsibility Principle.
-    - Reduce duplication by putting common query into manager and reused in other places like storages, admin, and especially services.
+These are universal guidelines for writing high-quality, robust, and maintainable code.
 
-- **2. Database & ORM Best Practices**
-    - Explicitly define `db_table` for all models to ensure consistent naming and prevent unexpected behavior.
-    - Define appropriate database indexes within the `Meta` class of models for columns frequently used in queries to optimize performance.
-    - Enforce data integrity by adding appropriate database constraints (e.g., `UniqueConstraint`, `CheckConstraint`) where applicable.
-    - Assign appropriate `max_length` values to `CharField` instances, balancing storage efficiency with practical requirements.
-    - Implement custom model managers for encapsulating common query logic, promoting reusability and cleaner code.
-    - Prevent N+1 query problems by consistently using `select_related` and `prefetch_related` where necessary, and provide helper methods for deep relationships.
-    - Leverage Django's built-in features (e.g., `annotate`, `aggregate`) to perform complex queries efficiently at the database level.
-    - Utilize database transactions (e.g., `transaction.atomic()`) to ensure data consistency during complex operations.
-    - Avoid raw SQL queries unless absolutely necessary; prefer Django ORM methods for better maintainability and security.
-    - Naming fields should be consistent and descriptive, avoiding ambiguous abbreviations.
+**1. Code Quality & Readability**
+*   **Style:** Adhere strictly to PEP 8 for all code.
+*   **Clarity:** Write concise functions and methods that follow the Single Responsibility Principle. Name variables, functions, and classes descriptively, avoiding ambiguous abbreviations.
+*   **Documentation:**
+    *   Use Google-style docstrings for all modules, classes, and functions.
+    *   Use type hints extensively throughout the codebase.
+    *   Provide `help_text` for all model fields to clarify their purpose.
+    *   Organize model fields into logical sections using comments (e.g., `# Core Fields`, `# Timestamps`).
 
-- **3. Application Logic & Design**
-    - Implement robust input validation at all entry points (e.g., forms, serializers, views) to prevent invalid or malicious data from being processed.
-    - Handle errors gracefully, providing meaningful feedback to users and detailed logging for debugging purposes.
-    - Utilize asynchronous tasks for long-running operations to prevent blocking the main request cycle and improve responsiveness.
+**2. Database & ORM**
+*   **Schema Definition:**
+    *   Explicitly define `db_table` for all models for naming consistency.
+    *   Use appropriate `max_length` for `CharField` instances.
+    *   Define database indexes (`Meta.indexes`) for columns frequently used in filtering or ordering.
+    *   Enforce data integrity with database constraints (`UniqueConstraint`, `CheckConstraint`).
+*   **Querying:**
+    *   **DRY Principle:** Encapsulate common or complex queries within custom model managers to promote reusability across the application (e.g., in services, admin, CLI).
+    *   **Performance:** Prevent N+1 problems by using `select_related` and `prefetch_related` for all relevant queries.
+    *   **Efficiency:** Leverage the Django ORM's `annotate` and `aggregate` features to perform calculations at the database level.
+    *   **Safety:** Use `transaction.atomic()` for operations that must be all-or-nothing. Avoid raw SQL unless absolutely necessary.
 
-- **4. Performance & Scalability**
-    - Implement caching strategies (e.g., per-view caching, object caching) for frequently accessed, static, or computationally expensive data.
-    - Monitor application performance and proactively address bottlenecks.
+**3. Application Design & Security**
+*   **Robustness:** Implement strict input validation at all entry points (forms, serializers, views). Handle errors gracefully with clear user feedback and detailed logging.
+*   **Security:**
+    *   Implement robust authentication and authorization for all protected resources.
+    *   Sanitize all user-generated content before rendering to prevent XSS attacks.
+    *   Store secrets (API keys, credentials) securely using environment variables or a secret management tool, never in code.
+    *   Keep all project dependencies regularly updated to patch security vulnerabilities.
+*   **Performance:**
+    *   Use asynchronous tasks for long-running or blocking operations.
+    *   Implement caching strategies for computationally expensive or frequently accessed data.
 
-- **5. Security**
-    - Implement robust authentication and authorization mechanisms (e.g., role-based access control, Django permissions) for all protected resources.
-    - Sanitize and escape all user-generated content before rendering to prevent Cross-Site Scripting (XSS) vulnerabilities.
-    - Store sensitive configuration data (e.g., API keys, database credentials) securely using environment variables or dedicated secret management tools.
-    - Regularly update dependencies to patch known security vulnerabilities.
+**4. Development Process**
+*   **Testing:** Write comprehensive unit and integration tests for all business logic, focusing on critical paths, edge cases, and error conditions. Ensure tests are independent and repeatable.
+*   **Version Control:** Write clear, descriptive commit messages. Use feature branches for all new work and conduct peer reviews before merging.
+*   **Logging:** Implement structured logging with appropriate log levels (DEBUG, INFO, WARNING, ERROR) to facilitate monitoring and debugging.
 
-- **6. Testing**
-    - Write comprehensive unit, integration, and end-to-end tests for all critical components and business logic.
-    - Strive for high test coverage, focusing on edge cases, error conditions, and failure scenarios.
-    - Ensure tests are independent, fast, and repeatable.
+---
 
-- **7. Documentation & Tooling**
-    - Adhere to Google style docstrings for all modules, classes, functions, and methods, ensuring they are clear, concise, and pass linter tests.
-    - Include `help_text` for all model fields to provide clear descriptions, especially useful for admin interfaces or API documentation.
-    - Use type hints extensively throughout the codebase for improved readability, maintainability, and static analysis.
-    - Maintain up-to-date documentation for API endpoints, project setup, and key architectural decisions.
+### **II. Project-Specific Directives for 'esperoj'**
 
-- **8. Version Control & Collaboration**
-    - Write clear, concise, and descriptive commit messages that follow a consistent style guide.
-    - Use feature branches for new features and bug fixes, and ensure pull requests are reviewed by peers before merging.
+These are specific architectural rules that MUST be followed for this project.
 
-- **9. Logging & Monitoring**
-    - Implement structured logging with appropriate log levels (DEBUG, INFO, WARNING, ERROR, CRITICAL) to facilitate debugging and monitoring.
-    - Set up monitoring and alerting for critical application metrics and error rates.
+**1. Core Architecture: The Layered Monolith**
+The `esperoj` application must be structured by architectural layer, not by feature. The primary goal is to isolate business logic from delivery mechanisms.
 
-- **10. AI Agent Specific Guidelines**
-    - Actively utilize Python 3.11+ language features, including native type hints (e.g., `dict`, `list`). Don't use `Dict`, `List` from `typing` module.
-    - Validate all changes by executing the diagnostic agent tool and ensuring successful completion of all associated tests.
-    - If there is troubles with editing files, just do it again assuming the AI agent faces rate limit.
-# Project Specific
+*   **Directory Structure:** The app must contain the following directories, named according to convention:
+    ```
+    esperoj/
+    ├── core/         # Singular: A single conceptual domain
+    ├── utils/        # Plural: A collection of utilities
+    ├── models/       # Plural: A collection of models
+    ├── services/     # Plural: A collection of services
+    ├── storages/     # Plural: A collection of storage backends
+    ├── web/          # Singular: A single web interface concept
+    ├── admin/        # Singular: A single admin interface concept
+    └── cli/          # Singular: A single CLI concept
+    ```
+*   **The Dependency Rule:** Dependencies must flow strictly from outer layers to inner layers. **The `core` and `utils` layers must remain pure and CANNOT import from Django or any other layer in this project.**
+    *   **`Entry Points (web, admin, cli)` -> `services` -> `(core, models, utils, storages)`**
+*   **Layer Responsibilities:**
+    *   **`core`:** Contains the pure, timeless business rules of the application.
+    *   **`services`:** The central orchestrator. This is the "glue" that implements use cases by coordinating the other layers.
+    *   **`storages`:** Implements a custom Django Storage backend using the `fsspec` library to create a flexible, protocol-agnostic interface to filesystems.
+    *   **`web`, `admin`, `cli`:** These are entry points only. They handle I/O and user interaction but must delegate all business logic and operations to the `services` layer.
 
-- The package name is esperoj, so don't use `import like import esperoj.esperoj`. use `import esperoj`
+**2. AI Agent & Project Guidelines**
+*   **Python Version:** Actively use Python 3.11+ features, including native type hints (e.g., `list`, not `List` from `typing`).
+*   **Package Name:** The package is `esperoj`. Use direct imports like `from esperoj.services import ...`, not `from esperoj.esperoj.services import ...`.
+*   **Validation:** After making changes, execute any available diagnostic tools and associated tests to ensure full functionality.
+*   **Execution:** If you encounter file editing issues, retry the operation, assuming it may be a temporary rate-limiting or API issue.
