@@ -1,68 +1,36 @@
 """
 Checksum utilities for calculating file hashes.
 
-This module provides functions for calculating common checksums like MD5 and SHA256,
+This module provides a flexible function for calculating various checksums,
 which are essential for verifying file integrity in a digital preservation system.
-The functions are designed to be memory-efficient by reading files in chunks.
+The function is designed to be memory-efficient by reading files in chunks.
 """
 
 import hashlib
-from pathlib import Path
+from typing import BinaryIO
 
 
-def calculate_md5(file_path: Path, chunk_size: int = 8192) -> str:
+def calculate_checksum(file_obj: BinaryIO, algorithm: str = "sha256", chunk_size: int = 8192) -> str:
     """
-    Calculates the MD5 checksum of a file.
+    Calculates the checksum of a file using a specified algorithm.
 
     Args:
-        file_path: The path to the file.
+        file_obj: A binary file-like object to read from.
+        algorithm: The hashing algorithm to use (e.g., 'md5', 'sha1', 'sha256', 'sha512').
         chunk_size: The size of chunks to read from the file.
 
     Returns:
-        The MD5 checksum as a hex digest.
+        The checksum as a hex digest.
+
+    Raises:
+        ValueError: If the specified algorithm is not supported.
     """
-    md5 = hashlib.md5()
-    with file_path.open("rb") as f:
-        while chunk := f.read(chunk_size):
-            md5.update(chunk)
-    return md5.hexdigest()
+    try:
+        hasher = hashlib.new(algorithm)
+    except ValueError:
+        raise ValueError(f"Unsupported hashing algorithm: {algorithm}")
 
-
-def calculate_sha256(file_path: Path, chunk_size: int = 8192) -> str:
-    """
-    Calculates the SHA256 checksum of a file.
-
-    Args:
-        file_path: The path to the file.
-        chunk_size: The size of chunks to read from the file.
-
-    Returns:
-        The SHA256 checksum as a hex digest.
-    """
-    sha256 = hashlib.sha256()
-    with file_path.open("rb") as f:
-        while chunk := f.read(chunk_size):
-            sha256.update(chunk)
-    return sha256.hexdigest()
-
-
-def calculate_checksums(file_path: Path) -> dict[str, str]:
-    """
-    Calculates multiple checksums (MD5, SHA256) for a file in a single pass.
-
-    Args:
-        file_path: The path to the file.
-
-    Returns:
-        A dictionary containing the 'md5' and 'sha256' checksums.
-    """
-    md5 = hashlib.md5()
-    sha256 = hashlib.sha256()
-    chunk_size = 8192
-
-    with file_path.open("rb") as f:
-        while chunk := f.read(chunk_size):
-            md5.update(chunk)
-            sha256.update(chunk)
-
-    return {"md5": md5.hexdigest(), "sha256": sha256.hexdigest()}
+    # Read directly from the file-like object. The caller is responsible for opening/closing/seeking.
+    while chunk := file_obj.read(chunk_size):
+        hasher.update(chunk)
+    return hasher.hexdigest()

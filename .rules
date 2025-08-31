@@ -1,4 +1,4 @@
-### **I. General Software Engineering Best Practices**
+### General Software Engineering Best Practices
 
 These are universal guidelines for writing high-quality, robust, and maintainable code.
 
@@ -28,8 +28,6 @@ These are universal guidelines for writing high-quality, robust, and maintainabl
 *   **Security:**
     *   Implement robust authentication and authorization for all protected resources.
     *   Sanitize all user-generated content before rendering to prevent XSS attacks.
-    *   Store secrets (API keys, credentials) securely using environment variables or a secret management tool, never in code.
-    *   Keep all project dependencies regularly updated to patch security vulnerabilities.
 *   **Performance:**
     *   Use asynchronous tasks for long-running or blocking operations.
     *   Implement caching strategies for computationally expensive or frequently accessed data.
@@ -41,7 +39,7 @@ These are universal guidelines for writing high-quality, robust, and maintainabl
 
 ---
 
-### **II. Project-Specific Directives for 'esperoj'**
+### II. Project-Specific Directives for 'esperoj'
 
 These are specific architectural rules that MUST be followed for this project.
 
@@ -61,10 +59,14 @@ The `esperoj` application must be structured by architectural layer, not by feat
     └── cli/          # Singular: A single CLI concept
     ```
 *   **The Dependency Rule:** Dependencies must flow strictly from outer layers to inner layers. **The `core` and `utils` layers must remain pure and CANNOT import from Django or any other layer in this project.**
-    *   **`Entry Points (web, admin, cli)` -> `services` -> `(core, models, utils, storages)`**
+    *   **`Entry Points (cli)` -> `services`. `Entry Points (web, admin)` -> `(services, models)`. `services` -> `(core, models, utils, storages)`.**
 *   **Layer Responsibilities:**
-    *   **`core`:** Contains the pure, timeless business rules of the application.
-    *   **`services`:** The central orchestrator. This is the "glue" that implements use cases by coordinating the other layers.
+    *   **`core`:** Contains the pure, timeless business rules of the application. This layer defines logic and behavior, contrasting with the `models` layer which defines data structure and persistence.
+        *   **Start with Functions:** The default approach is to implement business logic as pure, stateless functions. These functions should operate on primitive data types (e.g., `str`, `int`, `Decimal`) and should not depend on or modify external state.
+        *   **Organize by Domain:** Group related functions into modules (e.g., `core/pricing.py`) or sub-packages (e.g., `core/users/validation.py`) to serve as clear, logical namespaces.
+        *   **Introduce Entities When Necessary:** A class (an "entity," often a `dataclass`) should only be created when you need to manage a cluster of related data and behavior together. Use an entity to enforce invariants (rules that must always be true for an object) or to manage complex state transitions (e.g., an `Order` moving from `PENDING` to `SHIPPED`).
+    *   **`models`:** Defines the application's data schema (models) and provides efficient query interfaces (managers). Models are treated as data carriers for the persistence layer, not as the primary location for complex business logic. They may leverage functions from `core` and `utils` for validation.
+    *   **`services`:** The central orchestrator. This is the "glue" that implements use cases. It coordinates data retrieval (`models`), applies business rules (`core`), and interacts with infrastructure (`storages`).
     *   **`storages`:** Implements a custom Django Storage backend using the `fsspec` library to create a flexible, protocol-agnostic interface to filesystems.
     *   **`web`, `admin`, `cli`:** These are entry points only. They handle I/O and user interaction but must delegate all business logic and operations to the `services` layer.
 
