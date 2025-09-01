@@ -1,34 +1,60 @@
-from django.apps import AppConfig
 import logging
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from esperoj.storages.esperoj import EsperojFileSystem
-
-
-logger = logging.getLogger(__name__)
+import logging.handlers
+from django.apps import AppConfig
+from django.conf import settings
+import os
 
 
-class EsperojAppConfig(AppConfig):
-    """
-    Application configuration for the Esperoj app.
+class CustomFormatter(logging.Formatter):
+    def format(self, record):
+        return super().format(record)
 
-    This config ensures that the EsperojFileSystem is initialized only after
-    Django's app registry is fully loaded, preventing AppRegistryNotReady errors.
-    """
 
+class EsperojConfig(AppConfig):
     name = "esperoj"
-    verbose_name = "Esperoj File Storage"
-    esperoj_fs: "EsperojFileSystem | None" = None  # Declare as a class attribute
 
     def ready(self):
         """
-        Initializes the EsperojFileSystem once the Django app registry is ready.
+        Set up custom logging for the 'esperoj' app when Django starts.
+        The log level is set to INFO in 'production' and DEBUG otherwise.
         """
-        logger.info("EsperojAppConfig.ready() called. Configuring Esperoj File System...")
-        # Import config here to avoid AppRegistryNotReady error during initial import
-        # and to ensure configure_esperoj_filesystem is called at the correct time.
-        from esperoj.storages import config
+        # --- Start of Logging Configuration ---
+        logger = logging.getLogger(self.name)
 
-        self.esperoj_fs = config.configure_esperoj_filesystem()  # Assign to instance attribute
-        logger.info("Esperoj File System configured.")
+        # Avoid duplicate handlers if runserver reloads
+        if logger.handlers:
+            return
+
+        # Determine the log level based on the environment setting
+        if getattr(settings, "ENVIRONMENT", "development") == "production":
+            log_level = logging.INFO
+        else:
+            log_level = logging.DEBUG
+
+        logger.setLevel(log_level)  # <-- Set the logger's gatekeeper level
+        logger.propagate = False
+
+        # --- Formatter and Handler Setup ---
+        log_format = "%(asctime)s - %(name)s - [%(levelname)s] - %(message)s (%(pathname)s:%(lineno)d)"
+        formatter = CustomFormatter(log_format)
+
+        log_dir = "logs"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        file_handler = logging.handlers.RotatingFileHandler(
+            f"{log_dir}/{self.name}.log",
+            maxBytes=5 * 1024 * 1024,
+            backupCount=4,
+            encoding="utf-8",  # backupCount=4 for 25MB total
+        )
+
+        file_handler.setLevel(log_level)  # <-- Set the handler's gatekeeper level
+        file_handler.setFormatter(formatter)
+
+        logger.addHandler(file_handler)
+
+        # This log message will now tell you which level is active
+        logger.info(
+            "Logging for '%s' app configured successfully. Log level: %s", self.name, logging.getLevelName(log_level)
+        )

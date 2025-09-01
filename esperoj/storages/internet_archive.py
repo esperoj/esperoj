@@ -17,7 +17,7 @@ import logging
 import internetarchive
 import requests
 from fsspec.spec import AbstractFileSystem
-from typing import cast, Any, Union
+from typing import cast, Any
 from io import RawIOBase
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class InternetArchiveFile(io.BytesIO):
         self.item_identifier, self.path_in_item = self.fs._parse_ia_path(path)
         self.metadata_for_upload: dict[str, Any] = kwargs.pop("metadata", {})
 
-        self.storage_url: Union[str, None] = None  # This will be set after successful upload
+        self.storage_url: str | None = None  # This will be set after successful upload
 
         logger.debug(
             "InternetArchiveFile initialized for item: %s, path: %s (fsspec_path: %s)",
@@ -203,7 +203,7 @@ class InternetArchiveFileSystem(AbstractFileSystem):
 
         return item_identifier, path_in_item
 
-    def _open(self, path: str, mode: str = "rb", **kwargs: Any) -> Union[RawIOBase, "InternetArchiveFile"]:
+    def _open(self, path: str, mode: str = "rb", **kwargs: Any) -> RawIOBase | InternetArchiveFile:
         """
         Opens a file for reading or writing.
 

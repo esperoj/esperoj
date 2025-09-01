@@ -15,7 +15,7 @@ import logging
 import requests
 
 from fsspec.spec import AbstractFileSystem
-from typing import Any, cast, Union
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class CatboxFileSystem(AbstractFileSystem):
         self.api_url = api_url or "https://catbox.moe/user/api.php"
         self.userhash = userhash
 
-    def _open(self, path: str, mode: str = "rb", **kwargs: Any) -> Union[io.RawIOBase, CatboxFile]:
+    def _open(self, path: str, mode: str = "rb", **kwargs: Any) -> io.RawIOBase | CatboxFile:
         """
         Opens a file for reading or writing.
 

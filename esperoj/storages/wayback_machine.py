@@ -19,7 +19,7 @@ import time
 import requests
 
 from fsspec.spec import AbstractFileSystem
-from typing import Any, cast, Dict, Union
+from typing import Any, cast
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ class WaybackFile(io.BytesIO):
             raise ValueError("'job_id' not found in capture initiation response.")
         return response_data["job_id"]
 
-    def _poll_status(self, job_id: str) -> Dict[str, Any]:
+    def _poll_status(self, job_id: str) -> dict[str, Any]:
         """Polls the SPN2 status API until the job is complete or times out."""
         status_url = f"{self.fs.api_url_status}/{job_id}"
         headers = {
