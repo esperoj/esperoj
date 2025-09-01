@@ -45,6 +45,36 @@ class DatabaseSettings(BaseSettings):
     url: str = "postgresql://user:pass@localhost:5432/esperoj"
 
 
+class CatboxSettings(BaseSettings):
+    """
+    Manages settings for the Catbox storage backend.
+    Populated from environment variables like `ESPEROJ_CATBOX__API_URL`.
+    """
+
+    api_url: str = Field(default="https://catbox.moe/user/api.php", description="Catbox API endpoint URL.")
+    userhash: str | None = Field(default=None, description="User hash for Catbox, required for deletions.")
+
+
+class InternetArchiveSettings(BaseSettings):
+    """
+    Manages settings for the Internet Archive storage backend.
+    Populated from environment variables like `ESPEROJ_IA__ACCESS_KEY`.
+    """
+
+    access_key: str | None = Field(default=None, description="Internet Archive API access key.")
+    secret_key: str | None = Field(default=None, description="Internet Archive API secret key.")
+
+
+class WaybackMachineSettings(BaseSettings):
+    """
+    Manages settings for the Wayback Machine storage backend.
+    Populated from environment variables like `ESPEROJ_WM__ACCESS_KEY`.
+    """
+
+    access_key: str | None = Field(default=None, description="Wayback Machine S3-style access key.")
+    secret_key: str | None = Field(default=None, description="Wayback Machine S3-style secret key.")
+
+
 # --- Main Application Settings ---
 # This is the primary class that brings all the settings together.
 
@@ -70,6 +100,9 @@ class AppSettings(BaseSettings):
     # nested BaseSettings models. Pydantic-settings will then populate them from
     # environment variables using the `env_nested_delimiter` convention.
     db: DatabaseSettings = Field(default_factory=lambda: DatabaseSettings())
+    catbox: CatboxSettings = Field(default_factory=lambda: CatboxSettings())
+    internet_archive: InternetArchiveSettings = Field(default_factory=lambda: InternetArchiveSettings())
+    wayback_machine: WaybackMachineSettings = Field(default_factory=lambda: WaybackMachineSettings())
 
     model_config = SettingsConfigDict(
         env_prefix="ESPEROJ_",

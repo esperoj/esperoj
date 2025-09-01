@@ -14,7 +14,7 @@ class ReplicaType(models.TextChoices):
     """
 
     ORIGINAL = "original", "Original Copy"
-    ACCESS = "access_copy", "Access Copy"
+    ACCESS_COPY = "access_copy", "Access Copy"  # Corrected from ACCESS
     PRESERVATION = "preservation", "Preservation Copy"
     BACKUP = "backup", "Backup Copy"
     THUMBNAIL = "thumbnail", "Thumbnail"
@@ -31,7 +31,8 @@ class StorageName(models.TextChoices):
 
     LOCAL_DEFAULT = "local_default", "Local Default Storage"
     CATBOX = "catbox", "Catbox.moe"
-    INTERNET_ARCHIVE = "internet_archive", "Internet Archive"
+    INTERNET_ARCHIVE = "internetarchive", "Internet Archive"
+    WAYBACK_MACHINE = "wayback_machine", "Wayback Machine"  # Added Wayback Machine
     # Add other storage names as they are implemented, e.g.:
     # S3_PRIMARY = "s3_primary", "AWS S3 Primary"
     # GCS_ARCHIVE = "gcs_archive", "Google Cloud Storage Archive"

@@ -19,12 +19,12 @@ import time
 import requests
 
 from fsspec.spec import AbstractFileSystem
-from typing import Any, cast
+from typing import Any, cast, Union
 
 logger = logging.getLogger(__name__)
 
 
-class WaybackFile(io.BytesIO):
+class WaybackMachineFile(io.BytesIO):
     """
     A file-like object for handling asynchronous captures with the Wayback Machine's SPN2 API.
 
@@ -33,7 +33,7 @@ class WaybackFile(io.BytesIO):
     When the file is closed, it initiates the capture process.
     """
 
-    def __init__(self, fs: "WaybackFileSystem", path: str, mode: str = "wb", **kwargs: Any) -> None:
+    def __init__(self, fs: "WaybackMachineFileSystem", path: str, mode: str = "wb", **kwargs: Any) -> None:
         """
         Initializes the WaybackFile.
 
@@ -143,7 +143,7 @@ class WaybackFile(io.BytesIO):
         raise IOError("Capture timed out after 150 seconds.")
 
 
-class WaybackFileSystem(AbstractFileSystem):
+class WaybackMachineFileSystem(AbstractFileSystem):
     """
     An fsspec-compatible file system for the Wayback Machine (archive.org).
 
@@ -176,7 +176,7 @@ class WaybackFileSystem(AbstractFileSystem):
         self.access_key = access_key
         self.secret_key = secret_key
 
-    def _open(self, path: str, mode: str = "rb", **kwargs: Any) -> Union[io.RawIOBase, WaybackFile]:
+    def _open(self, path: str, mode: str = "rb", **kwargs: Any) -> Union[io.RawIOBase, WaybackMachineFile]:
         """
         Opens a file for reading or writing.
 
@@ -203,7 +203,7 @@ class WaybackFileSystem(AbstractFileSystem):
                 raise IOError(f"Failed to stream file from Wayback URL {path}: {e}") from e
 
         elif mode == "wb":
-            return WaybackFile(self, path, mode=mode, **kwargs)
+            return WaybackMachineFile(self, path, mode=mode, **kwargs)
 
         else:
             raise NotImplementedError(f"Mode '{mode}' is not supported.")
