@@ -1,8 +1,8 @@
 import logging
 from uuid import UUID
-import io  # Import io for BytesIO
+
 import fsspec  # Import fsspec for storage access
-from typing import cast  # Import cast for type hinting
+from typing import cast, BinaryIO  # Import cast and BinaryIO for type hinting
 
 from django.db import transaction
 
@@ -32,26 +32,21 @@ def verify_replica_integrity(replica_id: UUID) -> None:
                 replica.mark_inactive()
                 return
 
-            # Determine which checksum to use based on availability and preference
-            expected_checksum = None
-            algorithm = None
+            checksums_to_verify = []
             if file_obj.sha256:
-                expected_checksum = file_obj.sha256
-                algorithm = "sha256"
-            elif file_obj.sha1:
-                expected_checksum = file_obj.sha1
-                algorithm = "sha1"
-            elif file_obj.md5:
-                expected_checksum = file_obj.md5
-                algorithm = "md5"
+                checksums_to_verify.append(("sha256", file_obj.sha256))
+            if file_obj.sha1:
+                checksums_to_verify.append(("sha1", file_obj.sha1))
+            if file_obj.md5:
+                checksums_to_verify.append(("md5", file_obj.md5))
 
-            if not expected_checksum:
+            if not checksums_to_verify:
                 logger.warning(
                     "File %s (replica %s) has no checksums defined. Cannot verify integrity.",
                     file_obj.id,
                     replica_id,
                 )
-                replica.mark_verified(status="error")  # Mark as error since it can't be verified
+                replica.mark_verified(status="error")
                 return
 
             # 2. Interact with infrastructure (storage)
@@ -75,31 +70,48 @@ def verify_replica_integrity(replica_id: UUID) -> None:
                 replica.mark_inactive()
                 return
 
-            # Read file content using fsspec.open, which dispatches to the correct backend
-            file_content = b""
-            with fsspec.open(fsspec_uri, "rb") as f:
-                # Cast f to a RawIOBase to help type checkers understand its methods
-                file_content = cast(io.RawIOBase, f).read()
-
             # 3. Apply business logic (checksum validation)
-            # Use BytesIO to make the bytes data appear as a file-like object for calculate_checksum
-            with io.BytesIO(file_content) as data_stream:
-                assert algorithm is not None, "Checksum algorithm must be defined for verification."
-                # The algorithm is guaranteed to be a string here due to the preceding logic and assertion.
-                calculated_checksum = calculate_checksum(data_stream, algorithm)
+            is_overall_valid = True
+            failed_checksums = []
 
-            is_valid = calculated_checksum == expected_checksum
+            # Open the fsspec stream once and pass it directly to calculate_checksum
+            # fsspec's file objects are generally seekable when opened in 'rb' mode,
+            # allowing multiple passes for checksum calculation without re-downloading.
+            with fsspec.open(fsspec_uri, "rb") as raw_data_stream:
+                data_stream: BinaryIO = cast(BinaryIO, raw_data_stream)
+                for algorithm, expected_checksum in checksums_to_verify:
+                    # Ensure the stream is at the beginning for each checksum calculation.
+                    # fsspec file objects are generally seekable.
+                    data_stream.seek(0)
+                    calculated_checksum = calculate_checksum(data_stream, algorithm)
+
+                    if calculated_checksum != expected_checksum:
+                        is_overall_valid = False
+                        failed_checksums.append(algorithm)
+                        logger.warning(
+                            "FileReplica %s: Checksum mismatch for %s. Expected '%s', Got '%s'.",
+                            replica_id,
+                            algorithm,
+                            expected_checksum,
+                            calculated_checksum,
+                        )
+                    else:
+                        logger.info(
+                            "FileReplica %s: Checksum %s verified successfully.",
+                            replica_id,
+                            algorithm,
+                        )
 
             # 4. Persist results back to models
-            if is_valid:
+            if is_overall_valid:
                 replica.mark_verified(status="success")
-                logger.info("FileReplica %s integrity verified successfully.", replica_id)
+                logger.info("FileReplica %s integrity verified successfully for all present checksums.", replica_id)
             else:
                 replica.mark_inactive()
                 logger.warning(
-                    "FileReplica %s integrity verification failed. Checksum mismatch for %s.",
+                    "FileReplica %s integrity verification failed. Mismatched checksums: %s.",
                     replica_id,
-                    algorithm,
+                    ", ".join(failed_checksums),
                 )
 
         except FileReplica.DoesNotExist:
