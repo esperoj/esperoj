@@ -14,6 +14,7 @@ from django.db import models
 from django.db.models import Index, Manager, Q, UniqueConstraint
 
 from esperoj.constants import ReplicaType, StorageName
+from esperoj.utils.text import format_display_size
 
 from .base import BaseModel
 
@@ -28,8 +29,9 @@ class ChecksumMixin(models.Model):
     """
     A mixin for models that need checksum fields (MD5, SHA1, SHA256).
 
-    Provides checksum fields, validation logic, and a helper property
-    to get the primary checksum.
+    Provides checksum fields and validation logic to ensure their integrity.
+    The selection of a "primary" checksum is a business rule handled by the
+    service layer, not the model layer.
     """
 
     # --- Checksums ---
@@ -71,11 +73,6 @@ class ChecksumMixin(models.Model):
         if self.sha256 and len(self.sha256) != 64:
             raise ValidationError({"sha256": "SHA256 hash must be exactly 64 characters."})
 
-    @property
-    def primary_checksum(self) -> str:
-        """Returns the best available checksum (preferring SHA256, then SHA1, then MD5)."""
-        return self.sha256 or self.sha1 or self.md5
-
 
 class DisplaySizeMixin(models.Model):
     """A mixin for models with a size field needing human-readable display."""
@@ -92,12 +89,7 @@ class DisplaySizeMixin(models.Model):
     @property
     def display_size(self) -> str:
         """Returns a human-readable file size."""
-        current_size = self.size
-        for unit in ["B", "KB", "MB", "GB", "TB", "PB"]:
-            if current_size < 1024.0:
-                return f"{current_size:.1f} {unit}"
-            current_size /= 1024.0
-        return f"{current_size:.1f} PB"
+        return format_display_size(self.size)
 
 
 class FileManager(Manager):
@@ -158,6 +150,7 @@ class File(BaseModel, DisplaySizeMixin, ChecksumMixin):
         sha1: The SHA1 checksum of the file.
         sha256: The SHA256 checksum of the file.
         file_format: Additional format information beyond MIME type.
+        additional_data: Additional metadata for the file.
 
     Related Models:
         esperoj.FileReplica: Physical copies of this file.
@@ -239,7 +232,7 @@ class File(BaseModel, DisplaySizeMixin, ChecksumMixin):
         super().clean()
 
         # Validate that at least one checksum is provided
-        if not self.primary_checksum:
+        if not (self.sha256 or self.sha1 or self.md5):
             raise ValidationError("At least one checksum (MD5, SHA1, or SHA256) must be provided.")
 
     @property

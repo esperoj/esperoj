@@ -9,6 +9,8 @@ enumerations. This separation helps avoid circular dependencies.
 from django.db import models
 from django.db.models import Index, Manager
 
+from esperoj.utils.urls import get_domain_from_url
+
 from .base import BaseModel
 
 
@@ -306,9 +308,7 @@ class AbstractExternalReference(BaseModel):
     @property
     def domain(self) -> str:
         """Returns the domain name from the URL."""
-        from urllib.parse import urlparse
-
-        return urlparse(self.url).netloc
+        return get_domain_from_url(self.url)
 
     def mark_verified(self) -> None:
         """Mark this reference as verified and update the timestamp."""

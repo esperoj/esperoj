@@ -15,6 +15,9 @@ from django.db.models import CheckConstraint, Index, Q, Manager
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
+from esperoj.utils.dates import format_item_display_date
+from esperoj.utils.text import format_duration, format_isbn
+
 from .base import BaseModel
 
 if TYPE_CHECKING:
@@ -304,29 +307,7 @@ class Item(BaseModel):
     @property
     def display_date(self) -> str:
         """Returns a formatted date string for display."""
-        if not self.year:
-            return "Unknown date"
-
-        if self.year < 0:
-            year_str = f"{abs(self.year)} BCE"
-        else:
-            year_str = str(self.year)
-
-        if self.month and self.day:
-            try:
-                date_obj = datetime.date(abs(self.year), self.month, self.day)
-                return f"{date_obj.strftime('%B %d')}, {year_str}"
-            except ValueError:
-                pass
-
-        if self.month:
-            try:
-                month_name = datetime.date(2000, self.month, 1).strftime("%B")
-                return f"{month_name} {year_str}"
-            except ValueError:
-                pass
-
-        return year_str
+        return format_item_display_date(self.year, self.month, self.day)
 
     def get_primary_file(self):
         """Returns the primary file associated with this item, if any."""
@@ -566,12 +547,7 @@ class Song(Item):
     @property
     def display_duration(self) -> str:
         """Returns a formatted duration string (e.g., '3:45')."""
-        if not self.duration_seconds:
-            return ""
-
-        minutes = self.duration_seconds // 60
-        seconds = self.duration_seconds % 60
-        return f"{minutes}:{seconds:02d}"
+        return format_duration(self.duration_seconds)
 
     @property
     def is_part_of_album(self) -> bool:
@@ -731,15 +707,7 @@ class Book(Item):
     @property
     def display_isbn(self) -> str:
         """Returns a formatted ISBN for display."""
-        if self.isbn_13:
-            # Format ISBN-13: 978-0-123-45678-9
-            isbn = self.isbn_13
-            return f"{isbn[:3]}-{isbn[3]}-{isbn[4:7]}-{isbn[7:12]}-{isbn[12]}"
-        elif self.isbn_10:
-            # Format ISBN-10: 0-123-45678-9
-            isbn = self.isbn_10
-            return f"{isbn[0]}-{isbn[1:4]}-{isbn[4:9]}-{isbn[9]}"
-        return ""
+        return format_isbn(self.primary_isbn)
 
     @property
     def has_isbn(self) -> bool:

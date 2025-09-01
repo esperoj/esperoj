@@ -11,6 +11,9 @@ from typing import TYPE_CHECKING
 from django.db import models
 from django.db.models import Index, Manager
 
+from esperoj.utils.dates import format_person_display_name_with_dates
+from esperoj.utils.text import generate_sort_name
+
 from .base import BaseModel
 
 if TYPE_CHECKING:
@@ -130,13 +133,7 @@ class Person(BaseModel):
     def save(self, *args, **kwargs) -> None:
         """Automatically generates sort_name if it's not provided."""
         if not self.sort_name and self.authorized_name:
-            name_parts = self.authorized_name.split()
-            if len(name_parts) > 1:
-                last_part = name_parts[-1]
-                first_parts = " ".join(name_parts[:-1])
-                self.sort_name = f"{last_part}, {first_parts}"
-            else:
-                self.sort_name = self.authorized_name
+            self.sort_name = generate_sort_name(self.authorized_name)
         super().save(*args, **kwargs)
 
     @property
@@ -147,15 +144,7 @@ class Person(BaseModel):
     @property
     def display_name_with_dates(self) -> str:
         """Returns the name with birth/death dates in parentheses."""
-        name = self.authorized_name
-        if self.birth_date or self.death_date:
-            birth_year = self.birth_date.year if self.birth_date else "?"
-            death_year = self.death_date.year if self.death_date else ""
-            if death_year:
-                name += f" ({birth_year}–{death_year})"
-            else:
-                name += f" (b. {birth_year})"
-        return name
+        return format_person_display_name_with_dates(self.authorized_name, self.birth_date, self.death_date)
 
 
 class SubjectManager(Manager):
