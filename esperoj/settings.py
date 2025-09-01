@@ -37,9 +37,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "esperoj",
-    "simple_history",
-    "django_select2",
 ]
 
 MIDDLEWARE = [
@@ -50,7 +47,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "simple_history.middleware.HistoryRequestMiddleware",
 ]
 
 ROOT_URLCONF = "esperoj.urls"
@@ -125,9 +121,13 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
-REPLICA_TYPES = [("primary", "Primary Fast Replica"), ("backup", "Secondary Replica"), ("archive", "Archive Replica")]
-STORAGE_CHOICES = [
-    ("fast_ssd_storage", "Fast SSD"),
-    ("s3_archive_storage", "S3 Archive"),
+INSTALLED_APPS += [
+    "esperoj",
+    "simple_history",
+    "django_select2",
 ]
+
+MIDDLEWARE += [
+    "simple_history.middleware.HistoryRequestMiddleware",
+]
+REPLICA_TYPES = [("primary", "Primary Fast Replica"), ("backup", "Secondary Replica"), ("archive", "Archive Replica")]

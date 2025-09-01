@@ -17,7 +17,8 @@ import logging
 import internetarchive
 import requests
 from fsspec.spec import AbstractFileSystem
-from typing import cast
+from typing import cast, Any, Union
+from io import RawIOBase
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class InternetArchiveFile(io.BytesIO):
     fsspec path. Any necessary metadata is provided externally via kwargs.
     """
 
-    def __init__(self, fs: "InternetArchiveFileSystem", path: str, mode: str = "wb", **kwargs):
+    def __init__(self, fs: "InternetArchiveFileSystem", path: str, mode: str = "wb", **kwargs: Any) -> None:
         """
         Initializes the InternetArchiveFile.
 
@@ -50,9 +51,9 @@ class InternetArchiveFile(io.BytesIO):
         self.fs = fs
         # Parse item_identifier and path_in_item directly from the fsspec path
         self.item_identifier, self.path_in_item = self.fs._parse_ia_path(path)
-        self.metadata_for_upload = kwargs.pop("metadata", {})
+        self.metadata_for_upload: dict[str, Any] = kwargs.pop("metadata", {})
 
-        self.storage_url = None  # This will be set after successful upload
+        self.storage_url: Union[str, None] = None  # This will be set after successful upload
 
         logger.debug(
             "InternetArchiveFile initialized for item: %s, path: %s (fsspec_path: %s)",
@@ -61,13 +62,16 @@ class InternetArchiveFile(io.BytesIO):
             path,
         )
 
-    def close(self):
+    def close(self) -> None:
         """
         Finalizes the file by uploading its content to the Internet Archive.
 
         This method buffers the content and uses the `internetarchive.upload` client
         to add the file to the specified item. The item is assumed to exist
         with its metadata already defined by a service layer.
+
+        Returns:
+            None
         """
         if self.closed:
             return
@@ -146,7 +150,7 @@ class InternetArchiveFileSystem(AbstractFileSystem):
 
     protocol = "internetarchive"
 
-    def __init__(self, access_key: str, secret_key: str, **storage_options):
+    def __init__(self, access_key: str, secret_key: str, **storage_options: Any) -> None:
         """
         Initializes the InternetArchiveFileSystem.
 
@@ -199,7 +203,7 @@ class InternetArchiveFileSystem(AbstractFileSystem):
 
         return item_identifier, path_in_item
 
-    def _open(self, path, mode="rb", **kwargs):
+    def _open(self, path: str, mode: str = "rb", **kwargs: Any) -> Union[RawIOBase, "InternetArchiveFile"]:
         """
         Opens a file for reading or writing.
 
@@ -207,6 +211,16 @@ class InternetArchiveFileSystem(AbstractFileSystem):
         The content is streamed from the constructed public IA URL.
         For writing ('wb'), the `path` is also "item_identifier/path_within_item".
         The `kwargs` may include a `metadata` dictionary for the upload.
+
+        Args:
+            path: The fsspec path (e.g., "item_identifier/path/to/file.txt").
+            mode: The file mode ('rb' for read-binary, 'wb' for write-binary).
+            **kwargs: Additional keyword arguments, which *may* include:
+                      'metadata': A dictionary of pre-formed metadata for the IA item (for 'wb' mode).
+
+        Returns:
+            A file-like object; either a raw byte stream (RawIOBase) for reading,
+            or an `InternetArchiveFile` instance for writing.
         """
         path = cast(str, self._strip_protocol(path))
         item_identifier, path_in_item = self._parse_ia_path(path)
@@ -218,7 +232,7 @@ class InternetArchiveFileSystem(AbstractFileSystem):
                 logger.debug("Attempting to stream file from Internet Archive URL: %s", file_url)
                 response = requests.get(file_url, stream=True, timeout=60)
                 response.raise_for_status()
-                return response.raw
+                return cast(io.RawIOBase, response.raw)
             except requests.RequestException as e:
                 logger.error("Failed to stream file from Internet Archive URL %s: %s", file_url, e)
                 raise IOError(f"Failed to stream file from Internet Archive URL {file_url}: {e}") from e
@@ -236,13 +250,13 @@ class InternetArchiveFileSystem(AbstractFileSystem):
         else:
             raise NotImplementedError(f"Mode '{mode}' is not supported.")
 
-    def exists(self, path, **kwargs):
+    def exists(self, path: str, **kwargs: Any) -> bool:
         """
         Checks if a file exists on the Internet Archive by sending a HEAD request to its URL.
 
         Args:
             path: The fsspec path in the format "item_identifier/path_within_item".
-            **kwargs: Additional keyword arguments (not used by this method).
+            **kwargs: Additional keyword arguments (not used by this method, but passed for fsspec compatibility).
         Returns:
             True if the file exists and is accessible, False otherwise.
         """
@@ -260,7 +274,7 @@ class InternetArchiveFileSystem(AbstractFileSystem):
             logger.debug("HEAD request failed for %s (URL: %s): %s", path, file_url, e)
             return False
 
-    def rm(self, path, **kwargs):
+    def rm(self, path: str, **kwargs: Any) -> None:
         """
         Removes a file from the Internet Archive.
 
@@ -277,7 +291,10 @@ class InternetArchiveFileSystem(AbstractFileSystem):
 
         Args:
             path: The fsspec path in the format "item_identifier/path_within_item".
-            **kwargs: Additional keyword arguments (not used by this method).
+            **kwargs: Additional keyword arguments (not used by this method, but passed for fsspec compatibility).
+
+        Returns:
+            None
         """
         # The internetarchive library's `delete` function is for deleting an entire item,
         # and typically requires elevated privileges beyond what's usually provided
