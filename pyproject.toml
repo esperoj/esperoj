@@ -22,6 +22,9 @@ dependencies = [
   "psycopg2-binary",
   "requests",
   "uuid-utils",
+  "pydantic",
+  "pydantic-settings",
+  "dj-database-url",
 ]
 
 [project.optional-dependencies]

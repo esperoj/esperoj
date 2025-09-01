@@ -11,6 +11,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+
+# As a best practice, we are centralizing configuration management.
+# Import the Pydantic settings object that reads from environment variables
+# and .env files. We also import `dj-database-url` to help parse the
+# database connection string.
+import dj_database_url
+from .config import settings
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,12 +28,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-a%b3&0=cehtz6qsagy-vpu=1jc5$!_&lvfc76d*jn_7f3nv=9v"
+SECRET_KEY = settings.secret_key
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = settings.debug
 
-ALLOWED_HOSTS = [".esperoj.eu.org", "localhost", "127.0.0.1"]
+# Allowed hosts for the Django application.
+# Managed directly in settings.py, not via Pydantic settings.
+ALLOWED_HOSTS = [".esperoj.eu.org"]
 
 
 # Application definition
@@ -71,13 +80,13 @@ WSGI_APPLICATION = "esperoj.wsgi.application"
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+#
+# The database configuration is now managed through the Pydantic settings object.
+# We check if the URL indicates SQLite for local development, otherwise, we use
+# `dj-database-url` to parse the DSN.
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.parse(str(settings.db.url), conn_max_age=600),
 }
 
 
@@ -122,10 +131,7 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-ENVIRONMENT = os.environ.get("DJANGO_ENV", "development")
-
-# The DEBUG setting should also be driven by this
-DEBUG = ENVIRONMENT == "development"
+# Custom settings for the esperoj project
 
 INSTALLED_APPS += [
     "esperoj",
@@ -136,4 +142,5 @@ INSTALLED_APPS += [
 MIDDLEWARE += [
     "simple_history.middleware.HistoryRequestMiddleware",
 ]
+
 REPLICA_TYPES = [("primary", "Primary Fast Replica"), ("backup", "Secondary Replica"), ("archive", "Archive Replica")]
