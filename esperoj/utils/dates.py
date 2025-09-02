@@ -27,16 +27,17 @@ def format_person_display_name_with_dates(
     Returns:
         A formatted string, e.g., "Martin Luther King, Jr. (1929–1968)".
     """
-    if not birth_date and not death_date:
-        return authorized_name
 
-    birth_year = birth_date.year if birth_date else "?"
-    death_year = death_date.year if death_date else ""
+    birth_year_str = str(birth_date.year) if birth_date else "?"
+    death_year_str = str(death_date.year) if death_date else "?"
 
-    if death_year:
-        return f"{authorized_name} ({birth_year}–{death_year})"
-    else:
-        return f"{authorized_name} (b. {birth_year})"
+    if birth_date and death_date:
+        return f"{authorized_name} ({birth_year_str}–{death_year_str})"
+    elif birth_date:  # Only birth date is present
+        return f"{authorized_name} (b. {birth_year_str})"
+    elif death_date:  # Only death date is present
+        return f"{authorized_name} (?—{death_year_str})"
+    return authorized_name
 
 
 def format_item_display_date(

@@ -215,8 +215,8 @@ class Item(BaseModel):
             Index(fields=["date"]),
         ]
         constraints = [
-            CheckConstraint(check=Q(month__isnull=True) | Q(year__isnull=False), name="month_requires_year"),
-            CheckConstraint(check=Q(day__isnull=True) | Q(month__isnull=False), name="day_requires_month"),
+            CheckConstraint(condition=Q(month__isnull=True) | Q(year__isnull=False), name="month_requires_year"),  # type: ignore
+            CheckConstraint(condition=Q(day__isnull=True) | Q(month__isnull=False), name="day_requires_month"),  # type: ignore
         ]
 
     def __str__(self) -> str:

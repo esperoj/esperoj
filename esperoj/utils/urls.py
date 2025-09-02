@@ -23,7 +23,7 @@ def get_domain_from_url(url: str) -> str:
     if not url:
         return ""
     try:
-        return urlparse(url).netloc
+        return urlparse(url.strip()).netloc
     except (ValueError, AttributeError):
         # Handle cases where url is not a string or malformed
         return ""
