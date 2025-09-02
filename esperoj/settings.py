@@ -18,7 +18,6 @@ from pathlib import Path
 # database connection string.
 import dj_database_url
 from .config import settings
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

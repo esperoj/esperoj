@@ -2,7 +2,8 @@ import fsspec
 import logging
 import logging.handlers
 from django.apps import AppConfig
-from django.conf import settings
+from .config import settings
+
 import os
 
 from esperoj.storages.catbox import CatboxFileSystem

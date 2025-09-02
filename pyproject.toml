@@ -27,6 +27,9 @@ dependencies = [
   "dj-database-url",
 ]
 
+[project.scripts]
+esperoj = "esperoj.cli.main:main"
+
 [project.optional-dependencies]
 dev = [
   "django-types",
@@ -50,7 +53,7 @@ nuitka = [
 
 [project.urls]
 Changelog = "https://github.com/esperoj/esperoj/releases/"
-Documentation = "https://www.esperoj.eu.org/docs/"
+Documentation = "https://www.esperoj.eu.org/docs/`"
 Homepage = "https://www.esperoj.eu.org/"
 "Issue Tracker" = "https://github.com/esperoj/esperoj/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc"
 Repository = "https://github.com/esperoj/esperoj"
