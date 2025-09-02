@@ -4,7 +4,7 @@ import tempfile
 import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from shutil import copyfileobj
-from typing import BinaryIO, Union, cast
+from typing import BinaryIO, cast
 from uuid import UUID
 
 from django.db import transaction
@@ -15,9 +15,7 @@ from esperoj.models.files import File, FileReplica
 
 logger = logging.getLogger(__name__)
 
-
-# --- Top-level Functions for Process/Thread Pools ---
-# These must be at the top level of the module to be "pickleable" by multiprocessing.
+# --- Helper Functions ---
 
 
 def _download_to_temp_file(fsspec_uri: str, temp_path: str) -> None:
@@ -28,11 +26,9 @@ def _download_to_temp_file(fsspec_uri: str, temp_path: str) -> None:
         fsspec_uri: The URI of the file to download.
         temp_path: The local file system path to write the downloaded content to.
     """
-    # Imports are within the function to ensure they are available in the worker context.
     import fsspec
 
     with fsspec.open(fsspec_uri, "rb") as source, open(temp_path, "wb") as dest:
-        # Cast to satisfy the type checker, as fsspec's return type is broad.
         copyfileobj(cast(BinaryIO, source), dest)
 
 
@@ -119,7 +115,7 @@ class FileIntegrityService:
         fields = ["sha256", "sha1", "md5"]
         return [(alg, getattr(file_obj, alg)) for alg in fields if getattr(file_obj, alg)]
 
-    def verify_replica_integrity(self, replica_or_id: Union[FileReplica, UUID]) -> str:
+    def verify_replica_integrity(self, replica: FileReplica) -> str:
         """
         Verifies a single file replica using the service's shared resource pools.
 
@@ -127,18 +123,17 @@ class FileIntegrityService:
         checksums in a separate process, and updating the database record.
 
         Args:
-            replica_or_id: The FileReplica object or its UUID.
+            replica: The FileReplica object to verify.
 
         Returns:
             A status string: 'verified', 'failed', or 'error'.
         """
-        replica_id = replica_or_id.id if isinstance(replica_or_id, FileReplica) else replica_or_id
+        # replica_id is kept for error logging and the exception block's update
+        replica_id = replica.id
         temp_file_path = None
         try:
-            if isinstance(replica_or_id, UUID):
-                replica = FileReplica.objects.select_related("file").get(id=replica_id)
-            else:
-                replica = replica_or_id
+            # The input 'replica' is now guaranteed to be a FileReplica object.
+            # No need for the original replica_or_id logic.
 
             if not replica.file:
                 raise ValueError("Replica is not linked to a File object.")
@@ -163,28 +158,27 @@ class FileIntegrityService:
             checksum_future = self._cpu_pool.submit(_calculate_checksums_from_file, temp_file_path, checksums_to_verify)
             failed_checksums = checksum_future.result()
 
-            # 3. Update database in the main process.
+            # 3. Update database in the main process, using the passed replica object directly.
             with transaction.atomic():
-                replica_to_update = FileReplica.objects.get(id=replica.id)
                 if not failed_checksums:
-                    replica_to_update.mark_verified(status="success")
+                    replica.mark_verified(status="success")
                     return "verified"
                 else:
-                    replica_to_update.mark_inactive()
+                    replica.mark_inactive()
                     logger.warning(
                         "Replica %s failed verification. Mismatched: %s", replica.id, ", ".join(failed_checksums)
                     )
                     return "failed"
         except Exception as e:
             logger.error("Error verifying replica %s: %s", replica_id, e, exc_info=True)
+            # In case of an exception, ensure the replica is marked inactive/error in the DB.
+            # Use filter().update() to avoid issues if the 'replica' object itself is stale or invalid.
             FileReplica.objects.filter(id=replica_id).update(is_active=False, verification_status="error")
             return "error"
         finally:
             # 4. Clean up the temporary file
             if temp_file_path and os.path.exists(temp_file_path):
                 os.remove(temp_file_path)
-        # Fallback return to ensure all code paths return a string
-        return "error"
 
     def run_routine_verification(
         self, max_files: int = 1000, max_size_gb: float = 100.0, max_duration_minutes: int = 60
