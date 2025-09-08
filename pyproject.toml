@@ -63,12 +63,14 @@ skip_covered = true
 
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]
-omit = ["*/tests/*"]
+omit = ["*/tests/*", "*/migrations/*"]
 parallel = true
 source = ["esperoj"]
 
 
 [tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+python_files = ["test_*.py", "*_test.py"]
 addopts = "--color=yes --exitfirst --failed-first"
 testpaths = ["tests"]
 xfail_strict = true
