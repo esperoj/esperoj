@@ -43,11 +43,11 @@ class WaybackMachineFile(io.BytesIO):
             mode: The file mode (only 'wb' is supported for writing).
             **kwargs: Additional keyword arguments.
         """
+        super().__init__(**kwargs)  # Call super().__init__ first
+        self.fs = fs  # Initialize fs and path attributes immediately
+        self.path = path
         if mode != "wb":
             raise ValueError("WaybackFile only supports write-binary ('wb') mode.")
-        super().__init__(**kwargs)
-        self.fs = fs
-        self.path = path
         self.capture_result_url: str | None = None
 
     def close(self) -> None:
@@ -56,53 +56,56 @@ class WaybackMachineFile(io.BytesIO):
 
         This method orchestrates the SPN2 API calls to capture the URL provided
         to the file object. It polls for the capture status and, on success,
-        stores the resulting Wayback Machine URL.
+        stores the resulting Wayback Machine URL. This method is idempotent.
 
         Raises:
             IOError: If the capture process fails for any reason (e.g., API error, timeout).
         """
-        self.seek(0)
-        target_url_bytes = self.getvalue()
-        if not target_url_bytes:
-            logger.warning("No URL provided to capture for path %s. Aborting.", self.path)
-            super().close()
+        if self.closed:
             return
 
-        target_url = target_url_bytes.decode("utf-8")
-        if not (target_url.startswith("http://") or target_url.startswith("https://")):
-            raise ValueError("The provided input must be a valid HTTP or HTTPS URL.")
-
         try:
-            # 1. Initiate capture request
-            job_id = self._start_capture(target_url)
-            logger.info("Capture request sent for %s. Job ID: %s", target_url, job_id)
+            self.seek(0)
+            target_url_bytes = self.getvalue()
+            if not target_url_bytes:
+                logger.warning("No URL provided to capture for path %s. Aborting.", self.path)
+                return
 
-            # 2. Poll for status
-            final_status = self._poll_status(job_id)
+            target_url = target_url_bytes.decode("utf-8")
+            if not (target_url.startswith("http://") or target_url.startswith("https://")):
+                raise ValueError("The provided input must be a valid HTTP or HTTPS URL.")
 
-            # 3. Process final status
-            if final_status.get("status") == "success":
-                timestamp = final_status["timestamp"]
-                original_url = final_status["original_url"]
-                self.capture_result_url = f"https://web.archive.org/web/{timestamp}/{original_url}"
-                logger.info("Successfully captured %s: %s", target_url, self.capture_result_url)
-                # Write the result back to the buffer for the user to read
-                self.seek(0)
-                self.truncate()
-                self.write(self.capture_result_url.encode("utf-8"))
-                self.seek(0)
-            else:
-                error_message = final_status.get("message", "Unknown error during capture.")
-                raise IOError(f"Failed to capture {target_url}: {error_message}")
+            try:
+                # 1. Initiate capture request
+                job_id = self._start_capture(target_url)
+                logger.info("Capture request sent for %s. Job ID: %s", target_url, job_id)
 
-        except requests.RequestException as e:
-            logger.error("API request failed during capture of %s: %s", target_url, e)
-            raise IOError(f"API interaction failed: {e}") from e
-        except (ValueError, KeyError) as e:
-            logger.error("Unexpected API response for %s: %s", target_url, e)
-            raise IOError(f"Invalid API response received: {e}") from e
+                # 2. Poll for status
+                final_status = self._poll_status(job_id)
 
-        super().close()
+                # 3. Process final status
+                if final_status.get("status") == "success":
+                    timestamp = final_status["timestamp"]
+                    original_url = final_status["original_url"]
+                    self.capture_result_url = f"https://web.archive.org/web/{timestamp}/{original_url}"
+                    logger.info("Successfully captured %s: %s", target_url, self.capture_result_url)
+                    # Write the result back to the buffer for the user to read
+                    self.seek(0)
+                    self.truncate()
+                    self.write(self.capture_result_url.encode("utf-8"))
+                    self.seek(0)
+                else:
+                    error_message = final_status.get("message", "Unknown error during capture.")
+                    raise IOError(f"Failed to capture {target_url}: {error_message}")
+
+            except requests.RequestException as e:
+                logger.error("API request failed during capture of %s: %s", target_url, e)
+                raise IOError(f"API interaction failed: {e}") from e
+            except (ValueError, KeyError) as e:
+                logger.error("Unexpected API response for %s: %s", target_url, e)
+                raise IOError(f"Invalid API response received: {e}") from e
+        finally:
+            super().close()
 
     def _start_capture(self, url: str) -> str:
         """Sends the initial capture request to the SPN2 API."""

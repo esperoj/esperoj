@@ -17,7 +17,6 @@ from esperoj.models import (
     Person,
     Subject,
     Collection,
-    Item,
     Song,
     Book,
     File,

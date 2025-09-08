@@ -39,11 +39,11 @@ class CatboxFile(io.BytesIO):
             mode: The file mode (only 'wb' is supported for writing).
             **kwargs: Additional keyword arguments (passed to parent class).
         """
+        super().__init__(**kwargs)  # Call super().__init__ first
+        self.fs = fs  # Initialize fs and path attributes immediately
+        self.path = path
         if mode != "wb":
             raise ValueError("CatboxFile only supports write-binary ('wb') mode.")
-        super().__init__(**kwargs)
-        self.fs = fs
-        self.path = path
         self.storage_url: str | None = None
 
     def close(self) -> None:
@@ -51,22 +51,24 @@ class CatboxFile(io.BytesIO):
         Finalizes the file by uploading its content.
 
         If a `userhash` is present in the filesystem instance, it is used for
-        the upload, enabling future deletion.
+        the upload, enabling future deletion. This method is idempotent.
 
         Returns:
             None
         """
-        self.seek(0)
-        file_content = self.getvalue()
-        size = len(file_content)
-
-        if size == 0:
-            logger.warning("Attempted to upload an empty file for path %s. Aborting.", self.path)
-            super().close()
+        if self.closed:
             return
 
-        # Upload the file to the Catbox service
         try:
+            self.seek(0)
+            file_content = self.getvalue()
+            size = len(file_content)
+
+            if size == 0:
+                logger.warning("Attempted to upload an empty file for path %s. Aborting.", self.path)
+                return
+
+            # Upload the file to the Catbox service
             # The filename is taken from the last part of the path
             filename = self.path.split("/")[-1]
             files = {"fileToUpload": (filename, file_content)}
@@ -78,8 +80,8 @@ class CatboxFile(io.BytesIO):
         except requests.RequestException as e:
             logger.error("Failed to upload file %s to Catbox service: %s", self.path, e)
             raise IOError(f"File upload failed: {e}") from e
-
-        super().close()
+        finally:
+            super().close()
 
 
 class CatboxFileSystem(AbstractFileSystem):

@@ -76,3 +76,5 @@ The `esperoj` application must be structured by architectural layer, not by feat
 *   **Validation:** After making changes, execute any available diagnostic tools and associated tests to ensure full functionality.
 *   **Execution:** If you encounter file editing issues, retry the operation, assuming it may be a temporary rate-limiting or API issue.
 *   **Shell:** Use make commands for running tests and other tasks. For example, use `make test` to run tests. If not available, remember to active the venv first.
+*   **Shell:** `source .venv/bin/activate` first before running any commands that need the virtual environment.
+*   **Testing:** after successful creating tests, try to provide full coverage for that module. For example `source .venv/bin/activate && pytest tests/storages --cov-report term-missing --cov=esperoj.storages` to check coverage for `storages` module.

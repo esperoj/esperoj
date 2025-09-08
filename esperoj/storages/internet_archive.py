@@ -45,15 +45,16 @@ class InternetArchiveFile(io.BytesIO):
             **kwargs: Additional keyword arguments, which *may* include:
                       'metadata': A dictionary of pre-formed metadata for the IA item.
         """
-        if mode != "wb":
-            raise ValueError("InternetArchiveFile only supports write-binary ('wb') mode.")
-        super().__init__()
+        super().__init__()  # Call super().__init__ first
         self.fs = fs
         # Parse item_identifier and path_in_item directly from the fsspec path
+        # Initialize these attributes immediately to prevent AttributeError warnings.
         self.item_identifier, self.path_in_item = self.fs._parse_ia_path(path)
         self.metadata_for_upload: dict[str, Any] = kwargs.pop("metadata", {})
-
         self.storage_url: str | None = None  # This will be set after successful upload
+
+        if mode != "wb":
+            raise ValueError("InternetArchiveFile only supports write-binary ('wb') mode.")
 
         logger.debug(
             "InternetArchiveFile initialized for item: %s, path: %s (fsspec_path: %s)",
@@ -68,7 +69,7 @@ class InternetArchiveFile(io.BytesIO):
 
         This method buffers the content and uses the `internetarchive.upload` client
         to add the file to the specified item. The item is assumed to exist
-        with its metadata already defined by a service layer.
+        with its metadata already defined by a service layer. This method is idempotent.
 
         Returns:
             None
@@ -76,20 +77,19 @@ class InternetArchiveFile(io.BytesIO):
         if self.closed:
             return
 
-        self.seek(0)
-        file_content = self.getvalue()
-        size = len(file_content)
-
-        if size == 0:
-            logger.warning(
-                "Attempted to upload an empty file for item %s, path %s. Aborting.",
-                self.item_identifier,
-                self.path_in_item,
-            )
-            super().close()
-            return
-
         try:
+            self.seek(0)
+            file_content = self.getvalue()
+            size = len(file_content)
+
+            if size == 0:
+                logger.warning(
+                    "Attempted to upload an empty file for item %s, path %s. Aborting.",
+                    self.item_identifier,
+                    self.path_in_item,
+                )
+                return
+
             logger.info(
                 "Uploading file at path %s to Internet Archive item %s...", self.path_in_item, self.item_identifier
             )
@@ -127,8 +127,8 @@ class InternetArchiveFile(io.BytesIO):
                 exc_info=True,
             )
             raise IOError(f"Internet Archive upload failed for {self.item_identifier}/{self.path_in_item}: {e}") from e
-
-        super().close()
+        finally:
+            super().close()
 
 
 class InternetArchiveFileSystem(AbstractFileSystem):
