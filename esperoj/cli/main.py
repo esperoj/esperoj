@@ -1,23 +1,11 @@
 import argparse
 import os
 import sys
-from importlib import import_module
+from importlib import import_module, util
 from pathlib import Path
 
-
-class Command:
-    """Base class for CLI commands."""
-
-    name: str
-    help: str
-
-    def add_arguments(self, parser: argparse.ArgumentParser):
-        """Add arguments to the command's parser."""
-        pass
-
-    def handle(self, *args, **options):
-        """Execute the command logic."""
-        raise NotImplementedError("Subclasses must implement the handle method.")
+from esperoj.cli.base import Command
+from esperoj.cli.utils import execute_command_from_cli_entrypoint
 
 
 def discover_commands(command_dir: Path) -> dict[str, Command]:
@@ -48,27 +36,72 @@ def discover_commands(command_dir: Path) -> dict[str, Command]:
 
 def run_script_command(args):
     """Handle the 'run' subcommand to execute an arbitrary script."""
-    script_path = Path(args.script)
+    if not args.script_and_args:
+        print("Error: No script path provided.", file=sys.stderr)
+        sys.exit(1)
+
+    script_path = Path(args.script_and_args[0])
+    script_args = args.script_and_args[1:]
+
     if not script_path.exists():
         print(f"Error: Script '{script_path}' not found.", file=sys.stderr)
         sys.exit(1)
 
     print(f"Running script: {script_path} with Django setup.")
 
+    # Save original sys.argv and replace with script-specific arguments
+    original_sys_argv = sys.argv
+    sys.argv = [str(script_path)] + script_args
+
     # Add the script's directory to sys.path so it can be imported
-    sys.path.insert(0, str(script_path.parent))
+    # (The parent directory is added so the module can find local imports if any)
+    script_dir = str(script_path.parent)
+    sys.path.insert(0, script_dir)
+
+    module_name = script_path.stem
     try:
-        # Execute the script in a way that respects Django setup
-        # This is a bit tricky, but a common way is to run it as a module
-        # or simply exec its contents. For simplicity, we'll exec.
-        with open(script_path, "r") as f:
-            script_code = f.read()
-        exec(script_code, {"__name__": "__main__", "__file__": str(script_path)})
+        # Create a module spec from the script file
+        spec = util.spec_from_file_location(module_name, script_path)
+        if spec is None:
+            raise ImportError(f"Could not create module spec for {script_path}")
+
+        # Ensure a loader is available for the spec
+        if spec.loader is None:
+            raise ImportError(f"No module loader found for script '{script_path}'")
+
+        # Create a new module based on the spec
+        module = util.module_from_spec(spec)
+
+        # Set __file__ and __package__ for the module to mimic direct script execution
+        # __name__ will be set by the loader to the module\'s actual name
+        module.__file__ = str(script_path)
+        module.__package__ = ""  # Scripts often run as top-level
+
+        # Add the module to sys.modules
+        sys.modules[module_name] = module
+
+        # Execute the module\'s code
+        spec.loader.exec_module(module)
+
+        # Look for a specific MAIN_COMMAND attribute in the dynamically loaded module
+        cmd_class = getattr(module, "MAIN_COMMAND", None)
+        if cmd_class and isinstance(cmd_class, type) and issubclass(cmd_class, Command) and cmd_class is not Command:
+            execute_command_from_cli_entrypoint(cmd_class)
+        else:
+            print(
+                f"No valid MAIN_COMMAND (subclass of Command) found in module {module_name}. Script not executed as a command.",
+                file=sys.stderr,
+            )
+
     except Exception as e:
         print(f"Error executing script '{script_path}': {e}", file=sys.stderr)
         sys.exit(1)
     finally:
         sys.path.pop(0)
+        sys.argv = original_sys_argv  # Restore original sys.argv
+        # Clean up sys.modules if the module was added, to avoid side effects
+        if module_name in sys.modules:
+            del sys.modules[module_name]
 
 
 def main():
@@ -78,7 +111,9 @@ def main():
 
     # Add the 'run' subcommand
     run_parser = subparsers.add_parser("run", help="Run an arbitrary Python script with Django environment.")
-    run_parser.add_argument("script", type=str, help="Path to the Python script to run.")
+    run_parser.add_argument(
+        "script_and_args", nargs=argparse.REMAINDER, help="Path to the Python script to run, followed by its arguments."
+    )
     run_parser.set_defaults(func=run_script_command)
 
     # Discover and add internal commands

@@ -36,6 +36,7 @@ dev = [
   "pytest",
   "pytest-django",
   "pytest-cov",
+  "pytest-mock",
   "pyright",
   "python-lsp-server[all]",
   "types-requests",

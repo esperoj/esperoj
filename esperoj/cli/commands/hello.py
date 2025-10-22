@@ -1,4 +1,5 @@
-from esperoj.cli.main import Command
+from esperoj.cli.base import Command
+from esperoj.cli.utils import execute_command_from_cli_entrypoint
 
 
 class HelloCommand(Command):
@@ -11,3 +12,9 @@ class HelloCommand(Command):
     def handle(self, **options):
         name = options.get("name")
         print(f"Hello, {name} from Esperoj CLI!")
+
+
+MAIN_COMMAND = HelloCommand
+
+if __name__ == "__main__":
+    execute_command_from_cli_entrypoint(MAIN_COMMAND)
