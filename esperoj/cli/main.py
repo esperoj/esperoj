@@ -4,16 +4,6 @@ import sys
 from importlib import import_module
 from pathlib import Path
 
-import django
-from django.conf import settings
-
-
-def setup_django():
-    """Set up Django environment."""
-    if not settings.configured:
-        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "esperoj.settings")
-        django.setup()
-
 
 class Command:
     """Base class for CLI commands."""
@@ -108,7 +98,6 @@ def main():
     args = parser.parse_args()
 
     if hasattr(args, "func"):
-        setup_django()  # Setup Django before running any command
         if args.command == "run":
             args.func(args)
         else:

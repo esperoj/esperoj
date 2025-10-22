@@ -9,7 +9,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -189,9 +188,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        help_text="The name of the collection.", max_length=512
-                    ),
+                    models.CharField(help_text="The name of the collection.", max_length=512),
                 ),
                 (
                     "identifier",
@@ -797,9 +794,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        help_text="The name of the collection.", max_length=512
-                    ),
+                    models.CharField(help_text="The name of the collection.", max_length=512),
                 ),
                 (
                     "identifier",
@@ -1610,15 +1605,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "birth_date",
-                    models.DateField(
-                        blank=True, help_text="The person's date of birth.", null=True
-                    ),
+                    models.DateField(blank=True, help_text="The person's date of birth.", null=True),
                 ),
                 (
                     "death_date",
-                    models.DateField(
-                        blank=True, help_text="The person's date of death.", null=True
-                    ),
+                    models.DateField(blank=True, help_text="The person's date of death.", null=True),
                 ),
                 (
                     "biographical_note",
@@ -2089,9 +2080,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        help_text="The name of the subject or topic.", max_length=512
-                    ),
+                    models.CharField(help_text="The name of the subject or topic.", max_length=512),
                 ),
                 (
                     "identifier",
@@ -2366,15 +2355,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "birth_date",
-                    models.DateField(
-                        blank=True, help_text="The person's date of birth.", null=True
-                    ),
+                    models.DateField(blank=True, help_text="The person's date of birth.", null=True),
                 ),
                 (
                     "death_date",
-                    models.DateField(
-                        blank=True, help_text="The person's date of death.", null=True
-                    ),
+                    models.DateField(blank=True, help_text="The person's date of death.", null=True),
                 ),
                 (
                     "biographical_note",
@@ -2606,9 +2591,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "name",
-                    models.CharField(
-                        help_text="The name of the subject or topic.", max_length=512
-                    ),
+                    models.CharField(help_text="The name of the subject or topic.", max_length=512),
                 ),
                 (
                     "identifier",
@@ -2786,9 +2769,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="collection",
-            index=models.Index(
-                fields=["identifier"], name="collection_identif_b59345_idx"
-            ),
+            index=models.Index(fields=["identifier"], name="collection_identif_b59345_idx"),
         ),
         migrations.AddIndex(
             model_name="collection",
@@ -3128,9 +3109,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="person",
-            index=models.Index(
-                fields=["authorized_name"], name="person_authori_ebc142_idx"
-            ),
+            index=models.Index(fields=["authorized_name"], name="person_authori_ebc142_idx"),
         ),
         migrations.AddIndex(
             model_name="person",
@@ -3209,9 +3188,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="subject",
-            index=models.Index(
-                fields=["identifier"], name="subject_identif_95382f_idx"
-            ),
+            index=models.Index(fields=["identifier"], name="subject_identif_95382f_idx"),
         ),
         migrations.AddIndex(
             model_name="subject",
@@ -3249,51 +3226,35 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="song",
-            index=models.Index(
-                fields=["disc_number", "track_number"], name="song_disc_nu_8897a9_idx"
-            ),
+            index=models.Index(fields=["disc_number", "track_number"], name="song_disc_nu_8897a9_idx"),
         ),
         migrations.AddIndex(
             model_name="song",
-            index=models.Index(
-                fields=["duration_seconds"], name="song_duratio_cc72bf_idx"
-            ),
+            index=models.Index(fields=["duration_seconds"], name="song_duratio_cc72bf_idx"),
         ),
         migrations.AddIndex(
             model_name="filereplica",
-            index=models.Index(
-                fields=["file", "replica_type"], name="file_replic_file_id_d28c16_idx"
-            ),
+            index=models.Index(fields=["file", "replica_type"], name="file_replic_file_id_d28c16_idx"),
         ),
         migrations.AddIndex(
             model_name="filereplica",
-            index=models.Index(
-                fields=["storage_name"], name="file_replic_storage_b52fa7_idx"
-            ),
+            index=models.Index(fields=["storage_name"], name="file_replic_storage_b52fa7_idx"),
         ),
         migrations.AddIndex(
             model_name="filereplica",
-            index=models.Index(
-                fields=["replica_type"], name="file_replic_replica_bcc683_idx"
-            ),
+            index=models.Index(fields=["replica_type"], name="file_replic_replica_bcc683_idx"),
         ),
         migrations.AddIndex(
             model_name="filereplica",
-            index=models.Index(
-                fields=["is_active"], name="file_replic_is_acti_67ca9e_idx"
-            ),
+            index=models.Index(fields=["is_active"], name="file_replic_is_acti_67ca9e_idx"),
         ),
         migrations.AddIndex(
             model_name="filereplica",
-            index=models.Index(
-                fields=["last_verified"], name="file_replic_last_ve_ab15a3_idx"
-            ),
+            index=models.Index(fields=["last_verified"], name="file_replic_last_ve_ab15a3_idx"),
         ),
         migrations.AddIndex(
             model_name="filereplica",
-            index=models.Index(
-                fields=["verification_status"], name="file_replic_verific_afd229_idx"
-            ),
+            index=models.Index(fields=["verification_status"], name="file_replic_verific_afd229_idx"),
         ),
         migrations.AlterUniqueTogether(
             name="filereplica",
@@ -3301,15 +3262,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="fileblock",
-            index=models.Index(
-                fields=["replica", "block_order"], name="file_block_replica_877eb1_idx"
-            ),
+            index=models.Index(fields=["replica", "block_order"], name="file_block_replica_877eb1_idx"),
         ),
         migrations.AddIndex(
             model_name="fileblock",
-            index=models.Index(
-                fields=["block_order"], name="file_block_block_o_35e5df_idx"
-            ),
+            index=models.Index(fields=["block_order"], name="file_block_block_o_35e5df_idx"),
         ),
         migrations.AddIndex(
             model_name="fileblock",
@@ -3317,9 +3274,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="fileblock",
-            index=models.Index(
-                fields=["is_last_block"], name="file_block_is_last_0e1df8_idx"
-            ),
+            index=models.Index(fields=["is_last_block"], name="file_block_is_last_0e1df8_idx"),
         ),
         migrations.AlterUniqueTogether(
             name="fileblock",
@@ -3331,15 +3286,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="itemexternalreference",
-            index=models.Index(
-                fields=["is_active"], name="item_extern_is_acti_f55a27_idx"
-            ),
+            index=models.Index(fields=["is_active"], name="item_extern_is_acti_f55a27_idx"),
         ),
         migrations.AddIndex(
             model_name="itemexternalreference",
-            index=models.Index(
-                fields=["item", "type"], name="item_extern_item_id_168219_idx"
-            ),
+            index=models.Index(fields=["item", "type"], name="item_extern_item_id_168219_idx"),
         ),
         migrations.AlterUniqueTogether(
             name="itemexternalreference",
@@ -3361,9 +3312,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="itemrelationship",
-            index=models.Index(
-                fields=["relationship_type"], name="item_relati_relatio_8d60d3_idx"
-            ),
+            index=models.Index(fields=["relationship_type"], name="item_relati_relatio_8d60d3_idx"),
         ),
         migrations.AlterUniqueTogether(
             name="itemrelationship",
@@ -3375,15 +3324,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="personexternalreference",
-            index=models.Index(
-                fields=["is_active"], name="person_exte_is_acti_26559a_idx"
-            ),
+            index=models.Index(fields=["is_active"], name="person_exte_is_acti_26559a_idx"),
         ),
         migrations.AddIndex(
             model_name="personexternalreference",
-            index=models.Index(
-                fields=["person", "type"], name="person_exte_person__2cb479_idx"
-            ),
+            index=models.Index(fields=["person", "type"], name="person_exte_person__2cb479_idx"),
         ),
         migrations.AlterUniqueTogether(
             name="personexternalreference",
@@ -3403,9 +3348,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="role",
-            index=models.Index(
-                fields=["item", "name", "order"], name="role_item_id_e0f89d_idx"
-            ),
+            index=models.Index(fields=["item", "name", "order"], name="role_item_id_e0f89d_idx"),
         ),
         migrations.AlterUniqueTogether(
             name="role",
@@ -3413,9 +3356,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="item",
-            index=models.Index(
-                fields=["-date", "identifier"], name="item_date_bef137_idx"
-            ),
+            index=models.Index(fields=["-date", "identifier"], name="item_date_bef137_idx"),
         ),
         migrations.AddIndex(
             model_name="item",
@@ -3440,18 +3381,14 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="item",
             constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("month__isnull", True), ("year__isnull", False), _connector="OR"
-                ),
+                condition=models.Q(("month__isnull", True), ("year__isnull", False), _connector="OR"),
                 name="month_requires_year",
             ),
         ),
         migrations.AddConstraint(
             model_name="item",
             constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("day__isnull", True), ("month__isnull", False), _connector="OR"
-                ),
+                condition=models.Q(("day__isnull", True), ("month__isnull", False), _connector="OR"),
                 name="day_requires_month",
             ),
         ),
