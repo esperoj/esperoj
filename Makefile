@@ -18,7 +18,7 @@ $(VENV_DIR):
 		python3 -m venv $(TMP_VENV_DIR) ; \
 		ln -s $(TMP_VENV_DIR) $(VENV_DIR); \
 	fi
-	@if [ "$(ENV)" = "PRD" ]; then \
+	@if [ "$(ENV)" = "prd" ]; then \
 		. $(VENV_DIR)/bin/activate && pip install -e ".[server]"; \
 	else \
 		. $(VENV_DIR)/bin/activate && pip install -e ".[$(ENV)]"; \
@@ -45,7 +45,7 @@ manage = ./manage.py
 
 start: setup
 	@echo "Starting Django server..."
-	@if [ "$(ENV)" = "PRD" ]; then \
+	@if [ "$(ENV)" = "prd" ]; then \
 		echo "Starting Gunicorn production server..."; \
 		$(VENV_DIR)/bin/gunicorn esperoj.wsgi:application --bind 0.0.0.0:$(PORT) --workers 2; \
 	else \
