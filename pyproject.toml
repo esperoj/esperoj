@@ -49,6 +49,9 @@ nuitka = [
   "ordered-set",
   "wheel"
 ]
+server = [
+  "gunicorn",
+]
 
 [project.urls]
 Changelog = "https://github.com/esperoj/esperoj/releases/"

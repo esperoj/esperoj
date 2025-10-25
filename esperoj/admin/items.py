@@ -11,7 +11,7 @@ from django.contrib import admin
 from django_select2.forms import Select2Widget, Select2MultipleWidget
 from django import forms  # Import django.forms for custom form fields
 
-from ..models import Item, Song, Book
+from ..models import Item, Song, Book, ItemExternalReference
 from .base import StandardModelAdmin, LanguagesFormFieldMixin, AdminDisplayHelperMixin
 from .relationships import RoleInline, ItemRelationshipInline
 
@@ -53,8 +53,6 @@ class ItemAdminForm(forms.ModelForm):
 
 class ItemExternalReferenceInline(admin.TabularInline):
     """Inline admin for ItemExternalReference."""
-
-    from ..models import ItemExternalReference
 
     model = ItemExternalReference
     fk_name = "item"
@@ -254,7 +252,21 @@ class ItemAdmin(StandardModelAdmin, LanguagesFormFieldMixin, AdminDisplayHelperM
                 ("he", "Hebrew"),
                 ("id", "Indonesian"),
                 ("tr", "Turkish"),
+                ("vi", "Vietnamese"),
+                ("th", "Thai"),
+                ("cs", "Czech"),
+                ("ro", "Romanian"),
+                ("hu", "Hungarian"),
+                ("da", "Danish"),
+                ("fi", "Finnish"),
+                ("no", "Norwegian"),
                 ("uk", "Ukrainian"),
+                ("fa", "Persian"),
+                ("bn", "Bengali"),
+                ("ta", "Tamil"),
+                ("te", "Telugu"),
+                ("ml", "Malayalam"),
+                ("la", "Latin"),
             ]
 
         # The assignment is now fully type-safe.
@@ -300,8 +312,6 @@ class SongAdmin(ItemAdmin):
     list_filter = (
         "year",
         "duration_seconds",
-        "bpm",
-        "key_signature",
         "track_number",
         "disc_number",
         "created_at",
@@ -312,7 +322,6 @@ class SongAdmin(ItemAdmin):
 
     # Add song-specific search fields
     search_fields = list(ItemAdmin.search_fields) + [
-        "key_signature",
         "roles__person__authorized_name",
     ]
 
@@ -324,8 +333,7 @@ class SongAdmin(ItemAdmin):
                 "Song Details",
                 {
                     "fields": (
-                        ("duration_seconds", "bpm"),
-                        "key_signature",
+                        "duration_seconds",
                         ("track_number", "disc_number"),
                     ),
                     "classes": ("wide",),

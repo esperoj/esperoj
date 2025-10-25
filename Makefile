@@ -1,5 +1,6 @@
 # Define variables
 ENV ?= dev
+PORT ?= 8000
 VENV_DIR ?= .venv
 TMP_VENV_DIR ?= $(TMPDIR)/esperoj-venv
 
@@ -17,7 +18,11 @@ $(VENV_DIR):
 		python3 -m venv $(TMP_VENV_DIR) ; \
 		ln -s $(TMP_VENV_DIR) $(VENV_DIR); \
 	fi
-	@. $(VENV_DIR)/bin/activate && pip install -e ".[$(ENV)]"
+	@if [ "$(ENV)" = "PRD" ]; then \
+		. $(VENV_DIR)/bin/activate && pip install -e ".[server]"; \
+	else \
+		. $(VENV_DIR)/bin/activate && pip install -e ".[$(ENV)]"; \
+	fi
 	@echo "Virtual environment setup complete."
 
 clean-venv:
@@ -38,13 +43,15 @@ lock: setup
 
 manage = ./manage.py
 
-run: setup
-	@echo "Starting Django development server..."
-	$(VENV_DIR)/bin/python $(manage) runserver
-
-run_plus: setup
-	@echo "Starting Django development server with django-extensions (runserver_plus)..."
-	$(VENV_DIR)/bin/python $(manage) runserver_plus
+start: setup
+	@echo "Starting Django server..."
+	@if [ "$(ENV)" = "PRD" ]; then \
+		echo "Starting Gunicorn production server..."; \
+		$(VENV_DIR)/bin/gunicorn esperoj.wsgi:application --bind 0.0.0.0:$(PORT) --workers 2; \
+	else \
+		echo "Starting Django development server..."; \
+		$(VENV_DIR)/bin/python $(manage) runserver 0.0.0.0:$(PORT); \
+	fi
 
 shell: setup
 	@echo "Opening Django shell..."
@@ -132,10 +139,10 @@ clean-migrations:
 
 clean-db:
 	@echo "Deleting database file..."
-	@rm -f db.sqlite3
+	@rm -f db.*
 
 clean-ruff-cache:
 	@echo "Deleting Ruff cache..."
 	@rm -fr .ruff_cache/
 
-.PHONY: setup clean-venv lock run run_plus shell shell_plus makemigrations migrate fresh_db createsuperuser lint test nuitka release clean clean-pyc clean-build clean-migrations clean-db clean-ruff-cache
+.PHONY: setup clean-venv lock start shell shell_plus makemigrations migrate fresh_db createsuperuser lint test nuitka release clean clean-pyc clean-build clean-migrations clean-db clean-ruff-cache

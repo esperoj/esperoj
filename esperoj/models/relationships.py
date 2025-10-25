@@ -190,49 +190,20 @@ class Role(BaseModel):
 class ExternalReferenceType(models.TextChoices):
     """Defines the type of an external reference link."""
 
-    # --- General Web Presence ---
-    WEBSITE = "WEBSITE", "Official Website"
-    SOCIAL_MEDIA = "SOCIAL_MEDIA", "Social Media"
-    BLOG = "BLOG", "Blog"
+    WEBSITE = "WEBSITE", "Official Website / Personal Site / Blog"
+    SOCIAL_MEDIA = "SOCIAL_MEDIA", "Social Media Profile"
 
-    # --- Knowledge Bases ---
-    WIKIPEDIA = "WIKIPEDIA", "Wikipedia"
-    WIKIDATA = "WIKIDATA", "Wikidata"
+    # II. Knowledge & Databases
+    GENERAL_DATABASE = "GENERAL_DATABASE", "General Database / Wiki / Encyclopedia"
+    ACADEMIC_RESOURCE = "ACADEMIC_RESOURCE", "Academic Resource / Profile"
 
-    # --- Music Databases ---
-    MUSICBRAINZ = "MUSICBRAINZ", "MusicBrainz"
-    DISCOGS = "DISCOGS", "Discogs"
-    ALLMUSIC = "ALLMUSIC", "AllMusic"
-    LASTFM = "LASTFM", "Last.fm"
+    # III. Content Platforms
+    DIGITAL_CONTENT_PLATFORM = "DIGITAL_CONTENT_PLATFORM", "Digital Content Platform (Streaming, Purchase, Download)"
 
-    # --- Book Databases ---
-    GOODREADS = "GOODREADS", "Goodreads"
-    OPENLIBRARY = "OPENLIBRARY", "Open Library"
-    WORLDCAT = "WORLDCAT", "WorldCat"
+    # IV. Archival
+    ARCHIVAL_RESOURCE = "ARCHIVAL_RESOURCE", "Archival Resource / Finding Aid"
 
-    # --- Media Databases ---
-    IMDB = "IMDB", "IMDb"
-    TMDB = "TMDB", "The Movie Database"
-
-    # --- Academic ---
-    ORCID = "ORCID", "ORCID"
-    SCHOLAR = "SCHOLAR", "Google Scholar"
-
-    # --- Commercial ---
-    AMAZON = "AMAZON", "Amazon"
-    ITUNES = "ITUNES", "iTunes"
-    SPOTIFY = "SPOTIFY", "Spotify"
-
-    # --- Archival ---
-    FINDING_AID = "FINDING_AID", "Finding Aid"
-    ARCHIVE = "ARCHIVE", "Archive"
-
-    # --- Media Links ---
-    DOWNLOAD = "DOWNLOAD", "Download Link"
-    STREAMING = "STREAMING", "Streaming Link"
-    VIDEO = "VIDEO", "Video"
-
-    # --- Other ---
+    # V. Other
     OTHER = "OTHER", "Other"
 
 

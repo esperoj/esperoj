@@ -89,7 +89,7 @@ class AppSettings(BaseSettings):
 
     # Core Django Settings. These are top-level settings.
     # Maps to: ESPEROJ_DEBUG
-    debug: bool = Field(default=False)
+    debug: bool = Field(default=True)
     # Maps to: ESPEROJ_SECRET_KEY
     # The `...` as the default value means this field is REQUIRED. If the
     # environment variable is not set, Pydantic will raise a validation error.

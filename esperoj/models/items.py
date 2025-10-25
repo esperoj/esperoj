@@ -448,8 +448,8 @@ class Song(Item):
 
     Additional Attributes:
         duration_seconds: The duration of the recording in seconds.
-        bpm: Beats per minute (tempo).
-        key_signature: The musical key of the song.
+
+
         track_number: Track number if part of an album.
         disc_number: Disc number if part of a multi-disc release.
     """
@@ -460,17 +460,7 @@ class Song(Item):
         blank=True,
         help_text="The duration of the recording in seconds.",
     )
-    bpm = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        help_text="Beats per minute (tempo) of the song.",
-    )
-    key_signature = models.CharField(
-        max_length=10,
-        blank=True,
-        default="",
-        help_text="The musical key of the song (e.g., 'C major', 'A minor').",
-    )
+
     track_number = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
