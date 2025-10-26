@@ -22,7 +22,8 @@ from .config import settings
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-STATIC_ROOT      =  BASE_DIR / 'static'
+STATIC_ROOT = BASE_DIR / "static"
+MEDIA_ROOT = BASE_DIR / "media"
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -141,5 +142,3 @@ INSTALLED_APPS += [
 MIDDLEWARE += [
     "simple_history.middleware.HistoryRequestMiddleware",
 ]
-
-REPLICA_TYPES = [("primary", "Primary Fast Replica"), ("backup", "Secondary Replica"), ("archive", "Archive Replica")]

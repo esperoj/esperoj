@@ -2,7 +2,6 @@
 ENV ?= dev
 PORT ?= 8000
 VENV_DIR ?= .venv
-TMP_VENV_DIR ?= $(TMPDIR)/esperoj-venv
 
 .ONESHELL:
 
@@ -13,11 +12,7 @@ TMP_VENV_DIR ?= $(TMPDIR)/esperoj-venv
 setup: $(VENV_DIR)
 $(VENV_DIR):
 	@echo "Setting up virtual environment in $(VENV_DIR)..."
-	@if [ ! -d $(VENV_DIR) ]; then \
-		rm -fr $(TMP_VENV_DIR) ; \
-		python3 -m venv $(TMP_VENV_DIR) ; \
-		ln -s $(TMP_VENV_DIR) $(VENV_DIR); \
-	fi
+	python3 -m venv $(VENV_DIR)
 	@if [ "$(ENV)" = "prd" ]; then \
 		. $(VENV_DIR)/bin/activate && pip install -e ".[server]"; \
 	else \
@@ -28,7 +23,6 @@ $(VENV_DIR):
 clean-venv:
 	@echo "Removing virtual environment..."
 	@rm -fr $(VENV_DIR)
-	@rm -fr $(TMP_VENV_DIR)
 	@echo "Virtual environment removed."
 
 lock: setup
