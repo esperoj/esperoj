@@ -301,7 +301,7 @@ class SongAdmin(ItemAdmin):
         "title",
         "identifier",
         "display_date",
-        "display_duration",
+        "album",  # Added album to list display
         "admin_display_artists",
         "admin_display_composers",
         "admin_display_lyricists",
@@ -311,9 +311,7 @@ class SongAdmin(ItemAdmin):
 
     list_filter = (
         "year",
-        "duration_seconds",
-        "track_number",
-        "disc_number",
+        "album",  # Added album to list filter
         "created_at",
         "updated_at",
         "collections",
@@ -322,6 +320,7 @@ class SongAdmin(ItemAdmin):
 
     # Add song-specific search fields
     search_fields = list(ItemAdmin.search_fields) + [
+        "album",  # Added album to search fields
         "roles__person__authorized_name",
     ]
 
@@ -330,38 +329,19 @@ class SongAdmin(ItemAdmin):
         [
             ItemAdmin.base_fieldsets[0],  # Core info
             (
-                "Song Details",
+                "Album Information",  # New fieldset for album
                 {
-                    "fields": (
-                        "duration_seconds",
-                        ("track_number", "disc_number"),
-                    ),
+                    "fields": ("album",),
                     "classes": ("wide",),
                 },
             ),
         ]
         + ItemAdmin.base_fieldsets[1:]
-    )  # Date, relationships, notes, timestamps
+    )
 
-    # Custom admin display methods for song-specific fields
     admin_display_artists = AdminDisplayHelperMixin.make_admin_display_method("display_artists", "Artists")
     admin_display_composers = AdminDisplayHelperMixin.make_admin_display_method("display_composers", "Composers")
     admin_display_lyricists = AdminDisplayHelperMixin.make_admin_display_method("display_lyricists", "Lyricists")
-
-    @admin.display(description="Duration", ordering="duration_seconds")
-    def display_duration(self, obj):
-        """Display formatted duration."""
-        return obj.display_duration or "—"
-
-    @admin.display(description="Track Info")
-    def display_track_info(self, obj):
-        """Display track and disc information."""
-        parts = []
-        if obj.disc_number and obj.disc_number > 1:
-            parts.append(f"D{obj.disc_number}")
-        if obj.track_number:
-            parts.append(f"T{obj.track_number}")
-        return "/".join(parts) if parts else "—"
 
     def get_queryset(self, request):
         """Optimize queryset for song-specific relationships."""

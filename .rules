@@ -78,3 +78,4 @@ The `esperoj` application must be structured by architectural layer, not by feat
 *   **Shell:** Use make commands for running tests and other tasks. For example, use `make test` to run tests. If not available, remember to active the venv first.
 *   **Shell:** `source .venv/bin/activate` first before running any commands that need the virtual environment.
 *   **Testing:** after successful creating tests, try to provide full coverage for that module. For example `source .venv/bin/activate && pytest tests/storages --cov-report term-missing --cov=esperoj.storages` to check coverage for `storages` module.
+*   **Folder structure:** Remember that the app src is in esperoj/esperoj and not esperoj only. so all the python codes for the app should be in `esperoj/esperoj/**`.

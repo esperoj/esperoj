@@ -16,7 +16,7 @@ from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
 from esperoj.utils.dates import format_item_display_date
-from esperoj.utils.text import format_duration, format_isbn
+from esperoj.utils.text import format_isbn
 
 from .base import BaseModel
 
@@ -454,23 +454,11 @@ class Song(Item):
         disc_number: Disc number if part of a multi-disc release.
     """
 
-    # --- Song-specific fields ---
-    duration_seconds = models.PositiveIntegerField(
-        null=True,
+    album = models.CharField(
+        max_length=255,
         blank=True,
-        help_text="The duration of the recording in seconds.",
-    )
-
-    track_number = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        help_text="Track number if part of an album or collection.",
-    )
-    disc_number = models.PositiveSmallIntegerField(
-        null=True,
-        blank=True,
-        default=1,
-        help_text="Disc number if part of a multi-disc release.",
+        default="",
+        help_text="The album or release this song belongs to.",
     )
 
     objects = SongManager()
@@ -479,11 +467,9 @@ class Song(Item):
         db_table = "song"
         verbose_name = "Song"
         verbose_name_plural = "Songs"
-        ordering = ["track_number", "title"]
+        ordering = ["title"]
         indexes = [
-            Index(fields=["track_number"]),
-            Index(fields=["disc_number", "track_number"]),
-            Index(fields=["duration_seconds"]),
+            Index(fields=["album"]),
         ]
 
     def save(self, *args, **kwargs) -> None:
@@ -533,16 +519,6 @@ class Song(Item):
     def display_artists(self) -> str:
         """Returns a comma-separated string of artists."""
         return self._get_people_display_string(self.artists)
-
-    @property
-    def display_duration(self) -> str:
-        """Returns a formatted duration string (e.g., '3:45')."""
-        return format_duration(self.duration_seconds)
-
-    @property
-    def is_part_of_album(self) -> bool:
-        """Returns True if this song has a track number."""
-        return self.track_number is not None
 
 
 class BookManager(Manager):
