@@ -22,7 +22,7 @@ from .config import settings
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+STATIC_ROOT      =  BASE_DIR / 'static'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -34,8 +34,8 @@ DEBUG = settings.debug
 
 # Allowed hosts for the Django application.
 # Managed directly in settings.py, not via Pydantic settings.
-ALLOWED_HOSTS = [".esperoj.eu.org"]
-
+ALLOWED_HOSTS = [".esperoj.eu.org", "esperoj.alwaysdata.net"]
+CSRF_TRUSTED_ORIGINS = ["https://*.esperoj.eu.org", "https://esperoj.alwaysdata.net"]
 
 # Application definition
 
