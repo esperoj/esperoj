@@ -18,7 +18,52 @@ from .base import BaseModel
 
 if TYPE_CHECKING:
     from .items import Item
-    from .relationships import Role, PersonExternalReference
+    from .relationships import PersonExternalReference, Role
+
+
+class DateModel(BaseModel):
+    """Represents a standardized date or time with uncertainty.
+
+    This model aims to provide a flexible and precise way to store dates,
+    optionally with a time component, precision, and range information,
+    inspired by Wikidata's date handling. It represents a single point
+    in time with potential uncertainty around it.
+
+    Attributes:
+        time (str): Normalized ISO 8601 timestamp string (e.g., "+2023-00-00T00:00:00Z").
+        precision (int): Precision of the date according to Wikidata standards.
+            (0=10^9 years, 1=100 million years ... 7=millennium, 8=century,
+            9=decade, 10=year, 11=month, 12=day).
+        before (int): Number of units (days) before the given time, indicating uncertainty.
+            Defaults to 0.
+        after (int): Number of units (days) after the given time, indicating uncertainty.
+            Defaults to 0.
+        calendar_model (str): URL to the calendar model used, default to Gregorian (Q1985727).
+        label (str): Optional human-readable label/display value for UI or archival context.
+    """
+
+    time = models.CharField(max_length=25)
+    precision = models.PositiveSmallIntegerField()
+    before = models.PositiveIntegerField(default=0)
+    after = models.PositiveIntegerField(default=0)
+    calendar_model = models.URLField(default="http://www.wikidata.org/entity/Q1985727")
+    label = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["time"]
+        indexes = [
+            Index(fields=["time"]),
+            Index(fields=["label"]),
+            Index(fields=["precision"]),
+        ]
+
+    def __str__(self):
+        """Returns a string representation of the date.
+
+        Returns:
+            str: The string representation of the date.
+        """
+        return self.label or self.time
 
 
 class PersonManager(Manager):
