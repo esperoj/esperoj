@@ -58,7 +58,7 @@ The `esperoj` application must be structured by architectural layer, not by feat
     ├── admin/        # Singular: A single admin interface concept
     └── cli/          # Singular: A single CLI concept
     ```
-*   **The Dependency Rule:** Dependencies must flow strictly from outer layers to inner layers. **The `core` and `utils` layers must remain pure and CANNOT import from Django or any other layer in this project.**
+*   **The Dependency Rule:** Dependencies must flow strictly from outer layers to inner layers. **The `core` layer must remain pure and CANNOT import from Django or any other layer in this project.**
     *   **`Entry Points (cli)` -> `services`. `Entry Points (web, admin)` -> `(services, models)`. `services` -> `(core, models, utils, storages)`.**
 *   **Layer Responsibilities:**
     *   **`core`:** Contains the pure, timeless business rules of the application. This layer defines logic and behavior, contrasting with the `models` layer which defines data structure and persistence.

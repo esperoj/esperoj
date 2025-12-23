@@ -3,11 +3,11 @@ from unittest import mock
 
 from _pytest.stash import T
 
-from esperoj.utils.setup import setup_django
+from esperoj.utils.setup_django import setup_django
 
 
 @mock.patch.dict(os.environ, {}, clear=True)
-@mock.patch("esperoj.utils.setup.settings", configured=False)
+@mock.patch("esperoj.utils.setup_django.settings", configured=False)
 @mock.patch("django.setup")
 def test_setup_django_not_configured(mock_django_setup, mock_settings):
     """
@@ -22,7 +22,7 @@ def test_setup_django_not_configured(mock_django_setup, mock_settings):
 
 @mock.patch("django.setup")
 @mock.patch("os.environ.setdefault")
-@mock.patch("esperoj.utils.setup.settings", configured=True)
+@mock.patch("esperoj.utils.setup_django.settings", configured=True)
 def test_setup_django_already_configured(mock_settings_configured, mock_environ_setdefault, mock_django_setup):
     """
     Test that setup_django does nothing when Django is already configured.
