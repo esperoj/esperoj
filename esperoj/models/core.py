@@ -11,9 +11,6 @@ from typing import TYPE_CHECKING
 from django.db import models
 from django.db.models import Index, Manager
 
-from esperoj.utils.dates import format_person_display_name_with_dates
-from esperoj.utils.text import generate_sort_name
-
 from .base import BaseModel
 
 if TYPE_CHECKING:
@@ -21,69 +18,47 @@ if TYPE_CHECKING:
     from .relationships import PersonExternalReference, Role
 
 
-class DateModel(BaseModel):
-    """Represents a standardized date or time with uncertainty.
-
-    This model aims to provide a flexible and precise way to store dates,
-    optionally with a time component, precision, and range information,
-    inspired by Wikidata's date handling. It represents a single point
-    in time with potential uncertainty around it.
-
-    Attributes:
-        time (str): Normalized ISO 8601 timestamp string (e.g., "+2023-00-00T00:00:00Z").
-        precision (int): Precision of the date according to Wikidata standards.
-            (0=10^9 years, 1=100 million years ... 7=millennium, 8=century,
-            9=decade, 10=year, 11=month, 12=day).
-        before (int): Number of units (days) before the given time, indicating uncertainty.
-            Defaults to 0.
-        after (int): Number of units (days) after the given time, indicating uncertainty.
-            Defaults to 0.
-        calendar_model (str): URL to the calendar model used, default to Gregorian (Q1985727).
-        label (str): Optional human-readable label/display value for UI or archival context.
+def generate_sort_name(name: str) -> str:
     """
+    Generates a sortable version of a person's name.
 
-    time = models.CharField(max_length=25)
-    precision = models.PositiveSmallIntegerField()
-    before = models.PositiveIntegerField(default=0)
-    after = models.PositiveIntegerField(default=0)
-    calendar_model = models.URLField(default="http://www.wikidata.org/entity/Q1985727")
-    label = models.CharField(max_length=255, blank=True)
+    Following archival standards, this usually converts names from direct order 
+    (First Middle Last) to inverted order (Last, First Middle). It also attempts 
+    to handle common titles and suffixes.
 
-    class Meta:
-        ordering = ["time"]
-        indexes = [
-            Index(fields=["time"]),
-            Index(fields=["label"]),
-            Index(fields=["precision"]),
-        ]
+    Example: "Dr. Martin Luther King, Jr." -> "King, Martin Luther, Jr."
+    """
+    if not name:
+        return ""
 
-    def __str__(self):
-        """Returns a string representation of the date.
+    parts = name.strip().split()
+    if len(parts) <= 1:
+        return name
 
-        Returns:
-            str: The string representation of the date.
-        """
-        return self.label or self.time
+    # Strip common prefixes/titles
+    prefixes = {"Dr.", "Mr.", "Mrs.", "Ms.", "Prof.", "Sir", "Dame"}
+    if parts[0] in prefixes:
+        parts.pop(0)
 
+    if not parts:
+        return name
 
-class PersonManager(Manager):
-    """Custom manager for the Person model providing common query methods."""
+    # Detect and isolate common suffixes
+    suffixes = {"Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "MD", "Esq."}
+    suffix = ""
+    if parts[-1].rstrip(",") in suffixes:
+        suffix = parts.pop().rstrip(",")
 
-    def by_authorized_name(self, name: str):
-        """Returns persons matching the given authorized name."""
-        return self.filter(authorized_name__icontains=name)
+    if len(parts) > 1:
+        # The new last part is the surname
+        last_name = parts.pop().rstrip(",")
+        first_names = " ".join(parts).rstrip(",")
+        sort_name = f"{last_name}, {first_names}"
+        if suffix:
+            sort_name = f"{sort_name}, {suffix}"
+        return sort_name
 
-    def by_sort_name(self, sort_name: str):
-        """Returns persons matching the given sort name."""
-        return self.filter(sort_name__icontains=sort_name)
-
-    def living(self):
-        """Returns persons who are still living (no death date)."""
-        return self.filter(death_date__isnull=True)
-
-    def deceased(self):
-        """Returns persons who have died."""
-        return self.filter(death_date__isnull=False)
+    return name
 
 
 class Person(BaseModel):
@@ -96,7 +71,7 @@ class Person(BaseModel):
 
     Attributes:
         authorized_name: The full, authoritative name for display.
-        sort_name: The name in an inverted order for sorting.
+        sort_name: The name in an order for sorting.
         identifier: A unique, URL-friendly slug for the person.
         birth_date: The person's date of birth.
         death_date: The person's date of death.
@@ -147,8 +122,6 @@ class Person(BaseModel):
     roles: "Manager[Role]"
     external_references: "Manager[PersonExternalReference]"
 
-    objects = PersonManager()
-
     class Meta:
         db_table = "person"
         ordering = ["sort_name", "authorized_name"]
@@ -180,17 +153,6 @@ class Person(BaseModel):
         if not self.sort_name and self.authorized_name:
             self.sort_name = generate_sort_name(self.authorized_name)
         super().save(*args, **kwargs)
-
-    @property
-    def is_living(self) -> bool:
-        """Returns True if the person is still living (no death date)."""
-        return self.death_date is None
-
-    @property
-    def display_name_with_dates(self) -> str:
-        """Returns the name with birth/death dates in parentheses."""
-        return format_person_display_name_with_dates(self.authorized_name, self.birth_date, self.death_date)
-
 
 class SubjectManager(Manager):
     """Custom manager for the Subject model providing common query methods."""

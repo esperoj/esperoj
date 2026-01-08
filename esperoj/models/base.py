@@ -1,19 +1,33 @@
+"""Core models module for the Esperoj project.
+
+This module defines abstract base models, such as BaseModel, which provide
+common fields, functionality, and historical tracking for all other models
+in the application. It aims to ensure consistency and reduce redundancy
+across the database schema.
+"""
+
 from django.db import models
 from simple_history.models import HistoricalRecords
 import uuid_utils.compat as uuid
 
 
 class BaseModel(models.Model):
-    """
-    An abstract base model providing common fields and functionality for all models.
+    """Abstract base model providing common fields and functionality for all models.
 
-    This model includes:
-    - A UUID primary key (`id`).
-    - `created_at` and `updated_at` timestamps for record creation and last update.
-    - Historical records tracking changes using `simple_history`.
+    This model provides a UUID primary key, creation and update timestamps, and
+    historical records tracking. Concrete models inheriting from BaseModel
+    should explicitly define their `db_table` in their `Meta` class to ensure
+    consistent naming and prevent unexpected behavior.
 
-    Concrete models inheriting from BaseModel should explicitly define their `db_table`
-    in their `Meta` class to ensure consistent naming and prevent unexpected behavior.
+    Attributes:
+        id (models.UUIDField): Unique identifier for the record, automatically
+            generated as a UUID v7.
+        created_at (models.DateTimeField): Timestamp indicating when the record
+            was first created.
+        updated_at (models.DateTimeField): Timestamp indicating when the record
+            was last updated.
+        history (HistoricalRecords): Historical records tracking changes using
+            simple_history.
     """
 
     # Core Fields
