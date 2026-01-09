@@ -1,5 +1,4 @@
-"""
-Core entities for the esperoj application.
+"""Core entities for the esperoj application.
 
 This module contains the fundamental entities that other models reference:
 Person, Subject, and Collection. These models are kept separate to avoid
@@ -19,14 +18,20 @@ if TYPE_CHECKING:
 
 
 def generate_sort_name(name: str) -> str:
-    """
-    Generates a sortable version of a person's name.
+    """Generates a sortable version of a person's name.
 
-    Following archival standards, this usually converts names from direct order 
-    (First Middle Last) to inverted order (Last, First Middle). It also attempts 
+    Following archival standards, this usually converts names from direct order
+    (First Middle Last) to inverted order (Last, First Middle). It also attempts
     to handle common titles and suffixes.
 
-    Example: "Dr. Martin Luther King, Jr." -> "King, Martin Luther, Jr."
+    Args:
+        name: The person's name in direct order.
+
+    Returns:
+        The name in inverted order for sorting (e.g., "Last, First").
+
+    Example:
+        "Dr. Martin Luther King, Jr." -> "King, Martin Luther, Jr."
     """
     if not name:
         return ""
@@ -62,8 +67,7 @@ def generate_sort_name(name: str) -> str:
 
 
 class Person(BaseModel):
-    """
-    Represents a person, such as an author, artist, or composer.
+    """Represents a person, such as an author, artist, or composer.
 
     This model is designed for flexibility, storing both a display-friendly
     authorized name and a separate, structured name for sorting and indexing,
@@ -140,7 +144,11 @@ class Person(BaseModel):
         return self.authorized_name
 
     def clean(self) -> None:
-        """Performs model validation."""
+        """Performs model validation.
+
+        Raises:
+            ValidationError: If death date is before birth date.
+        """
         super().clean()
 
         if self.birth_date and self.death_date and self.death_date < self.birth_date:
@@ -154,21 +162,9 @@ class Person(BaseModel):
             self.sort_name = generate_sort_name(self.authorized_name)
         super().save(*args, **kwargs)
 
-class SubjectManager(Manager):
-    """Custom manager for the Subject model providing common query methods."""
-
-    def by_name(self, name: str):
-        """Returns subjects matching the given name."""
-        return self.filter(name__icontains=name)
-
-    def with_items(self):
-        """Returns subjects that have associated items."""
-        return self.filter(items__isnull=False).distinct()
-
 
 class Subject(BaseModel):
-    """
-    A subject, topic, or keyword used for categorization.
+    """A subject, topic, or keyword used for categorization.
 
     Subjects are used to categorize and organize items in the collection.
     They represent topics, themes, or keywords that can be associated with
@@ -203,8 +199,6 @@ class Subject(BaseModel):
 
     items: "Manager[Item]"
 
-    objects = SubjectManager()
-
     class Meta:
         db_table = "subject"
         ordering = ["name"]
@@ -219,27 +213,9 @@ class Subject(BaseModel):
         """Returns the subject's name."""
         return self.name
 
-    @property
-    def item_count(self) -> int:
-        """Returns the number of items associated with this subject."""
-        return self.items.count()
-
-
-class CollectionManager(Manager):
-    """Custom manager for the Collection model providing common query methods."""
-
-    def by_name(self, name: str):
-        """Returns collections matching the given name."""
-        return self.filter(name__icontains=name)
-
-    def with_items(self):
-        """Returns collections that have associated items."""
-        return self.filter(items__isnull=False).distinct()
-
 
 class Collection(BaseModel):
-    """
-    A collection that groups multiple related Items.
+    """A collection that groups multiple related Items.
 
     Collections are used to organize items into logical groupings,
     such as albums, book series, or thematic collections.
@@ -272,8 +248,6 @@ class Collection(BaseModel):
     # --- Type hints for reverse relationships ---
     items: "Manager[Item]"
 
-    objects = CollectionManager()
-
     class Meta:
         db_table = "collection"
         ordering = ["name"]
@@ -287,16 +261,3 @@ class Collection(BaseModel):
     def __str__(self) -> str:
         """Returns the collection's name."""
         return self.name
-
-    @property
-    def item_count(self) -> int:
-        """Returns the number of items in this collection."""
-        return self.items.count()
-
-    @property
-    def latest_item_date(self):
-        """Returns the date of the most recent item in this collection."""
-        from .items import Item
-
-        latest_item = Item.objects.filter(collections=self, date__isnull=False).order_by("-date").first()
-        return latest_item.date if latest_item else None
