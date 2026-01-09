@@ -1,5 +1,4 @@
-"""
-Item models for the esperoj application.
+"""Item models for the esperoj application.
 
 This module contains models for catalogued items in the digital preservation
 system, including the base Item model and specific item types like Song and Book.
@@ -11,19 +10,73 @@ from typing import TYPE_CHECKING, Union
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models import CheckConstraint, Index, Q, Manager
+from django.db.models import CheckConstraint, Index, Manager, Q
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
-
-from esperoj.utils.dates import format_item_display_date
-from esperoj.utils.text import format_isbn
 
 from .base import BaseModel
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
+
     from .core import Person
-    from .relationships import Role, ItemExternalReference, ItemRoleName, ItemRelationship
+    from .relationships import ItemExternalReference, ItemRelationship, ItemRoleName, Role
+
+
+def format_item_display_date(year: int | None, month: int | None, day: int | None) -> str:
+    """Formats a date from its components for display.
+
+    Args:
+        year: The year of publication or creation.
+        month: The month of publication or creation (1-12).
+        day: The day of publication or creation (1-31).
+
+    Returns:
+        A formatted date string (e.g., "2023", "January 2023", "January 15, 2023").
+    """
+    if year is None:
+        return ""
+
+    year_str = f"{abs(year)}"
+    if year < 0:
+        year_str += " BCE"
+
+    if month is None:
+        return year_str
+
+    try:
+        # Use a dummy date to get the month name
+        month_name = datetime.date(2000, month, 1).strftime("%B")
+    except (ValueError, TypeError):
+        return year_str
+
+    if day is None:
+        return f"{month_name} {year_str}"
+
+    return f"{month_name} {day}, {year_str}"
+
+
+def format_isbn(isbn: str) -> str:
+    """Formats an ISBN string with hyphens.
+
+    Args:
+        isbn: A 10 or 13 digit ISBN string without formatting.
+
+    Returns:
+        The formatted ISBN string.
+    """
+    if not isbn:
+        return ""
+
+    clean_isbn = isbn.replace("-", "").replace(" ", "")
+    if len(clean_isbn) == 13:
+        # Standard ISBN-13 format: 3-1-2-6-1
+        return f"{clean_isbn[:3]}-{clean_isbn[3:4]}-{clean_isbn[4:6]}-{clean_isbn[6:12]}-{clean_isbn[12:]}"
+    if len(clean_isbn) == 10:
+        # Standard ISBN-10 format: 1-3-5-1
+        return f"{clean_isbn[:1]}-{clean_isbn[1:4]}-{clean_isbn[4:9]}-{clean_isbn[9:]}"
+
+    return isbn
 
 
 class ItemType(models.TextChoices):
@@ -37,42 +90,8 @@ class ItemType(models.TextChoices):
     AUDIO = "AUDIO", "Audio"
 
 
-class ItemManager(Manager):
-    """Custom manager for the Item model providing common query methods."""
-
-    def get_by_type(self, item_type: ItemType) -> "QuerySet[Item]":
-        """Returns all items of a specific type."""
-        return self.filter(item_type=item_type)
-
-    def with_files(self):
-        """Returns items that have associated files."""
-        return self.filter(files__isnull=False).distinct()
-
-    def by_year(self, year: int):
-        """Returns items from a specific year."""
-        return self.filter(year=year)
-
-    def by_date_range(self, start_date=None, end_date=None):
-        """Returns items within a date range."""
-        queryset = self.all()
-        if start_date:
-            queryset = queryset.filter(date__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(date__lte=end_date)
-        return queryset
-
-    def with_people(self):
-        """Returns items that have associated people."""
-        return self.filter(people__isnull=False).distinct()
-
-    def by_language(self, language_code: str):
-        """Returns items in a specific language."""
-        return self.filter(languages__contains=[language_code])
-
-
 class Item(BaseModel):
-    """
-    The concrete base model for all cataloged objects in the system.
+    """The concrete base model for all cataloged objects in the system.
 
     This model uses multi-table inheritance, where each subclass (like Book or
     Song) gets its own table with a one-to-one link to this base Item table.
@@ -80,26 +99,19 @@ class Item(BaseModel):
 
     Attributes:
         title: The main title or name of the item.
-        subtitle: An optional subtitle for the item.
-        identifier: A unique, URL-friendly slug for the item.
+        identifier: A unique, human-readable identifier for the item.
         item_type: The type of the item (e.g., Book, Song).
         description: A free-text description of the item.
-        languages: A JSONField storing a list of languages associated with the item.
+        languages: A list of language codes associated with the item.
         notes: Internal notes about the item.
-
-    Date Information:
         year: The year of the item's creation or publication.
         month: The month of the item's creation or publication.
         day: The day of the item's creation or publication.
         date: A denormalized DateField for sorting and filtering.
-
-    Relationships:
-        people: People who contributed to this item (through Role model).
+        people: People who contributed to this item.
         subjects: Topics/keywords associated with this item.
         collections: Collections this item belongs to.
         files: Digital files associated with this item.
-        external_references: External links related to this item.
-        roles: Specific roles people play for this item.
     """
 
     # --- Core Information ---
@@ -107,12 +119,6 @@ class Item(BaseModel):
         max_length=512,
         db_index=True,
         help_text="The main title or name of the item.",
-    )
-    subtitle = models.CharField(
-        max_length=512,
-        blank=True,
-        default="",
-        help_text="An optional subtitle for the item.",
     )
     identifier = models.SlugField(
         max_length=255,
@@ -199,15 +205,13 @@ class Item(BaseModel):
     outgoing_relationships: "Manager[ItemRelationship]"
     incoming_relationships: "Manager[ItemRelationship]"
 
-    objects = ItemManager()
-
     class Meta:
         db_table = "item"
-        ordering = ["-date", "identifier"]
+        ordering = ["-year", "-month", "-day", "identifier"]
         verbose_name = "Item"
         verbose_name_plural = "Items"
         indexes = [
-            Index(fields=["-date", "identifier"]),
+            Index(fields=["-year", "-month", "-day", "identifier"]),
             Index(fields=["identifier"]),
             Index(fields=["title"]),
             Index(fields=["item_type"]),
@@ -252,20 +256,27 @@ class Item(BaseModel):
         return ", ".join(person.authorized_name for person in queryset.distinct())
 
     def get_people_by_role(self, role: Union[str, "ItemRoleName"]) -> "QuerySet[Person]":
-        """
-        Returns a queryset of people with a specific role for this item.
+        """Returns a queryset of people with a specific role for this item.
 
         Uses select_related to prevent N+1 queries when accessing person data.
+
+        Args:
+            role: The role name or ItemRoleName instance to filter by.
+
+        Returns:
+            A queryset of Person instances.
         """
         return self.people.filter(roles__name=role, roles__item=self).select_related().order_by("roles__order")
 
     @property
     def creators(self) -> "QuerySet[Person]":
-        """
-        Abstract property for primary creators.
+        """Abstract property for primary creators.
 
         Subclasses MUST override this property to define which roles
         are considered primary creators for that item type.
+
+        Raises:
+            NotImplementedError: If the subclass does not implement this property.
         """
         raise NotImplementedError(f"{self.__class__.__name__} must implement the 'creators' property.")
 
@@ -286,13 +297,6 @@ class Item(BaseModel):
         return self._get_people_display_string(self.contributors)
 
     @property
-    def full_title(self) -> str:
-        """Returns the full title including subtitle if present."""
-        if self.subtitle:
-            return f"{self.title}: {self.subtitle}"
-        return self.title
-
-    @property
     def display_languages(self) -> str:
         """Returns a comma-separated string of languages."""
         if self.languages:
@@ -300,29 +304,18 @@ class Item(BaseModel):
         return ""
 
     @property
-    def has_date(self) -> bool:
-        """Returns True if the item has at least a year."""
-        return self.year is not None
-
-    @property
     def display_date(self) -> str:
         """Returns a formatted date string for display."""
         return format_item_display_date(self.year, self.month, self.day)
 
-    def get_primary_file(self):
-        """Returns the primary file associated with this item, if any."""
-        return self.files.first()
-
-    def get_file_count(self) -> int:
-        """Returns the number of files associated with this item."""
-        return self.files.count()
-
     def get_related_items(self, relationship_type: str | None = None) -> "QuerySet[Item]":
-        """
-        Returns items related to this item through any relationship.
+        """Returns items related to this item through any relationship.
 
         Args:
-            relationship_type: Optional filter by relationship type
+            relationship_type: Optional filter by relationship type.
+
+        Returns:
+            A queryset of related Item instances.
         """
         filters = models.Q()
 
@@ -362,11 +355,13 @@ class Item(BaseModel):
         ).distinct()
 
     def get_sequential_items(self, direction: str = "both") -> "QuerySet[Item]":
-        """
-        Returns items in a sequence with this item.
+        """Returns items in a sequence with this item.
 
         Args:
-            direction: "both", "next", or "previous"
+            direction: Direction of sequence ("both", "next", or "previous").
+
+        Returns:
+            A queryset of sequential Item instances.
         """
         from .relationships import ItemRelationshipType
 
@@ -410,7 +405,7 @@ class Item(BaseModel):
 
 
 @receiver(pre_save, sender=Item)
-def update_item_date(sender, instance, **kwargs) -> None:
+def update_item_date(_sender, instance, **_kwargs) -> None:
     """Signal to automatically set the 'date' field before an Item is saved."""
     if isinstance(instance, Item):
         if instance.year and instance.year > 0:
@@ -426,32 +421,15 @@ def update_item_date(sender, instance, **kwargs) -> None:
             instance.date = None
 
 
-class SongManager(Manager):
-    """Custom manager for the Song model."""
-
-    def by_artist(self, artist_name: str):
-        """Returns songs by a specific artist."""
-        return self.filter(people__authorized_name__icontains=artist_name, roles__name="Artist").distinct()
-
-    def by_composer(self, composer_name: str):
-        """Returns songs by a specific composer."""
-        return self.filter(people__authorized_name__icontains=composer_name, roles__name="Composer").distinct()
-
-
 class Song(Item):
-    """
-    A musical composition and/or recording.
+    """A musical composition and/or recording.
 
     This model merges the concepts of a musical work and a recording into a single
     entity. It represents both the abstract song (music and lyrics) and its
     recorded performance.
 
-    Additional Attributes:
-        duration_seconds: The duration of the recording in seconds.
-
-
-        track_number: Track number if part of an album.
-        disc_number: Disc number if part of a multi-disc release.
+    Attributes:
+        album: The album or release this song belongs to.
     """
 
     album = models.CharField(
@@ -460,8 +438,6 @@ class Song(Item):
         default="",
         help_text="The album or release this song belongs to.",
     )
-
-    objects = SongManager()
 
     class Meta:
         db_table = "song"
@@ -521,27 +497,8 @@ class Song(Item):
         return self._get_people_display_string(self.artists)
 
 
-class BookManager(Manager):
-    """Custom manager for the Book model."""
-
-    def by_author(self, author_name: str):
-        """Returns books by a specific author."""
-        return self.filter(people__authorized_name__icontains=author_name, roles__name="Author").distinct()
-
-    def by_isbn(self, isbn: str):
-        """Returns books matching an ISBN (10 or 13 digit)."""
-        # Remove hyphens and spaces from ISBN
-        clean_isbn = isbn.replace("-", "").replace(" ", "")
-        return self.filter(models.Q(isbn_10=clean_isbn) | models.Q(isbn_13=clean_isbn))
-
-    def published_in_year(self, year: int):
-        """Returns books published in a specific year."""
-        return self.filter(year=year)
-
-
 class Book(Item):
-    """
-    A book or written publication.
+    """A book or written publication.
 
     Attributes:
         isbn_10: The 10-digit International Standard Book Number.
@@ -588,8 +545,6 @@ class Book(Item):
         default="",
         help_text="Physical format (e.g., 'Hardcover', 'Paperback', 'Ebook').",
     )
-
-    objects = BookManager()
 
     class Meta:
         db_table = "book"
