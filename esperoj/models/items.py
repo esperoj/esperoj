@@ -13,6 +13,7 @@ from django.db import models
 from django.db.models import CheckConstraint, Index, Manager, Q
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
+from django.template.defaultfilters import date as date_filter
 
 from .base import BaseModel
 
@@ -21,39 +22,6 @@ if TYPE_CHECKING:
 
     from .core import Person
     from .relationships import ItemExternalReference, ItemRelationship, ItemRoleName, Role
-
-
-def format_item_display_date(year: int | None, month: int | None, day: int | None) -> str:
-    """Formats a date from its components for display.
-
-    Args:
-        year: The year of publication or creation.
-        month: The month of publication or creation (1-12).
-        day: The day of publication or creation (1-31).
-
-    Returns:
-        A formatted date string (e.g., "2023", "January 2023", "January 15, 2023").
-    """
-    if year is None:
-        return ""
-
-    year_str = f"{abs(year)}"
-    if year < 0:
-        year_str += " BCE"
-
-    if month is None:
-        return year_str
-
-    try:
-        # Use a dummy date to get the month name
-        month_name = datetime.date(2000, month, 1).strftime("%B")
-    except (ValueError, TypeError):
-        return year_str
-
-    if day is None:
-        return f"{month_name} {year_str}"
-
-    return f"{month_name} {day}, {year_str}"
 
 
 def format_isbn(isbn: str) -> str:
@@ -306,7 +274,24 @@ class Item(BaseModel):
     @property
     def display_date(self) -> str:
         """Returns a formatted date string for display."""
-        return format_item_display_date(self.year, self.month, self.day)
+        if self.year is None:
+            return ""
+
+        year_str = f"{abs(self.year)}"
+        if self.year < 0:
+            year_str += " BCE"
+
+        if self.month is None:
+            return year_str
+
+        try:
+            # Use a dummy date to leverage Django's date template helper for localized formatting
+            dummy_date = datetime.date(2000, self.month, self.day or 1)
+            if self.day is None:
+                return f"{date_filter(dummy_date, 'F')} {year_str}"
+            return f"{date_filter(dummy_date, 'F j')}, {year_str}"
+        except (ValueError, TypeError):
+            return year_str
 
     def get_related_items(self, relationship_type: str | None = None) -> "QuerySet[Item]":
         """Returns items related to this item through any relationship.
@@ -419,6 +404,28 @@ def update_item_date(_sender, instance, **_kwargs) -> None:
         else:
             # Handles BCE years or cases where no date should be set
             instance.date = None
+
+
+class Representation(BaseModel):
+    """
+    A specific digital embodiment of an Intellectual Entity.
+
+    A single entity (e.g., "Episode 1") may have multiple representations,
+    such as a "High Quality Preservation Master" and a "Low Res Access Copy".
+
+    Attributes:
+        item (Item): The content this represents.
+        name (str): Label for this version (e.g., 'Preservation Master').
+    """
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="representations")
+    name = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = "representation"
+
+    def __str__(self) -> str:
+        return f"{self.name} of {self.item.title}"
 
 
 class Song(Item):

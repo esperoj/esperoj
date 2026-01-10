@@ -6,9 +6,12 @@ in the application. It aims to ensure consistency and reduce redundancy
 across the database schema.
 """
 
-from django.db import models
-from simple_history.models import HistoricalRecords
 import uuid_utils.compat as uuid
+from django.db import models
+from django.db.models.functions import Length
+from simple_history.models import HistoricalRecords
+
+models.CharField.register_lookup(Length, "length")
 
 
 class BaseModel(models.Model):

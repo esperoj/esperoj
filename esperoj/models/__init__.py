@@ -6,21 +6,18 @@ organizing them into logical groups to avoid circular dependencies.
 """
 
 from .base import BaseModel
-from .core import Person, Subject, Collection
-
+from .core import Collection, Person, Subject
+from .files import File
+from .items import Book, Item, ItemType, Song
 from .relationships import (
-    Role,
-    ItemRoleName,
+    ExternalReferenceType,
+    ItemExternalReference,
     ItemRelationship,
     ItemRelationshipType,
-    ExternalReferenceType,
+    ItemRoleName,
     PersonExternalReference,
-    ItemExternalReference,
+    Role,
 )
-
-from .files import File, FileReplica, FileBlock
-
-from .items import Item, ItemType, Song, Book
 
 __all__ = [
     # Base
