@@ -9,6 +9,8 @@ This decouples the messy reality of storage (S3 buckets, UUIDs) from the
 clean presentation required for users (folders, readable filenames).
 """
 
+from pathlib import PurePosixPath
+
 from django.db import models
 
 from .base import BaseModel
@@ -46,12 +48,14 @@ class AccessPackage(BaseModel):
     )
 
     title = models.CharField(max_length=255, db_index=True, help_text="The public title of this package.")
-    identifier = models.SlugField(unique=True, help_text="URL slug for the public page.")
+    identifier = models.SlugField(max_length=255, unique=True, help_text="URL slug for the public page.")
     description = models.TextField(blank=True, help_text="Public description (supports Markdown/HTML).")
 
     class Meta:
         db_table = "access_package"
         verbose_name = "Access Package"
+        verbose_name_plural = "Access Packages"
+        ordering = ["title"]
 
     def __str__(self) -> str:
         return self.title
@@ -89,9 +93,11 @@ class PackageEntry(BaseModel):
 
     class Meta:
         db_table = "access_package_entry"
-        # Ensure two files don't have the same path in the same package
-        unique_together = ("package", "virtual_path")
+        verbose_name = "Package Entry"
+        verbose_name_plural = "Package Entries"
         ordering = ["virtual_path"]
+        # Ensure two files don't have the same path in the same package
+        constraints = [models.UniqueConstraint(fields=["package", "virtual_path"], name="unique_package_virtual_path")]
 
     def __str__(self) -> str:
         return f"{self.package.identifier}: {self.virtual_path}"
@@ -99,13 +105,10 @@ class PackageEntry(BaseModel):
     @property
     def filename(self) -> str:
         """Extracts just the filename from the virtual path."""
-        import os
-
-        return os.path.basename(self.virtual_path)
+        return PurePosixPath(self.virtual_path).name
 
     @property
     def folder(self) -> str:
         """Extracts the folder structure from the virtual path."""
-        import os
-
-        return os.path.dirname(self.virtual_path)
+        parent = PurePosixPath(self.virtual_path).parent
+        return str(parent) if str(parent) != "." else ""

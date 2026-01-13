@@ -35,10 +35,7 @@ __all__ = [
     "PersonExternalReference",
     "ItemExternalReference",
     # Files
-    "File",
-    "FileReplica",
-    "FileBlock",
-    # Items
+    "File",  # Items
     "Item",
     "ItemType",
     "Song",

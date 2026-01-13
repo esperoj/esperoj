@@ -17,55 +17,6 @@ if TYPE_CHECKING:
     from .relationships import PersonExternalReference, Role
 
 
-def generate_sort_name(name: str) -> str:
-    """Generates a sortable version of a person's name.
-
-    Following archival standards, this usually converts names from direct order
-    (First Middle Last) to inverted order (Last, First Middle). It also attempts
-    to handle common titles and suffixes.
-
-    Args:
-        name: The person's name in direct order.
-
-    Returns:
-        The name in inverted order for sorting (e.g., "Last, First").
-
-    Example:
-        "Dr. Martin Luther King, Jr." -> "King, Martin Luther, Jr."
-    """
-    if not name:
-        return ""
-
-    parts = name.strip().split()
-    if len(parts) <= 1:
-        return name
-
-    # Strip common prefixes/titles
-    prefixes = {"Dr.", "Mr.", "Mrs.", "Ms.", "Prof.", "Sir", "Dame"}
-    if parts[0] in prefixes:
-        parts.pop(0)
-
-    if not parts:
-        return name
-
-    # Detect and isolate common suffixes
-    suffixes = {"Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "MD", "Esq."}
-    suffix = ""
-    if parts[-1].rstrip(",") in suffixes:
-        suffix = parts.pop().rstrip(",")
-
-    if len(parts) > 1:
-        # The new last part is the surname
-        last_name = parts.pop().rstrip(",")
-        first_names = " ".join(parts).rstrip(",")
-        sort_name = f"{last_name}, {first_names}"
-        if suffix:
-            sort_name = f"{sort_name}, {suffix}"
-        return sort_name
-
-    return name
-
-
 class Person(BaseModel):
     """Represents a person, such as an author, artist, or composer.
 
@@ -143,23 +94,59 @@ class Person(BaseModel):
         """Returns the person's authoritative name."""
         return self.authorized_name
 
-    def clean(self) -> None:
-        """Performs model validation.
+    @staticmethod
+    def generate_sort_name(name: str) -> str:
+        """Generates a sortable version of a person's name.
 
-        Raises:
-            ValidationError: If death date is before birth date.
+        Following archival standards, this usually converts names from direct order
+        (First Middle Last) to inverted order (Last, First Middle). It also attempts
+        to handle common titles and suffixes.
+
+        Args:
+            name: The person's name in direct order.
+
+        Returns:
+            The name in inverted order for sorting (e.g., "Last, First").
+
+        Example:
+            "Dr. Martin Luther King, Jr." -> "King, Martin Luther, Jr."
         """
-        super().clean()
+        if not name:
+            return ""
 
-        if self.birth_date and self.death_date and self.death_date < self.birth_date:
-            from django.core.exceptions import ValidationError
+        parts = name.strip().split()
+        if len(parts) <= 1:
+            return name
 
-            raise ValidationError({"death_date": "Death date cannot be before birth date."})
+        # Strip common prefixes/titles
+        prefixes = {"Dr.", "Mr.", "Mrs.", "Ms.", "Prof.", "Sir", "Dame"}
+        if parts[0] in prefixes:
+            parts.pop(0)
+
+        if not parts:
+            return name
+
+        # Detect and isolate common suffixes
+        suffixes = {"Jr.", "Sr.", "II", "III", "IV", "V", "Ph.D.", "MD", "Esq."}
+        suffix = ""
+        if parts[-1].rstrip(",") in suffixes:
+            suffix = parts.pop().rstrip(",")
+
+        if len(parts) > 1:
+            # The new last part is the surname
+            last_name = parts.pop().rstrip(",")
+            first_names = " ".join(parts).rstrip(",")
+            sort_name = f"{last_name}, {first_names}"
+            if suffix:
+                sort_name = f"{sort_name}, {suffix}"
+            return sort_name
+
+        return name
 
     def save(self, *args, **kwargs) -> None:
         """Automatically generates sort_name if it's not provided."""
         if not self.sort_name and self.authorized_name:
-            self.sort_name = generate_sort_name(self.authorized_name)
+            self.sort_name = self.generate_sort_name(self.authorized_name)
         super().save(*args, **kwargs)
 
 
@@ -196,7 +183,6 @@ class Subject(BaseModel):
     )
 
     # --- Type hints for reverse relationships ---
-
     items: "Manager[Item]"
 
     class Meta:
