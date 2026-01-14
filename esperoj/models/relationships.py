@@ -1,60 +1,51 @@
-"""
-Relationship models for the esperoj application.
+"""Models for representing relationships between items, agents, and external resources.
 
-This module contains models that define relationships between core entities,
-including roles that people play in items, external references, and related
-enumerations. This separation helps avoid circular dependencies.
+This module defines the structures for linking items to the people and organizations
+involved in their creation (Roles), linking items to each other (ItemRelationships),
+and connecting internal records to external databases (ExternalReferences).
 """
+
+from typing import TYPE_CHECKING
 
 from django.db import models
-from django.db.models import Index, Manager
-
-from esperoj.utils.urls import get_domain_from_url
+from django.db.models import Index, Q, QuerySet
 
 from .base import BaseModel
 
+if TYPE_CHECKING:
+    from .core import Agent
+    from .items import Item
+
 
 class ItemRelationshipType(models.TextChoices):
-    """
-    Types of relationships that can exist between Items.
+    """Defines the nature of a relationship between two items."""
 
-    This enum defines the vocabulary of relationships that can connect
-    items to each other in the collection.
-    """
+    # --- Hierarchical ---
+    PARENT = "Parent", "is parent of"
+    CHILD = "Child", "is child of"
 
-    # --- Hierarchical Relationships ---
-    PART_OF = "PART_OF", "Part of"
-    CONTAINS = "CONTAINS", "Contains"
+    # --- Sequential ---
+    PRECEDES = "Precedes", "precedes"
+    FOLLOWS = "Follows", "follows"
 
-    # --- Version Relationships ---
-    VERSION_OF = "VERSION_OF", "Version of"
-    EDITION_OF = "EDITION_OF", "Edition of"
-    REVISION_OF = "REVISION_OF", "Revision of"
+    # --- Derivative ---
+    VERSION_OF = "VersionOf", "is version of"
+    ADAPTATION_OF = "AdaptationOf", "is adaptation of"
+    TRANSLATION_OF = "TranslationOf", "is translation of"
 
-    # --- Creative Relationships ---
-    TRANSLATION_OF = "TRANSLATION_OF", "Translation of"
-    ADAPTATION_OF = "ADAPTATION_OF", "Adaptation of"
-    DERIVATIVE_OF = "DERIVATIVE_OF", "Derivative of"
-    INSPIRED_BY = "INSPIRED_BY", "Inspired by"
+    # --- Creative/Structural ---
+    INCLUDES = "Includes", "includes"
+    PART_OF = "PartOf", "is part of"
 
-    # --- Sequential Relationships ---
-    SEQUEL_TO = "SEQUEL_TO", "Sequel to"
-    PREQUEL_TO = "PREQUEL_TO", "Prequel to"
-    FOLLOWS = "FOLLOWS", "Follows"
-    PRECEDES = "PRECEDES", "Precedes"
-
-    # --- General Relationships ---
-    RELATED_TO = "RELATED_TO", "Related to"
-    SIMILAR_TO = "SIMILAR_TO", "Similar to"
-    REFERENCES = "REFERENCES", "References"
-    REFERENCED_BY = "REFERENCED_BY", "Referenced by"
+    # --- General ---
+    RELATED_TO = "RelatedTo", "is related to"
 
 
 class ItemRoleName(models.TextChoices):
     """
-    A unified list of all possible roles a Person can have in relation to an Item.
+    A unified list of all possible roles an Agent can have in relation to an Item.
 
-    This enum defines the vocabulary of roles that can be assigned to people
+    This enum defines the vocabulary of roles that can be assigned to agents
     for different types of items in the collection.
     """
 
@@ -80,54 +71,58 @@ class ItemRoleName(models.TextChoices):
     COLLABORATOR = "Collaborator", "Collaborator"
 
 
-class RoleManager(Manager):
-    """Custom manager for the Role model providing common query methods."""
+class RoleManager(models.Manager):
+    """Custom manager for the Role model."""
 
-    def for_person(self, person):
-        """Returns all roles for a specific person."""
-        return self.filter(person=person).select_related("item", "person")
+    def for_agent(self, agent: "Agent") -> QuerySet:
+        """Returns all roles for a specific agent."""
+        return self.filter(agent=agent)
 
-    def for_item(self, item):
+    def for_item(self, item: "Item") -> QuerySet:
         """Returns all roles for a specific item."""
-        return self.filter(item=item).select_related("item", "person")
+        return self.filter(item=item)
 
-    def by_role_name(self, role_name):
-        """Returns all roles of a specific type."""
-        return self.filter(name=role_name).select_related("item", "person")
+    def by_role_name(self, role_name: str) -> QuerySet:
+        """Returns all roles of a certain type."""
+        return self.filter(name=role_name)
 
-    def creators_for_item(self, item):
-        """Returns roles that are considered 'creator' roles for an item."""
-        creator_roles = [
+    def creators_for_item(self, item: "Item") -> QuerySet:
+        """Returns primary creators for an item.
+
+        Determined by roles traditionally considered 'creators'
+        (Author, Composer, Artist, Creator).
+        """
+        creative_roles = [
             ItemRoleName.AUTHOR,
             ItemRoleName.COMPOSER,
             ItemRoleName.ARTIST,
             ItemRoleName.CREATOR,
         ]
-        return self.filter(item=item, name__in=creator_roles).select_related("person")
+        return self.filter(item=item, name__in=creative_roles).order_by("order")
 
 
 class Role(BaseModel):
     """
-    Represents the role a Person plays in relation to an Item.
+    Represents the role an Agent plays in relation to an Item.
 
     This model serves as the 'through' table for the many-to-many relationship
-    between Person and Item, allowing us to specify the nature of a person's
+    between Agent and Item, allowing us to specify the nature of an agent's
     contribution to a specific item.
 
     Attributes:
-        person: The Person involved in the role.
-        item: The Item to which the Person is contributing.
-        name: The specific role (e.g., 'Author', 'Composer', 'Artist').
-        order: The order of this person for this role (for multiple people with same role).
+        agent: The Agent involved in the role.
+        item: The Item to which the Agent is contributing.
+        name: The specific role (e.g., 'Author', 'Composer', 'Artist', 'Publisher').
+        order: The order of this agent for this role (for multiple agents with same role).
         notes: Optional notes about this specific role assignment.
     """
 
     # --- Relationships ---
-    person = models.ForeignKey(
-        "esperoj.Person",
+    agent = models.ForeignKey(
+        "esperoj.Agent",
         on_delete=models.CASCADE,
         related_name="roles",
-        help_text="The person associated with this role.",
+        help_text="The agent associated with this role.",
     )
     item = models.ForeignKey(
         "esperoj.Item",
@@ -140,11 +135,11 @@ class Role(BaseModel):
     name = models.CharField(
         max_length=50,
         choices=ItemRoleName.choices,
-        help_text="The specific role performed by the person for this item.",
+        help_text="The specific role performed by the agent for this item.",
     )
     order = models.PositiveSmallIntegerField(
         default=1,
-        help_text="The order of this person for this role (1 = primary, 2 = secondary, etc.).",
+        help_text="The order of this agent for this role (1 = primary, 2 = secondary, etc.).",
     )
     notes = models.TextField(
         blank=True,
@@ -156,12 +151,12 @@ class Role(BaseModel):
 
     class Meta:
         db_table = "role"
-        unique_together = ("person", "item", "name", "order")
-        ordering = ["item", "name", "order", "person"]
+        unique_together = ("agent", "item", "name", "order")
+        ordering = ["item", "name", "order", "agent"]
         verbose_name = "Role"
         verbose_name_plural = "Roles"
         indexes = [
-            Index(fields=["person"]),
+            Index(fields=["agent"]),
             Index(fields=["item"]),
             Index(fields=["name"]),
             Index(fields=["item", "name", "order"]),
@@ -169,7 +164,7 @@ class Role(BaseModel):
 
     def __str__(self) -> str:
         """Returns a string representing the role."""
-        return f"{self.person.authorized_name} as {self.name} for {self.item.title}"
+        return f"{self.agent.authorized_name} as {self.name} for {self.item.title}"
 
     def clean(self) -> None:
         """Performs model validation."""
@@ -183,106 +178,86 @@ class Role(BaseModel):
 
     @property
     def is_primary(self) -> bool:
-        """Returns True if this is the primary person for this role."""
+        """Returns True if this is the primary agent for this role."""
         return self.order == 1
 
 
 class ExternalReferenceType(models.TextChoices):
-    """Defines the type of an external reference link."""
+    """Defines the source or type of an external reference."""
 
-    WEBSITE = "WEBSITE", "Official Website / Personal Site / Blog"
-    SOCIAL_MEDIA = "SOCIAL_MEDIA", "Social Media Profile"
+    # --- General ---
+    WIKIPEDIA = "Wikipedia", "Wikipedia"
+    WIKIDATA = "Wikidata", "Wikidata"
+    OFFICIAL_WEBSITE = "OfficialWebsite", "Official Website"
 
-    # II. Knowledge & Databases
-    GENERAL_DATABASE = "GENERAL_DATABASE", "General Database / Wiki / Encyclopedia"
-    ACADEMIC_RESOURCE = "ACADEMIC_RESOURCE", "Academic Resource / Profile"
+    # --- Music ---
+    MUSICBRAINZ = "MusicBrainz", "MusicBrainz"
+    DISCOGS = "Discogs", "Discogs"
+    SPOTIFY = "Spotify", "Spotify"
 
-    # III. Content Platforms
-    DIGITAL_CONTENT_PLATFORM = "DIGITAL_CONTENT_PLATFORM", "Digital Content Platform (Streaming, Purchase, Download)"
+    # --- Literature ---
+    GOODREADS = "Goodreads", "Goodreads"
+    OPEN_LIBRARY = "OpenLibrary", "Open Library"
+    ISFDB = "ISFDB", "ISFDB"
 
-    # IV. Archival
-    ARCHIVAL_RESOURCE = "ARCHIVAL_RESOURCE", "Archival Resource / Finding Aid"
-
-    # V. Other
-    OTHER = "OTHER", "Other"
+    # --- Authority Control ---
+    LCNAF = "LCNAF", "Library of Congress Name Authority File"
+    VIAF = "VIAF", "VIAF"
+    ISNI = "ISNI", "ISNI"
 
 
 class AbstractExternalReference(BaseModel):
-    """
-    An abstract model for storing external references (URLs) related to other models.
+    """Base class for external identifiers and links."""
 
-    This model is not intended to be used directly but to be inherited by
-    concrete models that link a URL to a specific parent object (e.g., a Person or an Item).
-
-    Attributes:
-        url: The full URL of the external resource.
-        type: The category of the link (e.g., 'Website', 'Social Media').
-        label: An optional, user-friendly label for the link.
-        notes: Optional internal notes about the reference.
-        verified_at: When this link was last verified as working.
-        is_active: Whether this link is currently active/working.
-    """
-
-    # --- Reference Details ---
-    url = models.URLField(
-        max_length=2048,
-        help_text="The full URL of the external resource.",
-    )
     type = models.CharField(
         max_length=50,
         choices=ExternalReferenceType.choices,
-        default=ExternalReferenceType.OTHER,
-        help_text="The category of the link.",
+        help_text="The source or type of the external reference.",
+    )
+    url = models.URLField(
+        max_length=1024,
+        help_text="The full URL to the external resource.",
     )
     label = models.CharField(
         max_length=255,
         blank=True,
-        help_text="An optional, user-friendly label for the link (e.g., 'Facebook Profile').",
-    )
-    notes = models.TextField(
-        blank=True,
-        help_text="Optional internal notes about this reference.",
-    )
-
-    # --- Status Tracking ---
-    verified_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="When this link was last verified as working.",
+        help_text="A human-readable label for the link.",
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Whether this link is currently active/working.",
+        help_text="Whether this link is currently valid.",
+    )
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="The date and time this link was last verified.",
+    )
+    notes = models.TextField(
+        blank=True,
+        default="",
+        help_text="Additional information about this reference.",
     )
 
     class Meta:
         abstract = True
-        ordering = ["type", "label", "url"]
-        indexes = [
-            Index(fields=["type"]),
-            Index(fields=["is_active"]),
-        ]
+        db_table = "external_reference"
+        ordering = ["type", "label"]
 
     def __str__(self) -> str:
-        """Returns a string representation of the external reference."""
+        """Returns a string representation of the reference."""
         if self.label:
-            return f"{self.label}: {self.url}"
-
-        # Get the display name for the type from the choices
-        type_display = self.type
-        for choice_value, choice_label in ExternalReferenceType.choices:
-            if choice_value == self.type:
-                type_display = choice_label
-                break
-        return f"{type_display}: {self.url}"
+            return f"{self.type}: {self.label}"
+        return f"{self.type} ({self.url})"
 
     @property
     def domain(self) -> str:
-        """Returns the domain name from the URL."""
-        return get_domain_from_url(self.url)
+        """Extracts the domain from the URL."""
+        from urllib.parse import urlparse
+
+        return urlparse(self.url).netloc
 
     def mark_verified(self) -> None:
-        """Mark this reference as verified and update the timestamp."""
+        """Marks the reference as verified."""
         from django.utils import timezone
 
         self.verified_at = timezone.now()
@@ -290,183 +265,162 @@ class AbstractExternalReference(BaseModel):
         self.save(update_fields=["verified_at", "is_active"])
 
     def mark_inactive(self) -> None:
-        """Mark this reference as inactive."""
+        """Marks the reference as inactive/broken."""
         self.is_active = False
         self.save(update_fields=["is_active"])
 
 
-class PersonExternalReference(AbstractExternalReference):
-    """An external reference link associated with a Person."""
+class AgentExternalReference(AbstractExternalReference):
+    """An external reference link associated with an Agent."""
 
-    person = models.ForeignKey(
-        "esperoj.Person",
+    agent = models.ForeignKey(
+        "esperoj.Agent",
         on_delete=models.CASCADE,
         related_name="external_references",
-        help_text="The person this link refers to.",
+        help_text="The agent this link refers to.",
     )
 
     class Meta(AbstractExternalReference.Meta):
-        db_table = "person_external_reference"
-        verbose_name = "Person External Reference"
-        verbose_name_plural = "Person External References"
-        unique_together = ("person", "url")
-        indexes = AbstractExternalReference.Meta.indexes + [
-            Index(fields=["person", "type"]),
-        ]
+        db_table = "agent_external_reference"
+        verbose_name = "Agent External Reference"
+        verbose_name_plural = "Agent External References"
 
 
-class ItemRelationshipManager(Manager):
-    """Custom manager for the ItemRelationship model providing common query methods."""
+class ItemRelationshipManager(models.Manager):
+    """Custom manager for ItemRelationship model."""
 
-    def for_item(self, item):
-        """Returns all relationships where the item is either source or target."""
-        return self.filter(models.Q(from_item=item) | models.Q(to_item=item)).select_related("from_item", "to_item")
+    def for_item(self, item: "Item") -> QuerySet:
+        """Returns all relationships involving a specific item."""
+        return self.filter(Q(from_item=item) | Q(to_item=item))
 
-    def outgoing_for_item(self, item):
+    def outgoing_for_item(self, item: "Item") -> QuerySet:
         """Returns relationships where the item is the source."""
-        return self.filter(from_item=item).select_related("to_item")
+        return self.filter(from_item=item)
 
-    def incoming_for_item(self, item):
+    def incoming_for_item(self, item: "Item") -> QuerySet:
         """Returns relationships where the item is the target."""
-        return self.filter(to_item=item).select_related("from_item")
+        return self.filter(to_item=item)
 
-    def by_type(self, relationship_type):
-        """Returns relationships of a specific type."""
-        return self.filter(relationship_type=relationship_type).select_related("from_item", "to_item")
+    def by_type(self, relationship_type: str) -> QuerySet:
+        """Returns relationships of a certain type."""
+        return self.filter(type=relationship_type)
 
-    def hierarchical(self):
-        """Returns hierarchical relationships (part_of, contains)."""
-        return self.filter(
-            relationship_type__in=[
-                ItemRelationshipType.PART_OF,
-                ItemRelationshipType.CONTAINS,
-            ]
-        ).select_related("from_item", "to_item")
+    def hierarchical(self) -> QuerySet:
+        """Returns only hierarchical relationships."""
+        return self.filter(type__in=[ItemRelationshipType.PARENT, ItemRelationshipType.CHILD])
 
 
 class ItemRelationship(BaseModel):
     """
-    Represents a directed relationship between two Items.
+    Represents a relationship between two items.
 
-    This model allows items to be connected to each other through various
-    types of relationships such as hierarchical (part of), sequential
-    (sequel to), or creative (translation of) relationships.
+    This model allows for complex graphs of items, including hierarchies
+    (e.g., chapters in a book), sequences (e.g., songs in an album),
+    and semantic links (e.g., adaptations, translations).
 
     Attributes:
         from_item: The source item in the relationship.
         to_item: The target item in the relationship.
-        relationship_type: The type of relationship between the items.
-        order: The order of this relationship among others of the same type.
-        notes: Optional notes about this specific relationship.
+        type: The nature of the relationship (from ItemRelationshipType).
+        order: The sequence order (e.g., track number or chapter number).
+        notes: Optional context or explanation for the relationship.
     """
 
-    # --- Relationships ---
+    # --- Relationship participants ---
     from_item = models.ForeignKey(
         "esperoj.Item",
         on_delete=models.CASCADE,
         related_name="outgoing_relationships",
-        help_text="The source item in this relationship.",
+        help_text="The source item of the relationship.",
     )
     to_item = models.ForeignKey(
         "esperoj.Item",
         on_delete=models.CASCADE,
         related_name="incoming_relationships",
-        help_text="The target item in this relationship.",
+        help_text="The target item of the relationship.",
     )
 
-    # --- Relationship Details ---
-    relationship_type = models.CharField(
+    # --- Relationship details ---
+    type = models.CharField(
         max_length=50,
         choices=ItemRelationshipType.choices,
-        help_text="The type of relationship between the items.",
+        help_text="The nature of the relationship.",
     )
     order = models.PositiveSmallIntegerField(
         default=1,
-        help_text="The order of this relationship among others of the same type (1 = first, 2 = second, etc.).",
+        help_text="The sequence order for this relationship (e.g., track or chapter number).",
     )
     notes = models.TextField(
         blank=True,
         default="",
-        help_text="Optional notes about this specific relationship.",
+        help_text="Optional context about this relationship.",
     )
 
     objects = ItemRelationshipManager()
 
     class Meta:
         db_table = "item_relationship"
-        unique_together = ("from_item", "to_item", "relationship_type")
-        ordering = ["from_item", "relationship_type", "order", "to_item"]
+        unique_together = ("from_item", "to_item", "type", "order")
+        ordering = ["from_item", "type", "order"]
         verbose_name = "Item Relationship"
         verbose_name_plural = "Item Relationships"
         indexes = [
-            Index(fields=["from_item", "relationship_type", "order"]),
-            Index(fields=["to_item", "relationship_type"]),
-            Index(fields=["relationship_type"]),
+            Index(fields=["from_item", "type"]),
+            Index(fields=["to_item", "type"]),
+            Index(fields=["type"]),
         ]
 
     def __str__(self) -> str:
         """Returns a string representing the relationship."""
-        choices_dict: dict[str, str] = {choice[0]: choice[1] for choice in ItemRelationshipType.choices}
-        display_name = choices_dict.get(self.relationship_type, self.relationship_type)
-        return f"{self.from_item.title} {display_name.lower()} {self.to_item.title}"
+        type_display = self.get_type_display()
+        return f"'{self.from_item.title}' {type_display} '{self.to_item.title}'"
 
     def clean(self) -> None:
-        """Performs model validation."""
+        """Ensures the relationship is valid."""
         super().clean()
 
-        # Prevent self-references
-        if hasattr(self, "from_item") and hasattr(self, "to_item") and self.from_item == self.to_item:
+        # Prevent items from relating to themselves
+        if self.from_item_id and self.to_item_id and self.from_item_id == self.to_item_id:
             from django.core.exceptions import ValidationError
 
             raise ValidationError("An item cannot have a relationship with itself.")
 
-        # Ensure order is positive
-        if self.order < 1:
-            from django.core.exceptions import ValidationError
-
-            raise ValidationError({"order": "Order must be 1 or greater."})
-
     @property
     def is_hierarchical(self) -> bool:
-        """Returns True if this is a hierarchical relationship."""
-        return self.relationship_type in [
-            ItemRelationshipType.PART_OF,
-            ItemRelationshipType.CONTAINS,
+        """Returns True if the relationship is hierarchical (Parent/Child)."""
+        return self.type in [
+            ItemRelationshipType.PARENT,
+            ItemRelationshipType.CHILD,
         ]
 
     @property
     def is_sequential(self) -> bool:
-        """Returns True if this is a sequential relationship."""
-        return self.relationship_type in [
-            ItemRelationshipType.SEQUEL_TO,
-            ItemRelationshipType.PREQUEL_TO,
-            ItemRelationshipType.FOLLOWS,
+        """Returns True if the relationship is sequential (Precedes/Follows)."""
+        return self.type in [
             ItemRelationshipType.PRECEDES,
+            ItemRelationshipType.FOLLOWS,
         ]
 
     @property
     def is_creative(self) -> bool:
-        """Returns True if this is a creative relationship."""
-        return self.relationship_type in [
-            ItemRelationshipType.TRANSLATION_OF,
+        """Returns True if the relationship is derivative (Version/Adaptation/Translation)."""
+        return self.type in [
+            ItemRelationshipType.VERSION_OF,
             ItemRelationshipType.ADAPTATION_OF,
-            ItemRelationshipType.DERIVATIVE_OF,
-            ItemRelationshipType.INSPIRED_BY,
+            ItemRelationshipType.TRANSLATION_OF,
         ]
 
-    def get_inverse_relationship_type(self) -> str:
-        """Returns the inverse relationship type if applicable."""
-        inverse_map = {
-            ItemRelationshipType.PART_OF.value: ItemRelationshipType.CONTAINS.value,
-            ItemRelationshipType.CONTAINS.value: ItemRelationshipType.PART_OF.value,
-            ItemRelationshipType.SEQUEL_TO.value: ItemRelationshipType.PREQUEL_TO.value,
-            ItemRelationshipType.PREQUEL_TO.value: ItemRelationshipType.SEQUEL_TO.value,
-            ItemRelationshipType.FOLLOWS.value: ItemRelationshipType.PRECEDES.value,
-            ItemRelationshipType.PRECEDES.value: ItemRelationshipType.FOLLOWS.value,
-            ItemRelationshipType.REFERENCES.value: ItemRelationshipType.REFERENCED_BY.value,
-            ItemRelationshipType.REFERENCED_BY.value: ItemRelationshipType.REFERENCES.value,
+    def get_inverse_relationship_type(self) -> str | None:
+        """Returns the logical opposite relationship type, if one exists."""
+        mapping = {
+            ItemRelationshipType.PARENT: ItemRelationshipType.CHILD,
+            ItemRelationshipType.CHILD: ItemRelationshipType.PARENT,
+            ItemRelationshipType.PRECEDES: ItemRelationshipType.FOLLOWS,
+            ItemRelationshipType.FOLLOWS: ItemRelationshipType.PRECEDES,
+            ItemRelationshipType.PART_OF: ItemRelationshipType.INCLUDES,
+            ItemRelationshipType.INCLUDES: ItemRelationshipType.PART_OF,
         }
-        return inverse_map.get(self.relationship_type, ItemRelationshipType.RELATED_TO.value)
+        return mapping.get(self.type)
 
 
 class ItemExternalReference(AbstractExternalReference):
@@ -483,7 +437,3 @@ class ItemExternalReference(AbstractExternalReference):
         db_table = "item_external_reference"
         verbose_name = "Item External Reference"
         verbose_name_plural = "Item External References"
-        unique_together = ("item", "url")
-        indexes = AbstractExternalReference.Meta.indexes + [
-            Index(fields=["item", "type"]),
-        ]

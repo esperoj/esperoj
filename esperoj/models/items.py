@@ -20,31 +20,8 @@ from .base import BaseModel
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
-    from .core import Person
+    from .core import Agent
     from .relationships import ItemExternalReference, ItemRelationship, ItemRoleName, Role
-
-
-def format_isbn(isbn: str) -> str:
-    """Formats an ISBN string with hyphens.
-
-    Args:
-        isbn: A 10 or 13 digit ISBN string without formatting.
-
-    Returns:
-        The formatted ISBN string.
-    """
-    if not isbn:
-        return ""
-
-    clean_isbn = isbn.replace("-", "").replace(" ", "")
-    if len(clean_isbn) == 13:
-        # Standard ISBN-13 format: 3-1-2-6-1
-        return f"{clean_isbn[:3]}-{clean_isbn[3:4]}-{clean_isbn[4:6]}-{clean_isbn[6:12]}-{clean_isbn[12:]}"
-    if len(clean_isbn) == 10:
-        # Standard ISBN-10 format: 1-3-5-1
-        return f"{clean_isbn[:1]}-{clean_isbn[1:4]}-{clean_isbn[4:9]}-{clean_isbn[9:]}"
-
-    return isbn
 
 
 class ItemType(models.TextChoices):
@@ -52,7 +29,11 @@ class ItemType(models.TextChoices):
 
     SONG = "SONG", "Song"
     BOOK = "BOOK", "Book"
-    DOCUMENT = "DOCUMENT", "Document"
+    AUDIOBOOK = "AUDIOBOOK", "Audiobook"
+    COMIC = "COMIC", "Comic"
+    TEXT = "TEXT", "Text"
+    MOVIE = "MOVIE", "Movie"
+    GAME = "GAME", "Game"
     IMAGE = "IMAGE", "Image"
     VIDEO = "VIDEO", "Video"
     AUDIO = "AUDIO", "Audio"
@@ -67,6 +48,7 @@ class Item(BaseModel):
 
     Attributes:
         title: The main title or name of the item.
+        alternative_titles: A list of alternative titles for the item.
         identifier: A unique, human-readable identifier for the item.
         item_type: The type of the item (e.g., Book, Song).
         description: A free-text description of the item.
@@ -79,7 +61,6 @@ class Item(BaseModel):
         people: People who contributed to this item.
         subjects: Topics/keywords associated with this item.
         collections: Collections this item belongs to.
-        files: Digital files associated with this item.
     """
 
     # --- Core Information ---
@@ -87,6 +68,11 @@ class Item(BaseModel):
         max_length=512,
         db_index=True,
         help_text="The main title or name of the item.",
+    )
+    alternative_titles = models.JSONField(
+        blank=True,
+        default=list,
+        help_text="A list of alternative titles for this item.",
     )
     identifier = models.SlugField(
         max_length=255,
@@ -160,12 +146,6 @@ class Item(BaseModel):
         blank=True,
         help_text="Collections this item belongs to.",
     )
-    files = models.ManyToManyField(
-        "esperoj.File",
-        related_name="items",
-        blank=True,
-        help_text="Digital files associated with this item.",
-    )
 
     # --- Type hints for reverse relationships ---
     roles: "Manager[Role]"
@@ -219,9 +199,16 @@ class Item(BaseModel):
                         {"languages": f"Invalid language code: {lang}. Must be 2-10 character strings."}
                     )
 
-    def _get_people_display_string(self, queryset: "QuerySet[Person]") -> str:
-        """Helper method to format a queryset of people into a display string."""
-        return ", ".join(person.authorized_name for person in queryset.distinct())
+        # Validate alternative titles
+        if self.alternative_titles:
+            if not isinstance(self.alternative_titles, list):
+                raise ValidationError({"alternative_titles": "Alternative titles must be a list of strings."})
+
+            for alt_title in self.alternative_titles:
+                if not isinstance(alt_title, str):
+                    raise ValidationError(
+                        {"alternative_titles": f"Invalid alternative title: {alt_title}. Must be a string."}
+                    )
 
     def get_people_by_role(self, role: Union[str, "ItemRoleName"]) -> "QuerySet[Person]":
         """Returns a queryset of people with a specific role for this item.
@@ -269,6 +256,13 @@ class Item(BaseModel):
         """Returns a comma-separated string of languages."""
         if self.languages:
             return ", ".join(self.languages)
+        return ""
+
+    @property
+    def display_alternative_titles(self) -> str:
+        """Returns a comma-separated string of alternative titles."""
+        if self.alternative_titles:
+            return ", ".join(self.alternative_titles)
         return ""
 
     @property
@@ -564,6 +558,29 @@ class Book(Item):
             Index(fields=["page_count"]),
         ]
 
+    @staticmethod
+    def format_isbn(isbn: str) -> str:
+        """Formats an ISBN string with hyphens.
+
+        Args:
+            isbn: A 10 or 13 digit ISBN string without formatting.
+
+        Returns:
+            The formatted ISBN string.
+        """
+        if not isbn:
+            return ""
+
+        clean_isbn = isbn.replace("-", "").replace(" ", "")
+        if len(clean_isbn) == 13:
+            # Standard ISBN-13 format: 3-1-2-6-1
+            return f"{clean_isbn[:3]}-{clean_isbn[3:4]}-{clean_isbn[4:6]}-{clean_isbn[6:12]}-{clean_isbn[12:]}"
+        if len(clean_isbn) == 10:
+            # Standard ISBN-10 format: 1-3-5-1
+            return f"{clean_isbn[:1]}-{clean_isbn[1:4]}-{clean_isbn[4:9]}-{clean_isbn[9:]}"
+
+        return isbn
+
     def save(self, *args, **kwargs) -> None:
         """Sets the item_type before saving."""
         self.item_type = ItemType.BOOK
@@ -635,7 +652,7 @@ class Book(Item):
     @property
     def display_isbn(self) -> str:
         """Returns a formatted ISBN for display."""
-        return format_isbn(self.primary_isbn)
+        return self.format_isbn(self.primary_isbn)
 
     @property
     def has_isbn(self) -> bool:
