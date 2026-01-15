@@ -1,14 +1,17 @@
 """Core entities for the esperoj application.
 
-This module contains the fundamental entities that other models reference:
-Agent, Subject, and Collection. These models are kept separate to avoid
-circular dependencies and provide a clear foundation for the rest of the system.
+This module contains the fundamental entities: Agent, Subject, and Collection.
+It implements archival standards including:
+- PREMIS for Agent types.
+- EDTF (ISO 8601-2) for fuzzy dating.
+- SKOS for hierarchical subjects.
 """
 
 from typing import TYPE_CHECKING
 
 from django.db import models
 from django.db.models import Index, Manager
+from django.utils.translation import gettext_lazy as _
 
 from .base import BaseModel
 
@@ -18,39 +21,39 @@ if TYPE_CHECKING:
 
 
 class AgentType(models.TextChoices):
-    """Defines the types of agents in the system."""
+    """Defines the types of agents, aligned with PREMIS and ISAAR standards."""
 
-    PERSON = "Person", "Person"
-    ORGANIZATION = "Organization", "Organization"
-    GROUP = "Group", "Group"
-    SOFTWARE = "Software", "Software"
-    OTHER = "Other", "Other"
+    PERSON = "Person", _("Person")
+    ORGANIZATION = "Organization", _("Organization")
+    FAMILY = "Family", _("Family")
+    SOFTWARE = "Software", _("Software")
+    OTHER = "Other", _("Other")
 
 
 class Agent(BaseModel):
-    """Represents an agent, such as a person, organization, or group.
+    """Represents an agent (PREMIS: Agent entity).
 
     An agent can be an author, artist, publisher, or any entity that performs
-    a role in the creation or distribution of items.
+    a role. This model supports name parsing and fuzzy dates.
 
     Attributes:
-        name (str): The full, authoritative name for display.
-        alternative_names (dict): A JSON object of alternative names (e.g., translations,
-            transliterations, or aliases) keyed by language code or type.
-        sort_name (str): The name used for sorting (e.g., "King, Martin Luther, Jr.").
-        identifier (str): A unique, URL-friendly slug for the agent.
-        agent_type (str): The type of agent (e.g., Person, Organization).
-        birth_date (date): The agent's date of birth or founding date.
-        death_date (date): The agent's date of death or dissolution date.
-        description (str): A public description or biographical information.
-        note (str): Internal notes about the agent.
-        items (Manager): Items related to this agent.
-        roles (Manager): Roles this agent performs for items.
-        external_references (Manager): Associated external links.
+        name (str): The full, authoritative name.
+        sort_name (str): The name used for sorting.
+        identifier (str): A unique, URL-friendly slug.
+        type (str): The type of agent (Person, Organization, Family).
+        birth_date (str): EDTF string for birth/founding (e.g., '1980', '1980?').
+        death_date (str): EDTF string for death/dissolution.
+        description (str): Public biographical info.
+        note (str): Internal notes.
+        alternative_names (dict): JSON of alias names.
+
+    Reverse Relationships:
+        items: Items related to this agent.
+        roles: Roles this agent performs.
+        external_references: External links (Wikidata, Websites) from relationships module.
     """
 
     # --- Constants for Name Parsing ---
-    # Titles to strip from the sort name entirely
     _IGNORED_TITLES = {
         "dr",
         "doctor",
@@ -68,66 +71,66 @@ class Agent(BaseModel):
         "hon",
         "honorable",
     }
-    # Suffixes to preserve but move to the end
     _KNOWN_SUFFIXES = {"jr", "sr", "ii", "iii", "iv", "v", "esq", "phd", "md"}
 
     # --- Core Information ---
     name = models.CharField(
         max_length=512,
-        help_text="The full, authoritative name in direct order (e.g., 'Dr. Martin Luther King, Jr.' or 'Penguin Books').",
+        help_text=_("The full, authoritative name (e.g., 'Dr. Martin Luther King, Jr.' or 'Penguin Books')."),
     )
     sort_name = models.CharField(
         max_length=512,
         blank=True,
-        help_text="The name used for sorting.",
+        help_text=_("The name used for sorting. Auto-generated if blank."),
     )
     identifier = models.SlugField(
         max_length=255,
         unique=True,
-        help_text="A unique, human-readable identifier for this agent.",
+        help_text=_("A unique, human-readable identifier (slug)."),
     )
-    agent_type = models.CharField(
+    type = models.CharField(
         max_length=20,
         choices=AgentType.choices,
         default=AgentType.PERSON,
-        help_text="The type of agent (e.g., Person, Organization).",
+        help_text=_("High-level classification (matches PREMIS agentType)."),
     )
 
-    # --- Temporal Details ---
-    birth_date = models.DateField(
-        null=True,
+    # --- Temporal Details (EDTF Standard) ---
+    # Using CharField to support "1990?", "1990~", "2020-05", etc.
+    birth_date = models.CharField(
+        max_length=50,
         blank=True,
-        help_text="The agent's date of birth or founding date.",
+        default="",
+        help_text=_("Date of birth or founding in EDTF format (e.g., '1980', '1980-05~', '1980?')."),
     )
-    death_date = models.DateField(
-        null=True,
+    death_date = models.CharField(
+        max_length=50,
         blank=True,
-        help_text="The agent's date of death or dissolution date.",
+        default="",
+        help_text=_("Date of death or dissolution in EDTF format."),
     )
 
     # --- Description and Notes ---
     description = models.TextField(
         blank=True,
         default="",
-        help_text="A public description or biographical information about the agent.",
+        help_text=_("A public description or biographical information."),
     )
     note = models.TextField(
         blank=True,
         default="",
-        help_text="Internal notes about the agent, not intended for public display.",
+        help_text=_("Internal notes, not intended for public display."),
     )
 
     # --- Alternative Names (JSON) ---
     alternative_names = models.JSONField(
         blank=True,
         default=dict,
-        help_text=(
-            "A JSON object containing alternative names for this agent. "
-            "Keys typically are language codes or types (e.g., {'ja': '名前', 'alt': 'Alias Name'})."
-        ),
+        help_text=_("Variant names. Keys typically are language codes or types."),
     )
 
     # --- Type hints for reverse relationships ---
+    # These are defined via 'related_name' in other models
     items: "Manager[Item]"
     roles: "Manager[Role]"
     external_references: "Manager[AgentExternalReference]"
@@ -135,101 +138,61 @@ class Agent(BaseModel):
     class Meta:
         db_table = "agent"
         ordering = ["sort_name", "name"]
-        verbose_name = "Agent"
-        verbose_name_plural = "Agents"
+        verbose_name = _("Agent")
+        verbose_name_plural = _("Agents")
         indexes = [
             Index(fields=["identifier"]),
             Index(fields=["sort_name"]),
             Index(fields=["name"]),
-            Index(fields=["birth_date"]),
-            Index(fields=["death_date"]),
-            Index(fields=["agent_type"]),
+            Index(fields=["type"]),
         ]
 
     def __str__(self) -> str:
-        """Returns the agent's authoritative name.
-
-        Returns:
-            str: The name of the agent.
-        """
         return self.name
 
     def generate_sort_name(self, name: str) -> str:
-        """Generates a sortable name string by handling suffixes and removing titles.
-
-        This method applies the following logic:
-        1. Tokens matching common titles (e.g., "Dr.", "Sir") are removed.
-        2. Tokens matching common suffixes (e.g., "Jr.", "III") are moved to the end.
-        3. The last remaining word is treated as the surname.
-        4. Format becomes: "Surname, First Middle, Suffix".
-
-        Examples:
-            "Dr. Martin Luther King, Jr." -> "King, Martin Luther, Jr."
-            "Sir Elton John" -> "John, Elton"
-            "Penguin Books" -> "Penguin Books" (if passed as non-person)
-
-        Args:
-            name (str): The full name to process.
-
-        Returns:
-            str: The formatted sort name.
-        """
-        # 1. Basic cleanup
+        """Generates a sortable name string by handling suffixes and removing titles."""
         clean_name = name.strip()
         parts = clean_name.replace(",", "").split()
 
         if not parts:
             return ""
 
-        # 2. Extract Suffix (Check the last word)
-        # We strip dots and lowercase to check against our constant set
+        # Extract Suffix
         suffix_part = ""
         if len(parts) > 1:
             last_word_clean = parts[-1].lower().replace(".", "")
             if last_word_clean in self._KNOWN_SUFFIXES:
-                suffix_part = parts.pop()  # Remove suffix from main parts
+                suffix_part = parts.pop()
 
-        # 3. Filter out Titles (Dr, Sir, etc)
-        # We assume titles appear at the start, but we filter all non-last-names just in case
+        # Filter Titles
         filtered_parts = []
         for i, part in enumerate(parts):
-            # Always keep the last word (Surname), even if it looks like a title (rare edge case)
+            # Always keep the last word (Surname)
             if i == len(parts) - 1:
                 filtered_parts.append(part)
                 continue
-
             # Check if this part is a title
             if part.lower().replace(".", "") not in self._IGNORED_TITLES:
                 filtered_parts.append(part)
 
         parts = filtered_parts
 
-        # 4. Construct the Sort Name
+        # Construct Sort Name
         if len(parts) > 1:
             last_name = parts.pop()
             first_names = " ".join(parts)
-
             if suffix_part:
                 return f"{last_name}, {first_names}, {suffix_part}"
             return f"{last_name}, {first_names}"
 
-        # Fallback for single words (e.g., "Madonna", "Prince")
+        # Fallback for single words
         return parts[0]
 
     def save(self, *args, **kwargs) -> None:
-        """Saves the agent instance.
-
-        Automatically generates a `sort_name` if one is not provided.
-        If the agent is a person, it applies name parsing logic (stripping titles,
-        handling suffixes). For organizations, the sort name defaults to the
-        regular name.
-
-        Args:
-            *args: Variable length argument list.
-            **kwargs: Arbitrary keyword arguments.
-        """
+        """Saves the agent, auto-generating sort_name if missing."""
         if not self.sort_name and self.name:
-            if self.agent_type == AgentType.PERSON:
+            if self.type == AgentType.PERSON:
                 self.sort_name = self.generate_sort_name(self.name)
             else:
                 self.sort_name = self.name
@@ -237,121 +200,114 @@ class Agent(BaseModel):
 
 
 class Subject(BaseModel):
-    """A subject, topic, or keyword used for categorization.
-
-    Subjects are used to categorize and organize items in the collection.
-    They represent topics, themes, or keywords that can be associated with
-    multiple items.
+    """A subject, topic, or keyword. Aligns with SKOS (Simple Knowledge Organization System).
 
     Attributes:
         name: The name of the subject.
-        alternative_names (dict): A JSON object of alternative names (e.g., translations or aliases).
-        identifier: A unique, URL-friendly slug for the subject.
-        description: A detailed description of the subject.
-
-    Reverse Relations:
-        items: Items categorized under this subject.
+        identifier: A unique slug.
+        description: Description of the subject.
+        parent: Link to a broader subject (SKOS hierarchy).
     """
 
-    # --- Core Information ---
     name = models.CharField(
         max_length=512,
-        help_text="The name of the subject or topic.",
+        help_text=_("The name of the subject or topic."),
     )
     identifier = models.SlugField(
         max_length=255,
         unique=True,
-        help_text="A unique, URL-friendly slug for the subject.",
+        help_text=_("A unique, URL-friendly slug."),
     )
     description = models.TextField(
         blank=True,
         default="",
-        help_text="A detailed description of the subject.",
+        help_text=_("A detailed description of the subject."),
     )
 
-    # --- Alternative Names (JSON) ---
+    # --- Hierarchy (SKOS) ---
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+        help_text=_("The broader subject category this belongs to (SKOS Broader)."),
+    )
+
     alternative_names = models.JSONField(
         blank=True,
         default=dict,
-        help_text=(
-            "A JSON object containing alternative names for this subject. "
-            "Keys typically are language codes or types (e.g., {'fr': 'Sujet', 'alt': 'Alternate'})."
-        ),
+        help_text=_("Alternative names or translations."),
     )
 
-    # --- Type hints for reverse relationships ---
     items: "Manager[Item]"
 
     class Meta:
         db_table = "subject"
         ordering = ["name"]
-        verbose_name = "Subject"
-        verbose_name_plural = "Subjects"
+        verbose_name = _("Subject")
+        verbose_name_plural = _("Subjects")
         indexes = [
             Index(fields=["identifier"]),
             Index(fields=["name"]),
         ]
 
     def __str__(self) -> str:
-        """Returns the subject's name."""
         return self.name
 
 
 class Collection(BaseModel):
-    """A collection that groups multiple related Items.
-
-    Collections are used to organize items into logical groupings,
-    such as albums, book series, or thematic collections.
+    """A collection grouping multiple related Items.
 
     Attributes:
         name: The name of the collection.
-        alternative_names (dict): A JSON object of alternative names (e.g., translations or alternate titles).
-        identifier: A unique, URL-friendly slug for the collection.
-        description: A detailed description of the collection's scope.
-
-    Reverse Relations:
-        items: Items within this collection.
+        identifier: A unique slug.
+        description: Description of scope.
+        parent: Link to a parent collection (Sub-collections/Series).
     """
 
-    # --- Core Information ---
     name = models.CharField(
         max_length=512,
-        help_text="The name of the collection.",
+        help_text=_("The name of the collection."),
     )
     identifier = models.SlugField(
         max_length=255,
         unique=True,
-        help_text="A unique, URL-friendly slug for the collection.",
+        help_text=_("A unique, URL-friendly slug."),
     )
     description = models.TextField(
         blank=True,
         default="",
-        help_text="A detailed description of the collection's scope and contents.",
+        help_text=_("A detailed description of the collection's scope."),
     )
 
-    # --- Alternative Names (JSON) ---
+    # --- Hierarchy ---
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="subcollections",
+        help_text=_("The parent collection if this is a sub-collection or series."),
+    )
+
     alternative_names = models.JSONField(
         blank=True,
         default=dict,
-        help_text=(
-            "A JSON object containing alternative names for this collection. "
-            "Keys typically are language codes or types (e.g., {'es': 'Colección', 'alt': 'Alternate Title'})."
-        ),
+        help_text=_("Alternative names or translations."),
     )
 
-    # --- Type hints for reverse relationships ---
     items: "Manager[Item]"
 
     class Meta:
         db_table = "collection"
         ordering = ["name"]
-        verbose_name = "Collection"
-        verbose_name_plural = "Collections"
+        verbose_name = _("Collection")
+        verbose_name_plural = _("Collections")
         indexes = [
             Index(fields=["identifier"]),
             Index(fields=["name"]),
         ]
 
     def __str__(self) -> str:
-        """Returns the collection's name."""
         return self.name
