@@ -10,6 +10,7 @@ from .base import BaseModel
 
 
 class AbstractFile(BaseModel):
+    # todo: add puid
     """
     Abstract base class for logical files and physical bitstreams.
 
@@ -173,11 +174,6 @@ class FileManifestation(BaseModel):
         except ValueError:
             method_label = self.combination_method
         return f"{self.file.filename} [{method_label}]"
-
-    @property
-    def is_composite(self) -> bool:
-        """Returns True if the manifestation consists of multiple bitstreams."""
-        return self.combination_method != self.CombinationMethod.SINGLE
 
 
 class Bitstream(AbstractFile):
