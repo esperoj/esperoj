@@ -5,16 +5,42 @@ involved in their creation (Roles), linking items to each other (ItemRelationshi
 and connecting internal records to external databases (ExternalReferences).
 """
 
-from typing import TYPE_CHECKING
-
 from django.db import models
 from django.db.models import Index, Q, QuerySet
 
 from .base import BaseModel
+from .core import Agent
+from .items import Collection, Item
 
-if TYPE_CHECKING:
-    from .core import Agent
-    from .items import Item
+
+class CollectionMembership(models.Model):
+    """Through model for Item-Collection relationships with sequence ordering.
+
+    Attributes:
+        item: The item belonging to the collection.
+        collection: The collection the item belongs to.
+        order: The numeric order of the item within the collection.
+    """
+
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name="memberships",
+    )
+    collection = models.ForeignKey(
+        Collection,
+        on_delete=models.CASCADE,
+        related_name="memberships",
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="The sequence order of the item within this collection.",
+    )
+
+    class Meta:
+        db_table = "collection_membership"
+        ordering = ["order"]
+        unique_together = ("item", "collection")
 
 
 class ItemRelationshipType(models.TextChoices):

@@ -20,16 +20,6 @@ if TYPE_CHECKING:
     from .relationships import AgentExternalReference, Role
 
 
-class AgentType(models.TextChoices):
-    """Defines the types of agents, aligned with PREMIS and ISAAR standards."""
-
-    PERSON = "Person", _("Person")
-    ORGANIZATION = "Organization", _("Organization")
-    FAMILY = "Family", _("Family")
-    SOFTWARE = "Software", _("Software")
-    OTHER = "Other", _("Other")
-
-
 class Agent(BaseModel):
     """Represents an agent (PREMIS: Agent entity).
 
@@ -52,6 +42,15 @@ class Agent(BaseModel):
         roles: Roles this agent performs.
         external_references: External links (Wikidata, Websites) from relationships module.
     """
+
+    class AgentType(models.TextChoices):
+        """Defines the types of agents, aligned with PREMIS and ISAAR standards."""
+
+        PERSON = "Person", _("Person")
+        ORGANIZATION = "Organization", _("Organization")
+        FAMILY = "Family", _("Family")
+        SOFTWARE = "Software", _("Software")
+        OTHER = "Other", _("Other")
 
     # --- Constants for Name Parsing ---
     _IGNORED_TITLES = {
@@ -192,7 +191,7 @@ class Agent(BaseModel):
     def save(self, *args, **kwargs) -> None:
         """Saves the agent, auto-generating sort_name if missing."""
         if not self.sort_name and self.name:
-            if self.type == AgentType.PERSON:
+            if self.type == self.AgentType.PERSON:
                 self.sort_name = self.generate_sort_name(self.name)
             else:
                 self.sort_name = self.name
@@ -262,9 +261,19 @@ class Collection(BaseModel):
     Attributes:
         name: The name of the collection.
         identifier: A unique slug.
+        type: The type of collection (Series, Anthology, etc.).
         description: Description of scope.
         parent: Link to a parent collection (Sub-collections/Series).
+        alternative_names: Alternative names or translations.
     """
+
+    class CollectionType(models.TextChoices):
+        """Enumeration for the type of a Collection."""
+
+        SERIES = "SERIES", _("Series")
+        ANTHOLOGY = "ANTHOLOGY", _("Anthology")
+        ARCHIVE = "ARCHIVE", _("Archive")
+        OTHER = "OTHER", _("Other")
 
     name = models.CharField(
         max_length=512,
@@ -274,6 +283,12 @@ class Collection(BaseModel):
         max_length=255,
         unique=True,
         help_text=_("A unique, URL-friendly slug."),
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=CollectionType.choices,
+        default=CollectionType.OTHER,
+        help_text=_("High-level classification of the collection."),
     )
     description = models.TextField(
         blank=True,
@@ -307,6 +322,7 @@ class Collection(BaseModel):
         indexes = [
             Index(fields=["identifier"]),
             Index(fields=["name"]),
+            Index(fields=["type"]),
         ]
 
     def __str__(self) -> str:
