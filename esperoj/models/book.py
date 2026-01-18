@@ -1,3 +1,14 @@
+from typing import TYPE_CHECKING
+
+from django.core.exceptions import ValidationError
+from django.db import models
+
+from .item import Item
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
+
+
 class Book(Item):
     """A book or written publication.
 
@@ -63,10 +74,10 @@ class Book(Item):
         verbose_name = "Book"
         verbose_name_plural = "Books"
         indexes = [
-            Index(fields=["isbn_10"]),
-            Index(fields=["isbn_13"]),
-            Index(fields=["publisher"]),
-            Index(fields=["page_count"]),
+            models.Index(fields=["isbn_10"]),
+            models.Index(fields=["isbn_13"]),
+            models.Index(fields=["publisher"]),
+            models.Index(fields=["page_count"]),
         ]
 
     @staticmethod
@@ -97,7 +108,7 @@ class Book(Item):
             *args: Variable length argument list.
             **kwargs: Arbitrary keyword arguments.
         """
-        self.type = ItemType.BOOK
+        self.type = Item.ItemType.BOOK
         super().save(*args, **kwargs)
 
     def clean(self) -> None:

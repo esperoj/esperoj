@@ -16,8 +16,8 @@ from django.utils.translation import gettext_lazy as _
 from .base import BaseModel
 
 if TYPE_CHECKING:
-    from .items import Item
-    from .relationships import AgentExternalReference, Role
+    from .item import Item
+    from .relationship import AgentExternalReference, Atribution
 
 
 class Agent(BaseModel):

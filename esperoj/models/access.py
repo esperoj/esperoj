@@ -14,8 +14,8 @@ from pathlib import PurePosixPath
 from django.db import models
 
 from .base import BaseModel
-from .files import File
-from .items import Item
+from .file import File
+from .item import Item
 
 
 class AccessPackage(BaseModel):
@@ -74,20 +74,20 @@ class PackageEntry(BaseModel):
 
     Attributes:
         package (AccessPackage): The parent bundle.
-        file_source (File): The actual preservation file.
-        virtual_path (str): The logical path/filename shown to the user.
+        file (File): The actual preservation file.
+        path (str): The logical path/filename shown to the user.
     """
 
     package = models.ForeignKey(
         AccessPackage, on_delete=models.CASCADE, related_name="entries", help_text="The package this file belongs to."
     )
 
-    file_source = models.ForeignKey(
+    file = models.ForeignKey(
         File, on_delete=models.PROTECT, related_name="package_usages", help_text="The preservation file being exposed."
     )
 
     # This is the "Archive.org" style file listing magic
-    virtual_path = models.CharField(
+    path = models.CharField(
         max_length=1024, help_text="The relative path/filename shown to the user (e.g. 'extras/map.jpg')."
     )
 
@@ -95,20 +95,20 @@ class PackageEntry(BaseModel):
         db_table = "access_package_entry"
         verbose_name = "Package Entry"
         verbose_name_plural = "Package Entries"
-        ordering = ["virtual_path"]
+        ordering = ["path"]
         # Ensure two files don't have the same path in the same package
-        constraints = [models.UniqueConstraint(fields=["package", "virtual_path"], name="unique_package_virtual_path")]
+        constraints = [models.UniqueConstraint(fields=["package", "path"], name="unique_package_path")]
 
     def __str__(self) -> str:
-        return f"{self.package.identifier}: {self.virtual_path}"
+        return f"{self.package.identifier}: {self.path}"
 
     @property
     def filename(self) -> str:
         """Extracts just the filename from the virtual path."""
-        return PurePosixPath(self.virtual_path).name
+        return PurePosixPath(self.path).name
 
     @property
     def folder(self) -> str:
         """Extracts the folder structure from the virtual path."""
-        parent = PurePosixPath(self.virtual_path).parent
+        parent = PurePosixPath(self.path).parent
         return str(parent) if str(parent) != "." else ""

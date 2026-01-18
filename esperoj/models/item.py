@@ -16,23 +16,7 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
 
     from .core import Agent
-    from .relationships import Attribution, ItemExternalReference, ItemRoleName
-
-
-# todo: put itemtype enum in item model and collectin type in collection model
-class ItemType(models.TextChoices):
-    """Enumeration for the type of a cataloged Item."""
-
-    SONG = "SONG", "Song"
-    BOOK = "BOOK", "Book"
-    AUDIOBOOK = "AUDIOBOOK", "Audiobook"
-    COMIC = "COMIC", "Comic"
-    TEXT = "TEXT", "Text"
-    MOVIE = "MOVIE", "Movie"
-    GAME = "GAME", "Game"
-    IMAGE = "IMAGE", "Image"
-    VIDEO = "VIDEO", "Video"
-    AUDIO = "AUDIO", "Audio"
+    from .relationship import Attribution, ItemExternalReference, ItemRoleName
 
 
 class Collection(BaseModel):
@@ -44,6 +28,12 @@ class Collection(BaseModel):
         type: The type of collection (e.g., series, anthology).
         description: A free-text description of the collection.
     """
+
+    class CollectionType(models.TextChoices):
+        """Enumeration for the type of a collection."""
+
+        SERIES = "SERIES", "Series"
+        ANTHOLOGY = "ANTHOLOGY", "Anthology"
 
     title = models.CharField(
         max_length=512,
@@ -104,6 +94,20 @@ class Item(BaseModel):
         - Replaced year/month/day fields with a single string 'date' field (EDTF).
         - Replaced 'item_type' field name with simply 'type'.
     """
+
+    class ItemType(models.TextChoices):
+        """Enumeration for the type of a cataloged Item."""
+
+        SONG = "SONG", "Song"
+        BOOK = "BOOK", "Book"
+        AUDIOBOOK = "AUDIOBOOK", "Audiobook"
+        COMIC = "COMIC", "Comic"
+        TEXT = "TEXT", "Text"
+        MOVIE = "MOVIE", "Movie"
+        GAME = "GAME", "Game"
+        IMAGE = "IMAGE", "Image"
+        VIDEO = "VIDEO", "Video"
+        AUDIO = "AUDIO", "Audio"
 
     # --- Core Information ---
     title = models.CharField(
