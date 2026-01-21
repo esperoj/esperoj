@@ -9,6 +9,8 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
 
 
+# todo: remove page_count since we have extent now
+# todo: update the docstring accordingly for the whole file
 class Book(Item):
     """A book or written publication.
 
@@ -80,6 +82,7 @@ class Book(Item):
             models.Index(fields=["page_count"]),
         ]
 
+    # todo: simplify this using modern features like matching or switch rather than multiple len and if
     @staticmethod
     def format_isbn(isbn: str) -> str:
         """Formats an ISBN string with hyphens.

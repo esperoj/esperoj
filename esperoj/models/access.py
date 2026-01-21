@@ -86,7 +86,6 @@ class PackageEntry(BaseModel):
         File, on_delete=models.PROTECT, related_name="package_usages", help_text="The preservation file being exposed."
     )
 
-    # This is the "Archive.org" style file listing magic
     path = models.CharField(
         max_length=1024, help_text="The relative path/filename shown to the user (e.g. 'extras/map.jpg')."
     )
@@ -96,7 +95,6 @@ class PackageEntry(BaseModel):
         verbose_name = "Package Entry"
         verbose_name_plural = "Package Entries"
         ordering = ["path"]
-        # Ensure two files don't have the same path in the same package
         constraints = [models.UniqueConstraint(fields=["package", "path"], name="unique_package_path")]
 
     def __str__(self) -> str:
