@@ -13,14 +13,14 @@ from django.db import models
 from django.db.models import Index, Manager
 from django.utils.translation import gettext_lazy as _
 
-from .base import BaseModel
+from .base import Entity
 
 if TYPE_CHECKING:
     from .item import Item
     from .relationship import AgentExternalReference, Atribution
 
 
-class Subject(BaseModel):
+class Subject(Entity):
     """A subject, topic, or keyword. Aligns with SKOS (Simple Knowledge Organization System).
 
     Attributes:
@@ -77,7 +77,7 @@ class Subject(BaseModel):
         return self.name
 
 
-class Collection(BaseModel):
+class Collection(Entity):
     """A collection grouping multiple related Items.
 
     Attributes:

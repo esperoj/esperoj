@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Index, Manager
 
-from .base import BaseModel
+from .base import Entity
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .relationship import Attribution, ItemExternalReference, ItemRoleName
 
 
-class Collection(BaseModel):
+class Collection(Entity):
     """A collection of items, such as a some series or music anthology.
 
     Attributes:
@@ -79,7 +79,7 @@ class Collection(BaseModel):
         return self.items.all().order_by("memberships__order")
 
 
-class Item(BaseModel):
+class Item(Entity):
     """The concrete base model for all cataloged objects in the system.
 
     This model uses multi-table inheritance, where each subclass (like Book or

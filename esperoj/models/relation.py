@@ -10,7 +10,7 @@ from typing import Optional
 from django.db import models
 from django.db.models import Index
 
-from .base import BaseModel
+from .base import Entity
 from .core import Collection
 from .item import Item
 
@@ -73,7 +73,7 @@ class CollectionItem(models.Model):
         unique_together = ("item", "collection", "relation_type")
 
 
-class AgentItem(BaseModel):
+class AgentItem(Entity):
     """
     Represents the relationship (role) an Agent plays in relation to an Item.
 
@@ -160,7 +160,7 @@ class AgentItem(BaseModel):
         return f"{self.agent.authorized_name} as {self.relation_type} for {self.item.title}"
 
 
-class AbstractReference(BaseModel):
+class AbstractReference(Entity):
     """Base class for external identifiers and links."""
 
     class ReferenceType(models.TextChoices):
@@ -279,7 +279,7 @@ class ItemReference(AbstractReference):
         verbose_name_plural = "Item External References"
 
 
-class ItemRelation(BaseModel):
+class ItemRelation(Entity):
     """
     Represents a relationship between two items.
 

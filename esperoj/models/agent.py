@@ -4,7 +4,7 @@ from django.db import models
 from django.db.models import Index, Manager
 from django.utils.translation import gettext_lazy as _
 
-from .base import BaseModel
+from .base import Entity
 from .relation import AgentReference
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 # - Docstring revised to refer to "relations to items" rather than "roles".
 # - External references renamed to "references" and documented to use AgentReference.
 # - Removed all logic related to generating sort_name (no automatic generation on save).
-class Agent(BaseModel):
+class Agent(Entity):
     """Represents an agent (PREMIS: Agent entity).
 
     An agent can be an author, artist, publisher, or any entity that is

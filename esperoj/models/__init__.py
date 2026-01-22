@@ -5,7 +5,7 @@ This module provides a clean interface for importing all models while
 organizing them into logical groups to avoid circular dependencies.
 """
 
-from .base import BaseModel
+from .base import Entity
 from .core import Collection, Person, Subject
 from .files import File
 from .items import Book, Item, ItemType, Song
@@ -21,7 +21,7 @@ from .relationships import (
 
 __all__ = [
     # Base
-    "BaseModel",
+    "Entity",
     # Core Entities
     "Person",
     "Subject",

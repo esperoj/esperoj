@@ -13,12 +13,12 @@ from pathlib import PurePosixPath
 
 from django.db import models
 
-from .base import BaseModel
+from .base import Entity
 from .file import File
 from .item import Item
 
 
-class AccessPackage(BaseModel):
+class AccessPackage(Entity):
     """
     A distinct, public-facing collection of content.
 
@@ -61,7 +61,7 @@ class AccessPackage(BaseModel):
         return self.title
 
 
-class PackageEntry(BaseModel):
+class PackageEntry(Entity):
     """
     A file mapped to a virtual path within an AccessPackage.
 

@@ -6,10 +6,10 @@ from django.core.validators import MinLengthValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from .base import BaseModel
+from .base import Entity
 
 
-class AbstractFile(BaseModel):
+class AbstractFile(Entity):
     # todo: add puid
     """
     Abstract base class for logical files and physical bitstreams.
@@ -110,7 +110,7 @@ class File(AbstractFile):
         ordering = ["filename"]
 
 
-class FileManifestation(BaseModel):
+class FileManifestation(Entity):
     """A specific physical arrangement (copy) of the logical file.
 
     This intermediary layer allows a single logical `File` to exist in multiple
