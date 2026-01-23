@@ -13,9 +13,8 @@ from pathlib import PurePosixPath
 
 from django.db import models
 
-from .base import Entity
+from .entity import Entity
 from .file import File
-from .item import Item
 
 
 class AccessPackage(Entity):
@@ -40,8 +39,8 @@ class AccessPackage(Entity):
     """
 
     # Link back to your internal preservation record
-    item = models.ForeignKey(
-        Item,
+    entity = models.ForeignKey(
+        Entity,
         on_delete=models.CASCADE,
         related_name="access_packages",
         help_text="The internal preservation item being disseminated.",

@@ -1,22 +1,12 @@
-from typing import TYPE_CHECKING
-
 from django.db import models
 from django.db.models import Index, Manager
 from django.utils.translation import gettext_lazy as _
 
-from .base import Entity
-from .relation import AgentReference
-
-if TYPE_CHECKING:
-    # Imported only for type checking to avoid runtime import cycles.
-    from .item import Item
-    from .relation import AgentItem
+from .entity import Entity
+from .relation import EntityRelation
 
 
-# Todos implemented:
-# - Docstring revised to refer to "relations to items" rather than "roles".
-# - External references renamed to "references" and documented to use AgentReference.
-# - Removed all logic related to generating sort_name (no automatic generation on save).
+# todo: update docstrings
 class Agent(Entity):
     """Represents an agent (PREMIS: Agent entity).
 
@@ -60,12 +50,8 @@ class Agent(Entity):
         blank=True,
         help_text=_("The name used for sorting. This should be provided/maintained manually."),
     )
-    identifier = models.SlugField(
-        max_length=255,
-        unique=True,
-        help_text=_("A unique, human-readable identifier (slug)."),
-    )
-    type = models.CharField(
+
+    agent_type = models.CharField(
         max_length=20,
         choices=AgentType.choices,
         default=AgentType.PERSON,
@@ -106,11 +92,7 @@ class Agent(Entity):
         help_text=_("Variant names. Keys typically are language codes or types."),
     )
 
-    # --- Type hints for reverse relationships ---
-    # These relationships are defined via 'related_name' in other models.
-    items: "Manager[Item]"
-    relations: "Manager[AgentItem]"
-    references: "Manager[AgentReference]"
+    relations: "Manager[EntityRelation]"
 
     class Meta:
         db_table = "agent"

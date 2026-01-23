@@ -7,6 +7,8 @@ from django.db import models
 from django.db.models.functions import Length
 from simple_history.models import HistoricalRecords
 
+from .relation import EntityRelation
+
 models.CharField.register_lookup(Length, "length")
 
 
@@ -70,6 +72,8 @@ class Entity(models.Model):
 
     # History / Meta
     history = HistoricalRecords(inherit=True)
+
+    relations: models.Manager[EntityRelation]
 
     class Meta:
         """Meta options for the Entity model."""
