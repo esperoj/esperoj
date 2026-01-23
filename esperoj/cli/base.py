@@ -1,5 +1,5 @@
 import argparse
-from typing import Any, Dict
+from typing import Any
 
 
 class Command:

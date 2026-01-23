@@ -1,7 +1,6 @@
 import os
 from unittest import mock
 
-from _pytest.stash import T
 
 from esperoj.utils.setup_django import setup_django
 

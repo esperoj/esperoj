@@ -17,7 +17,6 @@ from .base import Entity
 
 if TYPE_CHECKING:
     from .item import Item
-    from .relationship import AgentExternalReference, Atribution
 
 
 class Subject(Entity):
