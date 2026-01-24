@@ -23,16 +23,16 @@ class AccessPackage(Entity):
 
     This represents the 'DIP' (Dissemination Information Package). It acts as
     the catalog entry that users browse, search for, and view. Unlike the
-    internal 'Item', which organizes preservation data, the AccessPackage
-    organizes presentation data.
+    internal preservation record (Entity), the AccessPackage organizes
+    presentation data.
 
     Example:
-        - Internal Item: "Project Gutenberg Dump 2023 (UUID: ...)"
+        - Internal Entity: "Project Gutenberg Dump 2023 (UUID: ...)"
         - AccessPackage 1: "Alice in Wonderland (EPUB Edition)"
         - AccessPackage 2: "Alice in Wonderland (HTML Online Read)"
 
     Attributes:
-        item (Item): The internal preservation item this derives from.
+        entity (Entity): The internal preservation entity being disseminated.
         title (str): The public display title.
         identifier (str): Unique URL identifier.
         description (str): HTML/Markdown content describing this package.

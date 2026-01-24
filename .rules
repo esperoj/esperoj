@@ -3,7 +3,7 @@
 These are universal guidelines for writing high-quality, robust, and maintainable code.
 
 **1. Code Quality & Readability**
-*   **Style:** Adhere strictly to PEP 8 for all code.
+*   **Style:** Adhere strictly to PEP 8 for all code. Sort model fields using logical categories (e.g., core fields, metadata, timestamps) and best practices.
 *   **Clarity:** Write concise functions and methods that follow the Single Responsibility Principle. Name variables, functions, and classes descriptively, avoiding ambiguous abbreviations.
 *   **Documentation:**
     *   Use Google-style docstrings for all modules, classes, and functions.

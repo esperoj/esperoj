@@ -23,6 +23,7 @@ class Entity(models.Model):
         id (UUID): Primary key, generated via UUIDv7 for time-sorted uniqueness.
         identifier (str): A unique, human-readable slug identifier.
         type (str): The specific subclass type of the entity (e.g., 'BOOK').
+        additional_metadata (dict): Extensible JSON metadata.
         created_at (datetime): Timestamp when the entity was first created.
         updated_at (datetime): Timestamp when the entity was last modified.
         history (HistoricalRecords): Audit log of changes to the entity.
@@ -56,6 +57,18 @@ class Entity(models.Model):
         default=EntityType.BOOK,
         editable=False,
         help_text="The polymorphic type of this entity.",
+    )
+
+    note = models.TextField(
+        blank=True,
+        default="",
+        help_text="Internal notes, not intended for public display.",
+    )
+
+    additional_metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Extensible metadata stored in JSON format.",
     )
 
     # Timestamps
