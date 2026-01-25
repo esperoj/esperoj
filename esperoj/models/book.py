@@ -3,24 +3,25 @@ from typing import TYPE_CHECKING
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from .item import Item
+from .entity import Entity
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
 
+    from .agent import Agent
 
-# todo: remove page_count since we have extent now
-# todo: update the docstring accordingly for the whole file
-class Book(Item):
+
+class Book(Entity):
     """A book or written publication.
 
     Attributes:
         isbn_10: The 10-digit International Standard Book Number.
         isbn_13: The 13-digit International Standard Book Number.
-        page_count: The number of pages in the book.
         publisher: The publisher of the book.
         edition: The edition information.
         format: The physical format (hardcover, paperback, etc.).
+        extent: The physical extent (e.g., page count, dimensions).
+        table_of_contents: Table of contents or chapter listing.
     """
 
     # --- Book-specific fields ---
@@ -35,11 +36,6 @@ class Book(Item):
         blank=True,
         default="",
         help_text="The 13-digit ISBN (without hyphens).",
-    )
-    page_count = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="The number of pages in the book.",
     )
     publisher = models.CharField(
         max_length=255,
@@ -79,10 +75,8 @@ class Book(Item):
             models.Index(fields=["isbn_10"]),
             models.Index(fields=["isbn_13"]),
             models.Index(fields=["publisher"]),
-            models.Index(fields=["page_count"]),
         ]
 
-    # todo: simplify this using modern features like matching or switch rather than multiple len and if
     @staticmethod
     def format_isbn(isbn: str) -> str:
         """Formats an ISBN string with hyphens.
@@ -97,12 +91,13 @@ class Book(Item):
             return ""
 
         clean_isbn = isbn.replace("-", "").replace(" ", "")
-        if len(clean_isbn) == 13:
-            return f"{clean_isbn[:3]}-{clean_isbn[3:4]}-{clean_isbn[4:6]}-{clean_isbn[6:12]}-{clean_isbn[12:]}"
-        if len(clean_isbn) == 10:
-            return f"{clean_isbn[:1]}-{clean_isbn[1:4]}-{clean_isbn[4:9]}-{clean_isbn[9:]}"
-
-        return isbn
+        match len(clean_isbn):
+            case 13:
+                return f"{clean_isbn[:3]}-{clean_isbn[3:4]}-{clean_isbn[4:6]}-{clean_isbn[6:12]}-{clean_isbn[12:]}"
+            case 10:
+                return f"{clean_isbn[:1]}-{clean_isbn[1:4]}-{clean_isbn[4:9]}-{clean_isbn[9:]}"
+            case _:
+                return isbn
 
     def save(self, *args, **kwargs) -> None:
         """Sets the type before saving.
@@ -204,15 +199,6 @@ class Book(Item):
         return self._get_agents_display_string(self.translators)
 
     @property
-    def primary_isbn(self) -> str:
-        """Returns the primary ISBN (preferring ISBN-13).
-
-        Returns:
-            The raw ISBN string.
-        """
-        return self.isbn_13 or self.isbn_10
-
-    @property
     def display_isbn(self) -> str:
         """Returns a formatted ISBN for display.
 
@@ -220,12 +206,3 @@ class Book(Item):
             A string for display.
         """
         return self.format_isbn(self.primary_isbn)
-
-    @property
-    def has_isbn(self) -> bool:
-        """Returns True if the book has any ISBN.
-
-        Returns:
-            True if an ISBN is present.
-        """
-        return bool(self.isbn_10 or self.isbn_13)
