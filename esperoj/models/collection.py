@@ -1,11 +1,10 @@
 from django.db import models
 
 from .entity import Entity
-from .relation import EntityRelation
 
 
 class Collection(Entity):
-    """A collection grouping multiple related Items.
+    """A collection grouping multiple related Entities.
 
     Attributes:
         name: The name of the collection.
@@ -36,8 +35,6 @@ class Collection(Entity):
         default="",
         help_text="A detailed description of the collection's scope.",
     )
-
-    relations: models.Manager["EntityRelation"]
 
     class Meta:
         db_table = "collection"

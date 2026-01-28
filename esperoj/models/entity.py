@@ -7,8 +7,6 @@ from django.db import models
 from django.db.models.functions import Length
 from simple_history.models import HistoricalRecords
 
-from .relation import EntityRelation
-
 models.CharField.register_lookup(Length, "length")
 
 
@@ -23,6 +21,8 @@ class Entity(models.Model):
         id (UUID): Primary key, generated via UUIDv7 for time-sorted uniqueness.
         identifier (str): A unique, human-readable slug identifier.
         type (str): The specific subclass type of the entity (e.g., 'BOOK').
+        note (str): Internal notes for the entity.
+        relations (ManyToManyField): Relationships to other entities via EntityRelation.
         additional_metadata (dict): Extensible JSON metadata.
         created_at (datetime): Timestamp when the entity was first created.
         updated_at (datetime): Timestamp when the entity was last modified.
@@ -33,6 +33,16 @@ class Entity(models.Model):
         """Enumeration of available entity types."""
 
         BOOK = "BOOK", "Book"
+        COLLECTION = "COLLECTION", "Collection"
+        SONG = "SONG", "Song"
+        AUDIOBOOK = "AUDIOBOOK", "Audiobook"
+        COMIC = "COMIC", "Comic"
+        TEXT = "TEXT", "Text"
+        MOVIE = "MOVIE", "Movie"
+        GAME = "GAME", "Game"
+        IMAGE = "IMAGE", "Image"
+        VIDEO = "VIDEO", "Video"
+        AUDIO = "AUDIO", "Audio"
 
     # Primary Key
     id = models.UUIDField(
@@ -43,7 +53,7 @@ class Entity(models.Model):
         help_text="Unique UUIDv7 identifier.",
     )
 
-    # Human-Readable Identifier
+    # Identification
     identifier = models.SlugField(
         max_length=255,
         unique=True,
@@ -59,12 +69,24 @@ class Entity(models.Model):
         help_text="The polymorphic type of this entity.",
     )
 
+    # Descriptive Fields
     note = models.TextField(
         blank=True,
         default="",
         help_text="Internal notes, not intended for public display.",
     )
 
+    # Relationships
+    relations = models.ManyToManyField(
+        "self",
+        through="EntityRelation",
+        through_fields=("source", "target"),
+        symmetrical=False,
+        related_name="related_from",
+        help_text="Other entities related to this entity.",
+    )
+
+    # Metadata
     additional_metadata = models.JSONField(
         default=dict,
         blank=True,
@@ -83,10 +105,8 @@ class Entity(models.Model):
         help_text="The time when the entity was last updated.",
     )
 
-    # History / Meta
+    # History
     history = HistoricalRecords(inherit=True)
-
-    relations: models.Manager[EntityRelation]
 
     class Meta:
         """Meta options for the Entity model."""
